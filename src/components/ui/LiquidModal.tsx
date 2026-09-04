@@ -81,7 +81,7 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
         aria-modal="true"
         aria-labelledby={title ? 'liquid-modal-title' : undefined}
         className={twMerge(
-          'glass-panel w-full rounded-3xl border border-white/90 bg-white/85 backdrop-blur-2xl shadow-liquid-card text-slate-900',
+          'glass-panel w-full rounded-3xl border border-white/90 shadow-liquid-card text-slate-900',
           'flex flex-col max-h-[92vh] sm:max-h-[88vh]',
           'landscape:max-h-[85vh] landscape:my-auto',
           maxWidthMap[maxWidth],

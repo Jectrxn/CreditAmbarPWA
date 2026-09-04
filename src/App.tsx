@@ -115,27 +115,51 @@ export default function App() {
 
       {/* Main Content */}
       <main className="w-full max-w-4xl space-y-8 relative z-10">
-        {/* Reference Button Highlight Showcase */}
-        <section className="flex flex-col items-center justify-center p-6 rounded-3xl bg-white/40 backdrop-blur-xl border border-white/80 shadow-sm text-center">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
-            Acabado iOS Liquid Glass de Referencia
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            {/* Exact Pill Button Replica from User Reference Image */}
-            <button className="glass-pill-button text-slate-900 font-bold px-8 py-3 text-base shadow-liquid-pill group">
-              <Sparkles className="w-5 h-5 text-amber-600 group-hover:rotate-12 transition-transform" />
-              <span>Button</span>
-            </button>
-
-            {/* Amber Gold Brand Accent Button */}
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="glass-button-primary text-base px-7 py-3"
-            >
-              <CreditCard className="w-5 h-5 text-amber-950" />
-              <span>Abrir Modal Liquid Glass</span>
-            </button>
+        {/* Exact Reference Button Optical Showcase */}
+        <section className="flex flex-col items-center justify-center p-6 md:p-8 rounded-3xl bg-white/40 backdrop-blur-xl border border-white/80 shadow-sm text-center">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+            <p className="text-xs font-black text-slate-700 uppercase tracking-widest">
+              Comparativa Directa de Acabado iOS Liquid Glass
+            </p>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+            {/* 1. Exact Replica of User Reference Image (Blue / Aqua Backdrop) */}
+            <div className="relative h-48 rounded-2xl overflow-hidden flex items-center justify-center bg-gradient-to-tr from-teal-200 via-sky-300 to-blue-600 shadow-inner p-4">
+              {/* Deep Satin Royal Blue Disc intersecting the button */}
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-gradient-to-br from-blue-700 to-indigo-950 shadow-2xl opacity-90" />
+              <div className="absolute left-4 bottom-2 w-28 h-28 rounded-full bg-emerald-300/60 blur-xl" />
+
+              {/* Exact Pill Button Replica from Reference Image */}
+              <button className="glass-pill-button text-slate-950 font-bold px-8 py-3 text-base shadow-2xl relative z-10 hover:scale-105 active:scale-95 transition-all">
+                {/* Hand-drawn squiggly mark like reference image */}
+                <svg className="w-6 h-4 text-slate-950 stroke-[2.5]" fill="none" viewBox="0 0 24 16" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2 12c3-8 5-8 8 0s5 8 8 0 3-4 4-2" />
+                </svg>
+                <span className="tracking-tight text-lg">Button</span>
+              </button>
+            </div>
+
+            {/* 2. Bodega Ámbar Branded Version (Amber / Lime / Magenta Backdrop) */}
+            <div className="relative h-48 rounded-2xl overflow-hidden flex items-center justify-center bg-gradient-to-tr from-amber-200 via-amber-300 to-rose-400 shadow-inner p-4">
+              {/* Brand color sphere */}
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-gradient-to-br from-amber-600 to-rose-700 shadow-2xl opacity-90" />
+              <div className="absolute left-4 bottom-2 w-28 h-28 rounded-full bg-lime-400/60 blur-xl" />
+
+              {/* Pill button for Ámbar */}
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="glass-pill-button text-slate-950 font-bold px-7 py-3 text-base shadow-2xl relative z-10 hover:scale-105 active:scale-95 transition-all"
+              >
+                <CreditCard className="w-5 h-5 text-amber-900" />
+                <span className="tracking-tight text-lg">Probar Modal</span>
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-3 font-medium">
+            Fíjate cómo el cristal refracta la esfera oscura de fondo a través del cuerpo del botón, manteniendo el borde iluminado.
+          </p>
         </section>
 
         {/* Terminal Login or Active Session */}

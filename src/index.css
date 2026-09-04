@@ -3,61 +3,77 @@
 @tailwind utilities;
 
 @layer components {
-  /* Ultra-realistic iOS Liquid Glass (Light, Frosted & Luminous) */
+  /* True iOS Liquid Glass (High Translucency, Specular Rim & Saturation) */
   .glass-panel {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03), inset 0 1px 2px 0 rgba(255, 255, 255, 0.95);
-    border-radius: 1.5rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.22) 100%);
+    backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(105%);
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 
+      inset 0 2px 2px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 1px 0 rgba(255, 255, 255, 0.3),
+      0 20px 40px -10px rgba(15, 23, 42, 0.12),
+      0 4px 12px -2px rgba(15, 23, 42, 0.04);
+    border-radius: 1.75rem;
   }
 
   .glass-card {
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    border-radius: 1.25rem;
-    box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.06), 0 4px 10px -2px rgba(15, 23, 42, 0.02), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.18) 100%);
+    backdrop-filter: blur(24px) saturate(180%) contrast(105%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(105%);
+    border: 1.2px solid rgba(255, 255, 255, 0.70);
+    border-radius: 1.5rem;
+    box-shadow: 
+      inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -1px 1px 0 rgba(255, 255, 255, 0.2),
+      0 12px 30px -4px rgba(15, 23, 42, 0.08),
+      0 4px 10px -2px rgba(15, 23, 42, 0.03);
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-card:hover {
-    background: rgba(255, 255, 255, 0.80);
-    box-shadow: 0 16px 32px -4px rgba(15, 23, 42, 0.09), 0 6px 14px -2px rgba(15, 23, 42, 0.03), inset 0 1px 2px 0 rgba(255, 255, 255, 1);
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.26) 100%);
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 
+      inset 0 2px 2px 0 rgba(255, 255, 255, 0.95),
+      0 20px 40px -6px rgba(15, 23, 42, 0.14);
+    transform: translateY(-2px);
   }
 
   /* Liquid Glass Pill Button - Exact replica of the reference image */
   .glass-button, .glass-pill-button {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.45) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1.2px solid rgba(255, 255, 255, 0.90);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.15) 100%);
+    backdrop-filter: blur(22px) saturate(200%) contrast(108%);
+    -webkit-backdrop-filter: blur(22px) saturate(200%) contrast(108%);
+    border: 1.2px solid rgba(255, 255, 255, 0.75);
     border-radius: 9999px;
-    padding: 0.65rem 1.6rem;
-    font-weight: 600;
+    padding: 0.75rem 2rem;
+    font-weight: 700;
     color: #0f172a;
-    box-shadow: 0 8px 24px -2px rgba(15, 23, 42, 0.08), 0 2px 6px 0 rgba(15, 23, 42, 0.03), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95);
+    box-shadow: 
+      inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 1px 0 rgba(255, 255, 255, 0.25),
+      0 12px 28px -4px rgba(15, 23, 42, 0.12),
+      0 4px 8px -2px rgba(15, 23, 42, 0.04);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
   }
 
   .glass-button:hover, .glass-pill-button:hover {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.60) 100%);
-    border-color: rgba(255, 255, 255, 1);
-    box-shadow: 0 12px 28px -2px rgba(15, 23, 42, 0.12), 0 4px 10px 0 rgba(15, 23, 42, 0.04), inset 0 1.5px 2px 0 rgba(255, 255, 255, 1);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 
+      inset 0 2px 2px 0 rgba(255, 255, 255, 1),
+      0 16px 36px -4px rgba(15, 23, 42, 0.16);
     transform: translateY(-1px);
   }
 
   .glass-button:active, .glass-pill-button:active {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.40) 100%);
-    box-shadow: 0 4px 12px 0 rgba(15, 23, 42, 0.06), inset 0 1px 1px 0 rgba(255, 255, 255, 0.85);
-    transform: scale(0.98);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.10) 100%);
+    transform: scale(0.97);
   }
 
   .glass-button-primary {
