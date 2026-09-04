@@ -1,0 +1,26 @@
+schema: spec-driven
+
+context: |
+  Project: CreditAmbar PWA
+  Tech stack: React 18+, Vite, TypeScript, Tailwind CSS, IndexedDB (Dexie / Offline Queue), Supabase (PostgreSQL, Realtime, Storage, Auth)
+  Architecture: PWA Offline-First with local IndexedDB queue and automatic Supabase background synchronization
+  Design: iOS Liquid Glass (Glassmorphism with backdrop-blur, translucent borders, accessible contrast, tactile feedback)
+  Role Model: Multi-role support (Cajero, Supervisor, Jefe) with shared-device flow and quick PIN authentication
+  Key Modules: Clientes, Nuevo Fiado, Abonos/Pagos, Reporte Caja Chica (FCC), Auditoría y Anulaciones, WhatsApp Sharing
+
+rules:
+  proposal:
+    - Include rollback plan for schema or architectural changes
+    - Identify affected modules/packages (UI, offline store, Supabase schema)
+    - Detail offline and sync implications
+  specs:
+    - Use Given/When/Then format for acceptance scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Ensure offline state behaviors and edge cases are specified
+  design:
+    - Include sequence diagrams for state & data synchronization flows
+    - Document architecture decisions with rationale (ADRs)
+    - Specify UI/UX responsive behavior for 390x844 mobile viewport and desktop
+  tasks:
+    - Group tasks into logical, testable milestones
+    - Enforce TDD / verification steps for sync logic and business rules
