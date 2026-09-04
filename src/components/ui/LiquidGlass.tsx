@@ -107,9 +107,9 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
       <span
         className="absolute inset-0 pointer-events-none rounded-[inherit]"
         style={{
-          border: `1.5px solid rgba(255, 255, 255, ${borderOpacity})`,
+          border: `1.5px solid rgba(255, 255, 255, ${safeBorderOp})`,
           boxShadow: `
-            inset 0 2px 2px 0 rgba(255, 255, 255, ${Math.min(1, borderOpacity * 1.5).toFixed(2)}),
+            inset 0 2px 2px 0 rgba(255, 255, 255, ${Math.min(1, safeBorderOp * 1.5).toFixed(2)}),
             inset 0 -2px 3px 0 rgba(0, 0, 0, 0.35),
             0 24px 48px -10px rgba(0, 0, 0, 0.55),
             0 8px 18px -4px rgba(0, 0, 0, 0.3)
