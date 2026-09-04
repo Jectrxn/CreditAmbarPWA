@@ -1,0 +1,131 @@
+import React, { useEffect, ReactNode, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { twMerge } from 'tailwind-merge';
+import { X } from 'lucide-react';
+
+export interface LiquidModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  showCloseButton?: boolean;
+  closeOnBackdropClick?: boolean;
+  className?: string;
+  'data-testid'?: string;
+}
+
+const maxWidthMap = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  full: 'max-w-full m-4',
+};
+
+export const LiquidModal: React.FC<LiquidModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  footer,
+  maxWidth = 'md',
+  showCloseButton = true,
+  closeOnBackdropClick = true,
+  className,
+  'data-testid': testId = 'liquid-modal',
+}) => {
+  // Handle ESC key press
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen, handleKeyDown]);
+
+  if (!isOpen) return null;
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget && closeOnBackdropClick) {
+      onClose();
+    }
+  };
+
+  const modalContent = (
+    <div
+      data-testid={`${testId}-backdrop`}
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-glass-md transition-all duration-300 animate-in fade-in"
+      role="presentation"
+    >
+      <div
+        data-testid={`${testId}-container`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? 'liquid-modal-title' : undefined}
+        className={twMerge(
+          'glass-panel w-full rounded-2xl border border-white/20 bg-slate-900/90 backdrop-blur-glass-xl shadow-glass-lg',
+          'flex flex-col max-h-[92vh] sm:max-h-[88vh]',
+          'landscape:max-h-[85vh] landscape:my-auto',
+          maxWidthMap[maxWidth],
+          className
+        )}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        {(title || showCloseButton) && (
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 shrink-0">
+            {title ? (
+              <div id="liquid-modal-title" className="text-lg font-semibold text-white tracking-tight">
+                {title}
+              </div>
+            ) : (
+              <div />
+            )}
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Cerrar modal"
+                className="rounded-xl p-1.5 text-slate-300 hover:text-white hover:bg-white/10 active:bg-white/15 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Scrollable Body with landscape/portrait adaptation */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 text-slate-200">
+          {children}
+        </div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="border-t border-white/10 px-5 py-3.5 bg-white/[0.02] rounded-b-2xl shrink-0 flex items-center justify-end gap-2.5">
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
+};

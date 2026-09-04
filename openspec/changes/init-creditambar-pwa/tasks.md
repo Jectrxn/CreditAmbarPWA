@@ -27,11 +27,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 1: Foundation & Liquid Glass UI (PR 1)
 
-- [ ] 1.1 Scaffold Vite React TypeScript PWA setup in `package.json`, `vite.config.ts`, and `index.html`.
-- [ ] 1.2 Configure Tailwind CSS with Liquid Glass design tokens (blur, translucency) in `tailwind.config.js` and `src/index.css`.
-- [ ] 1.3 Implement shared-phone store auth and PIN state in `src/store/authStore.ts`.
-- [ ] 1.4 Write failing test (RED) for Liquid Glass modal and fallback styling in `src/components/ui/LiquidModal.test.tsx`.
-- [ ] 1.5 Implement `src/components/ui/LiquidModal.tsx` and `src/components/ui/GlassCard.tsx` with responsive orientation support.
+- [x] 1.1 Scaffold Vite React TypeScript PWA setup in `package.json`, `vite.config.ts`, and `index.html`.
+- [x] 1.2 Configure Tailwind CSS with Liquid Glass design tokens (blur, translucency) in `tailwind.config.js` and `src/index.css`.
+- [x] 1.3 Implement shared-phone store auth and PIN state in `src/store/authStore.ts`.
+- [x] 1.4 Write failing test (RED) for Liquid Glass modal and fallback styling in `src/components/ui/LiquidModal.test.tsx`.
+- [x] 1.5 Implement `src/components/ui/LiquidModal.tsx` and `src/components/ui/GlassCard.tsx` with responsive orientation support.
 
 ## Phase 2: Dexie IndexedDB & Offline Sync Engine (PR 2)
 
