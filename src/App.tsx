@@ -255,10 +255,14 @@ export default function App() {
 
           {/* Showcase Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-            {/* 1. User Info Card Replica with Elasticity and Optical Glass */}
-            <div className="relative h-64 rounded-3xl overflow-hidden flex items-center justify-center p-4 bg-cover bg-center shadow-inner"
-                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=800&auto=format&fit=crop')" }}>
-              <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+            {/* 1. User Info Card Replica with Elasticity on Vivid Colorful Background */}
+            <div className="relative h-64 rounded-3xl overflow-hidden flex items-center justify-center p-4 shadow-inner bg-slate-950 border border-white/20">
+              {/* Vivid Radiant Background Layer */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-amber-500 via-rose-600 to-indigo-700 opacity-90" />
+              <div className="absolute -top-6 -left-6 w-40 h-40 rounded-full bg-amber-300 blur-2xl opacity-90 animate-pulse" />
+              <div className="absolute -bottom-6 -right-6 w-40 h-40 rounded-full bg-lime-400 blur-2xl opacity-80" />
+              <div className="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-pink-500 blur-2xl opacity-85" />
+              <div className="absolute inset-0 bg-black/10 pointer-events-none" />
 
               <LiquidGlass
                 displacementScale={dispScale}
