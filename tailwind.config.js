@@ -4,15 +4,30 @@ export default {
   theme: {
     extend: {
       colors: {
+        ambar: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b', // Amarillo oro del logo Ámbar
+          600: '#d97706',
+          700: '#b45309',
+        },
+        magenta: {
+          500: '#e11d48', // Fucsia/magenta del logo
+          600: '#be123c',
+        },
+        lima: {
+          500: '#84cc16', // Verde lima del logo
+          600: '#65a30d',
+        },
         glass: {
-          bg: 'rgba(255, 255, 255, 0.08)',
-          'bg-subtle': 'rgba(255, 255, 255, 0.04)',
-          'bg-prominent': 'rgba(255, 255, 255, 0.14)',
-          'bg-dark': 'rgba(15, 23, 42, 0.65)',
-          'bg-modal': 'rgba(15, 23, 42, 0.8)',
-          border: 'rgba(255, 255, 255, 0.18)',
-          'border-subtle': 'rgba(255, 255, 255, 0.08)',
-          'border-glow': 'rgba(99, 102, 241, 0.35)',
+          surface: 'rgba(255, 255, 255, 0.65)',
+          'surface-subtle': 'rgba(255, 255, 255, 0.45)',
+          'surface-prominent': 'rgba(255, 255, 255, 0.82)',
+          border: 'rgba(255, 255, 255, 0.85)',
+          'border-subtle': 'rgba(255, 255, 255, 0.5)',
         },
       },
       backdropBlur: {
@@ -22,11 +37,8 @@ export default {
         'glass-xl': '40px',
       },
       boxShadow: {
-        'glass-sm': '0 4px 16px 0 rgba(0, 0, 0, 0.25)',
-        'glass-md': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-        'glass-lg': '0 12px 48px 0 rgba(0, 0, 0, 0.45)',
-        'glass-glow': '0 0 20px 2px rgba(99, 102, 241, 0.3)',
-        'glass-inset': 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)',
+        'liquid-pill': '0 8px 24px -2px rgba(15, 23, 42, 0.08), 0 2px 6px 0 rgba(15, 23, 42, 0.03), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95)',
+        'liquid-card': '0 12px 36px -4px rgba(15, 23, 42, 0.07), 0 4px 12px -2px rgba(15, 23, 42, 0.03), inset 0 1px 2px 0 rgba(255, 255, 255, 0.95)',
       },
     },
   },

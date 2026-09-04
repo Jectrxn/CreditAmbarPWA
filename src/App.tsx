@@ -57,19 +57,34 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 p-4 md:p-8 flex flex-col items-center">
-      {/* Top Bar */}
-      <header className="w-full max-w-4xl flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-4 md:p-8 flex flex-col items-center relative overflow-hidden selection:bg-amber-200 selection:text-amber-900">
+      {/* Ambient Fluid Lighting (The secret to realistic Liquid Glass refraction) */}
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-amber-400/25 blur-3xl pointer-events-none animate-pulse duration-1000" />
+      <div className="absolute top-1/4 -left-28 w-96 h-96 rounded-full bg-rose-400/20 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 right-1/4 w-96 h-96 rounded-full bg-lime-400/25 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-12 left-12 w-80 h-80 rounded-full bg-sky-300/20 blur-3xl pointer-events-none" />
+
+      {/* Top Navigation Bar */}
+      <header className="w-full max-w-4xl flex items-center justify-between mb-8 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-400/30 flex items-center justify-center backdrop-blur-md">
-            <CreditCard className="w-5 h-5 text-indigo-400" />
+          <div className="h-14 w-14 rounded-2xl bg-white/70 backdrop-blur-md border border-white/80 p-1.5 shadow-sm flex items-center justify-center">
+            <img
+              src="/logo-ambar.png"
+              alt="Ámbar Bodega"
+              className="h-full w-full object-contain drop-shadow-sm"
+            />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              CreditAmbar <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">PWA</span>
-            </h1>
-            <p className="text-xs text-slate-400">
-              {storeSession ? storeSession.storeName : 'Dispositivo no vinculado'}
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900">
+                CreditAmbar
+              </h1>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300/70 font-semibold shadow-xs">
+                PWA
+              </span>
+            </div>
+            <p className="text-xs font-medium text-slate-500">
+              {storeSession ? storeSession.storeName : 'Dispositivo no vinculado'} • Bodega & Fiambrería
             </p>
           </div>
         </div>
@@ -77,50 +92,81 @@ export default function App() {
         <div className="flex items-center gap-2">
           {activeCashier ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs bg-slate-800/80 px-3 py-1.5 rounded-lg border border-white/10 text-slate-300">
-                {activeCashier.name} ({activeCashier.role})
-              </span>
+              <div className="text-xs bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/80 shadow-xs text-slate-700 font-medium">
+                <span className="font-semibold text-slate-900">{activeCashier.name}</span>
+                <span className="ml-1 text-xs text-amber-700 font-bold uppercase tracking-wider">({activeCashier.role})</span>
+              </div>
               <button
                 onClick={lockSession}
-                className="glass-button text-xs py-1.5 px-2.5 flex items-center gap-1.5 text-amber-300"
+                className="glass-pill-button text-xs py-1.5 px-3.5 flex items-center gap-1.5 text-slate-700 hover:text-amber-800"
                 title="Bloquear sesión"
               >
-                <Lock className="w-3.5 h-3.5" />
+                <Lock className="w-3.5 h-3.5 text-amber-600" />
                 Bloquear
               </button>
             </div>
           ) : (
-            <span className="text-xs text-slate-400">Sin sesión activa</span>
+            <span className="text-xs font-medium text-slate-500 bg-white/50 backdrop-blur-sm px-3 py-1 rounded-full border border-white/70">
+              Esperando operador
+            </span>
           )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="w-full max-w-4xl space-y-6">
-        {/* Active Cashier or Lock Screen */}
+      <main className="w-full max-w-4xl space-y-8 relative z-10">
+        {/* Reference Button Highlight Showcase */}
+        <section className="flex flex-col items-center justify-center p-6 rounded-3xl bg-white/40 backdrop-blur-xl border border-white/80 shadow-sm text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
+            Acabado iOS Liquid Glass de Referencia
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {/* Exact Pill Button Replica from User Reference Image */}
+            <button className="glass-pill-button text-slate-900 font-bold px-8 py-3 text-base shadow-liquid-pill group">
+              <Sparkles className="w-5 h-5 text-amber-600 group-hover:rotate-12 transition-transform" />
+              <span>Button</span>
+            </button>
+
+            {/* Amber Gold Brand Accent Button */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="glass-button-primary text-base px-7 py-3"
+            >
+              <CreditCard className="w-5 h-5 text-amber-950" />
+              <span>Abrir Modal Liquid Glass</span>
+            </button>
+          </div>
+        </section>
+
+        {/* Terminal Login or Active Session */}
         {isLocked ? (
-          <GlassCard variant="prominent" className="max-w-md mx-auto p-6 text-center space-y-5">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-300">
-              <Lock className="w-6 h-6" />
+          <GlassCard variant="prominent" className="max-w-md mx-auto p-7 text-center space-y-6">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-600 shadow-sm">
+              <Lock className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Terminal Bloqueada</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Seleccione su perfil e ingrese su PIN de cajero para operar
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">Terminal de Tienda</h2>
+              <p className="text-xs font-medium text-slate-500 mt-1">
+                Seleccione su nombre e introduzca su PIN para operar
               </p>
             </div>
 
             <form onSubmit={handleUnlock} className="space-y-4 text-left">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Cajero / Operador</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Operador / Cajero
+                </label>
                 <select
                   value={selectedCashierId}
-                  onChange={(e) => setSelectedCashierId(e.target.value)}
-                  className="w-full glass-input text-sm bg-slate-900/90 text-white"
+                  onChange={(e) => {
+                    setSelectedCashierId(e.target.value);
+                    setPinError('');
+                  }}
+                  className="w-full glass-input text-sm font-medium bg-white/80 text-slate-900 cursor-pointer"
                 >
-                  <option value="">-- Seleccionar --</option>
+                  <option value="">-- Seleccionar Operador --</option>
                   {cashiers.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} className="text-slate-900">
                       {c.name} ({c.role})
                     </option>
                   ))}
@@ -128,76 +174,94 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">PIN</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Código PIN
+                  </label>
+                  {selectedCashierId && (
+                    <span className="text-[11px] text-amber-700 font-medium">
+                      PIN prueba: {cashiers.find(c => c.id === selectedCashierId)?.pin}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="password"
                   maxLength={6}
                   value={pinInput}
                   onChange={(e) => setPinInput(e.target.value)}
                   placeholder="••••"
-                  className="w-full glass-input text-center text-lg tracking-widest"
+                  className="w-full glass-input text-center text-xl font-bold tracking-widest bg-white/80 text-slate-900"
                 />
               </div>
 
-              {pinError && <p className="text-xs text-rose-400 text-center">{pinError}</p>}
+              {pinError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-600 text-center">
+                  {pinError}
+                </div>
+              )}
 
-              <button type="submit" className="w-full glass-button bg-indigo-600/40 hover:bg-indigo-600/60 border-indigo-500/40 py-2.5 text-sm font-medium flex items-center justify-center gap-2">
-                <Unlock className="w-4 h-4" /> Desbloquear
+              <button
+                type="submit"
+                className="w-full glass-button-primary py-3 font-bold text-base flex items-center justify-center gap-2 mt-2"
+              >
+                <Unlock className="w-5 h-5 text-amber-950" />
+                <span>Desbloquear Terminal</span>
               </button>
             </form>
           </GlassCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <GlassCard variant="prominent" className="space-y-4">
+            <GlassCard variant="prominent" className="space-y-4 p-6">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-white flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-emerald-400" />
-                  Sesión de Operador Activa
+                <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-lime-600" />
+                  Turno Activo
                 </h3>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="text-xs px-3 py-1 rounded-full bg-lime-100 text-lime-800 border border-lime-300 font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
                   En Línea
                 </span>
               </div>
-              <div className="text-sm text-slate-300 space-y-1">
-                <p><span className="text-slate-400">Operador:</span> {activeCashier?.name}</p>
-                <p><span className="text-slate-400">Rol:</span> <span className="capitalize">{activeCashier?.role}</span></p>
-                <p><span className="text-slate-400">Sucursal:</span> {storeSession?.storeName}</p>
+              <div className="text-sm text-slate-700 space-y-1.5 bg-white/40 p-4 rounded-2xl border border-white/80">
+                <p><span className="text-slate-500 font-medium">Operador:</span> <strong className="text-slate-900">{activeCashier?.name}</strong></p>
+                <p><span className="text-slate-500 font-medium">Rol:</span> <span className="capitalize font-bold text-amber-700">{activeCashier?.role}</span></p>
+                <p><span className="text-slate-500 font-medium">Sucursal:</span> {storeSession?.storeName}</p>
               </div>
 
-              <div className="pt-2 flex gap-3">
+              <div className="pt-2 flex flex-wrap gap-3">
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="glass-button text-xs flex items-center gap-2 bg-indigo-500/30 hover:bg-indigo-500/50 border-indigo-400/40"
+                  className="glass-pill-button text-xs py-2 px-4"
                 >
-                  <Sparkles className="w-4 h-4 text-indigo-300" />
-                  Abrir Modal Liquid Glass
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  Probar Modal
                 </button>
                 <button
                   onClick={logoutCashier}
-                  className="glass-button text-xs text-slate-300 hover:text-rose-300"
+                  className="glass-pill-button text-xs py-2 px-4 text-rose-600 hover:text-rose-800 hover:bg-rose-50/50"
                 >
                   Cerrar Turno
                 </button>
               </div>
             </GlassCard>
 
-            <GlassCard variant="default" glow className="space-y-4">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-indigo-400" />
-                Liquid Glass UI & PWA Ready
+            <GlassCard variant="default" glow className="space-y-4 p-6">
+              <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-amber-600" />
+                Estilo iOS Liquid Glass
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                El sistema adopta el lenguaje visual Liquid Glass con soporte de desenfoque translúcido,
-                reflejos dinámicos y adaptación responsiva a orientación horizontal y vertical.
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Superficies translúcidas en color claro con refracción de luz sobre los colores de la marca
+                (ámbar dorado, fucsia y lima).
               </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                  <span className="text-slate-400 block">Backdrop Blur</span>
-                  <span className="text-emerald-400 font-medium">Activo (16px)</span>
+              <div className="grid grid-cols-2 gap-3 text-xs pt-1">
+                <div className="p-3 rounded-2xl bg-white/70 border border-white/90 shadow-xs">
+                  <span className="text-slate-400 block font-medium">Refracción</span>
+                  <span className="text-amber-700 font-bold text-sm">Light Glass (24px)</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                  <span className="text-slate-400 block">Modo Compartido</span>
-                  <span className="text-indigo-400 font-medium">PIN Rápido</span>
+                <div className="p-3 rounded-2xl bg-white/70 border border-white/90 shadow-xs">
+                  <span className="text-slate-400 block font-medium">Modo Tienda</span>
+                  <span className="text-lime-700 font-bold text-sm">PIN Rápido</span>
                 </div>
               </div>
             </GlassCard>
@@ -209,24 +273,22 @@ export default function App() {
       <LiquidModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Liquid Glass Modal"
+        title="Modal iOS Liquid Glass"
         footer={
           <button
             onClick={() => setIsModalOpen(false)}
-            className="glass-button text-xs py-1.5 px-4"
+            className="glass-pill-button text-xs py-2 px-5 font-bold"
           >
             Entendido
           </button>
         }
       >
         <div className="space-y-3">
-          <p className="text-sm leading-relaxed">
-            Este modal implementa el efecto translúcido con desenfoque de fondo y borde reflectante.
-            En navegadores sin soporte para <code className="text-indigo-300 bg-white/5 px-1 py-0.5 rounded">backdrop-filter</code>,
-            se aplica un degradado semitransparente sólido como fallback garantizando legibilidad.
+          <p className="text-sm leading-relaxed text-slate-700">
+            Este diálogo implementa el acabado translúcido con desenfoque de fondo y borde especular reflectante sobre fondo claro.
           </p>
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300">
-            Orientación adaptativa: se reacomoda verticalmente en móviles y en cuadrícula compacta en modo apaisado.
+          <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 font-medium">
+            La refracción ahora resalta con los tonos cálidos del logo de <strong>Ámbar Bodega</strong> y tipografía nítida de alto contraste.
           </div>
         </div>
       </LiquidModal>

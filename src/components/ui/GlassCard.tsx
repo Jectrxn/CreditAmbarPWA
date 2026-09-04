@@ -10,10 +10,10 @@ export interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variantStyles: Record<NonNullable<GlassCardProps['variant']>, string> = {
-  default: 'glass-card bg-slate-900/60 backdrop-blur-glass-md border-white/10 text-slate-100',
-  subtle: 'glass-card bg-slate-900/40 backdrop-blur-glass-sm border-white/5 text-slate-200',
-  prominent: 'glass-panel bg-slate-900/80 backdrop-blur-glass-lg border-white/20 text-white',
-  interactive: 'glass-card bg-slate-900/60 backdrop-blur-glass-md border-white/10 text-slate-100 cursor-pointer hover:bg-slate-800/70 hover:border-white/25 active:scale-[0.99] transition-all duration-200',
+  default: 'glass-card bg-white/65 backdrop-blur-xl border-white/80 text-slate-900 shadow-liquid-card',
+  subtle: 'glass-card bg-white/45 backdrop-blur-md border-white/60 text-slate-800 shadow-sm',
+  prominent: 'glass-panel bg-white/80 backdrop-blur-2xl border-white/90 text-slate-900 shadow-liquid-card',
+  interactive: 'glass-card bg-white/65 backdrop-blur-xl border-white/80 text-slate-900 shadow-liquid-card cursor-pointer hover:bg-white/85 hover:border-white hover:scale-[1.01] active:scale-[0.99] transition-all duration-200',
 };
 
 const paddingStyles: Record<NonNullable<GlassCardProps['padding']>, string> = {
