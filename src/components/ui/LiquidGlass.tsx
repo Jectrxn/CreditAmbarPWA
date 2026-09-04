@@ -18,13 +18,13 @@ export interface LiquidGlassProps extends React.HTMLAttributes<HTMLDivElement> {
  * specular rim reflections, chromatic aberration, and interactive elasticity.
  */
 export const LiquidGlass: React.FC<LiquidGlassProps> = ({
-  displacementScale = 200,
-  blurAmount = 0.2,
+  displacementScale = 35,
+  blurAmount = 0.25,
   saturation = 130,
   chromaticAberration = 0,
   elasticity = 0.0,
-  cornerRadius = 39,
-  borderOpacity = 0.4,
+  cornerRadius = 29,
+  borderOpacity = 0.10,
   children,
   className = '',
   style,

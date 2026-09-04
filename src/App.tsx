@@ -23,14 +23,14 @@ export default function App() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
 
-  // Liquid Glass Optical Parameters from Reference
-  const [dispScale, setDispScale] = useState(140);
+  // Liquid Glass Optical Parameters from Reference (Calibrated & Approved)
+  const [dispScale, setDispScale] = useState(35);
   const [blurAmt, setBlurAmt] = useState(0.25);
-  const [saturation, setSaturation] = useState(140);
-  const [chromatic, setChromatic] = useState(2);
-  const [elasticity, setElasticity] = useState(0.35);
-  const [cornerRadius, setCornerRadius] = useState(34);
-  const [borderOp, setBorderOp] = useState(0.4);
+  const [saturation, setSaturation] = useState(130);
+  const [chromatic, setChromatic] = useState(0);
+  const [elasticity, setElasticity] = useState(0);
+  const [cornerRadius, setCornerRadius] = useState(29);
+  const [borderOp, setBorderOp] = useState(0.10);
   const [showTuning, setShowTuning] = useState(false);
 
   // Auto-init demo session and cashiers if empty
