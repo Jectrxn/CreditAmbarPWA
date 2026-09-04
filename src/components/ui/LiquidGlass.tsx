@@ -7,6 +7,7 @@ export interface LiquidGlassProps extends React.HTMLAttributes<HTMLDivElement> {
   chromaticAberration?: number;// Controls RGB channel separation (0 - 15)
   elasticity?: number;        // Controls how much glass follows cursor (0.0 - 1.0)
   cornerRadius?: number;      // Controls glass corner roundness in px
+  borderOpacity?: number;     // Controls opacity of border and specular highlights (0.0 - 1.0)
   children?: React.ReactNode;
   className?: string;
 }
@@ -23,6 +24,7 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
   chromaticAberration = 0,
   elasticity = 0.0,
   cornerRadius = 39,
+  borderOpacity = 0.4,
   children,
   className = '',
   style,
@@ -34,10 +36,13 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
   // Blur Amount 0.2 = ~4px blur, matching crystal clear glass
   const blurPx = Math.max(1, Math.round(blurAmount * 22));
 
+  // Safeguard: Clamp borderOpacity between 0 and 1 to prevent invalid CSS rgba values
+  const safeBorderOp = Math.max(0, Math.min(1, Number(borderOpacity) || 0));
+
   // Displacement Scale Calculations (Simulating the physical convex lens curvature)
   const ringSpread = Math.round((displacementScale / 200) * 18);
   const ringBlur = Math.round((displacementScale / 200) * 28);
-  const bevelOpacity = ((displacementScale / 200) * 0.35).toFixed(2);
+  const bevelOpacity = (safeBorderOp * 0.8).toFixed(2);
   const innerDarken = ((displacementScale / 200) * 0.40).toFixed(2);
 
   // Chromatic Aberration RGB fringe
@@ -102,9 +107,9 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
       <span
         className="absolute inset-0 pointer-events-none rounded-[inherit]"
         style={{
-          border: `1.5px solid rgba(255, 255, 255, ${0.45 + (displacementScale / 200) * 0.3})`,
+          border: `1.5px solid rgba(255, 255, 255, ${borderOpacity})`,
           boxShadow: `
-            inset 0 2px 2px 0 rgba(255, 255, 255, 0.95),
+            inset 0 2px 2px 0 rgba(255, 255, 255, ${Math.min(1, borderOpacity * 1.5).toFixed(2)}),
             inset 0 -2px 3px 0 rgba(0, 0, 0, 0.35),
             0 24px 48px -10px rgba(0, 0, 0, 0.55),
             0 8px 18px -4px rgba(0, 0, 0, 0.3)

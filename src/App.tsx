@@ -30,6 +30,7 @@ export default function App() {
   const [chromatic, setChromatic] = useState(2);
   const [elasticity, setElasticity] = useState(0.35);
   const [cornerRadius, setCornerRadius] = useState(34);
+  const [borderOp, setBorderOp] = useState(0.4);
   const [showTuning, setShowTuning] = useState(false);
 
   // Auto-init demo session and cashiers if empty
@@ -249,6 +250,23 @@ export default function App() {
                   />
                   <p className="text-[10px] text-slate-400">Controls the roundness of the glass corners</p>
                 </div>
+
+                {/* 7. Border Opacity */}
+                <div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-semibold text-white">Border Opacity: {(borderOp * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={borderOp}
+                    onChange={(e) => setBorderOp(Number(e.target.value))}
+                    className="w-full accent-white cursor-pointer"
+                  />
+                  <p className="text-[10px] text-slate-400">Controls opacity of the border and specular highlights</p>
+                </div>
               </div>
             </div>
           )}
@@ -271,6 +289,7 @@ export default function App() {
                 chromaticAberration={chromatic}
                 elasticity={elasticity}
                 cornerRadius={cornerRadius}
+                borderOpacity={borderOp}
                 className="w-full max-w-[260px] p-4 text-white text-left cursor-crosshair"
               >
                 <div className="space-y-2">
@@ -314,6 +333,7 @@ export default function App() {
                 chromaticAberration={chromatic}
                 elasticity={elasticity}
                 cornerRadius={9999}
+                borderOpacity={borderOp}
                 className="cursor-pointer active:scale-95"
               >
                 <button
