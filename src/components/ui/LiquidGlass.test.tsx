@@ -20,7 +20,10 @@ describe('LiquidGlass Component', () => {
     );
     const glassEl = container.firstChild as HTMLElement;
     expect(glassEl.style.borderRadius).toBe('42px');
-    expect(glassEl.style.backdropFilter).toContain('saturate(180%)');
+    
+    // Check warp span element for backdrop filter
+    const warpSpan = glassEl.querySelector('span') as HTMLElement;
+    expect(warpSpan.style.backdropFilter).toContain('saturate(180%)');
   });
 
   it('handles mouse movements with elasticity', () => {
