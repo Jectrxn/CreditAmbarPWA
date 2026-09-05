@@ -35,12 +35,12 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2: Dexie IndexedDB & Offline Sync Engine (PR 2)
 
-- [ ] 2.1 Write failing test (RED) for cross-tenant isolation and 10-minute grace policy in `tests/rls-policies.test.ts`.
-- [ ] 2.2 Create Supabase SQL migrations and RLS policies for profiles, customers, products, and transactions in `supabase/migrations/20260903000000_init_schema.sql`.
-- [ ] 2.3 Setup Supabase client and TypeScript types in `src/lib/supabase.ts` and `src/types/database.ts`.
-- [ ] 2.4 Write failing test (RED) for offline Dexie queue persistence and sync retries in `src/lib/syncManager.test.ts`.
-- [ ] 2.5 Implement Dexie IndexedDB schema and transaction queues in `src/lib/dexie.ts`.
-- [ ] 2.6 Implement offline-first auto-sync orchestrator with network listeners in `src/lib/syncManager.ts`.
+- [x] 2.1 Write failing test (RED) for cross-tenant isolation and 10-minute grace policy in `tests/rls-policies.test.ts`.
+- [x] 2.2 Create Supabase SQL migrations and RLS policies for profiles, customers, products, and transactions in `supabase/migrations/20260903000000_init_schema.sql`.
+- [x] 2.3 Setup Supabase client and TypeScript types in `src/lib/supabase.ts` and `src/types/database.ts`.
+- [x] 2.4 Write failing test (RED) for offline Dexie queue persistence and sync retries in `src/lib/syncManager.test.ts`.
+- [x] 2.5 Implement Dexie IndexedDB schema and transaction queues in `src/lib/dexie.ts`.
+- [x] 2.6 Implement offline-first auto-sync orchestrator with network listeners in `src/lib/syncManager.ts`.
 
 ## Phase 3: Credit Transactions & Cash FCC vs QR (PR 3)
 
