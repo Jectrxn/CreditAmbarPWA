@@ -14,6 +14,7 @@ export default function App() {
     activeCashier,
     isLocked,
     unlockWithPin,
+    isProfileLocked,
     lockSession,
     logoutCashier,
   } = useAuthStore();
@@ -61,12 +62,20 @@ export default function App() {
       setPinError('Seleccione un cajero');
       return;
     }
+    if (isProfileLocked(selectedCashierId)) {
+      setPinError('Perfil bloqueado por 5 minutos tras 3 intentos fallidos.');
+      return;
+    }
     const success = unlockWithPin(selectedCashierId, pinInput);
     if (success) {
       setPinInput('');
       setPinError('');
     } else {
-      setPinError('PIN incorrecto. Intente nuevamente.');
+      if (isProfileLocked(selectedCashierId)) {
+        setPinError('Perfil bloqueado por 5 minutos tras 3 intentos fallidos.');
+      } else {
+        setPinError('PIN incorrecto. Intente nuevamente.');
+      }
     }
   };
 

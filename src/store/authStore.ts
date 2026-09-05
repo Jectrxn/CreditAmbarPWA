@@ -17,12 +17,17 @@ export interface CashierProfile {
   avatarUrl?: string;
 }
 
+export const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+export const MAX_PIN_ATTEMPTS = 3;
+
 export interface AuthState {
   storeSession: StoreSession | null;
   isStoreAuthenticated: boolean;
   cashiers: CashierProfile[];
   activeCashier: CashierProfile | null;
   isLocked: boolean;
+  failedPinAttempts: Record<string, number>;
+  lockedUntil: Record<string, number>;
 
   setStoreSession: (session: StoreSession | null) => void;
   clearStoreSession: () => void;
@@ -31,6 +36,8 @@ export interface AuthState {
   selectCashier: (cashierId: string) => void;
   validatePin: (cashierId: string, pin: string) => boolean;
   unlockWithPin: (cashierId: string, pin: string) => boolean;
+  isProfileLocked: (cashierId: string) => boolean;
+  getLockoutRemainingTime: (cashierId: string) => number;
   lockSession: () => void;
   logoutCashier: () => void;
   hasRole: (requiredRole: CashierRole) => boolean;
@@ -43,12 +50,77 @@ const ROLE_RANK: Record<CashierRole, number> = {
   jefe: 3,
 };
 
+function processPinAttempt(
+  set: (partial: Partial<AuthState> | ((state: AuthState) => Partial<AuthState>)) => void,
+  get: () => AuthState,
+  cashierId: string,
+  pin: string,
+  shouldUnlockOnSuccess: boolean
+): boolean {
+  const cashier = get().cashiers.find((c) => c.id === cashierId);
+  if (!cashier) return false;
+
+  if (get().isProfileLocked(cashierId)) {
+    return false;
+  }
+
+  // Check if previous lock expired; if so, clear previous attempts
+  const prevLock = get().lockedUntil[cashierId];
+  if (prevLock && Date.now() >= prevLock) {
+    set((state) => {
+      const nextLocked = { ...state.lockedUntil };
+      delete nextLocked[cashierId];
+      const nextFailed = { ...state.failedPinAttempts };
+      delete nextFailed[cashierId];
+      return { lockedUntil: nextLocked, failedPinAttempts: nextFailed };
+    });
+  }
+
+  if (cashier.pin === pin) {
+    set((state) => {
+      const nextFailed = { ...state.failedPinAttempts };
+      delete nextFailed[cashierId];
+      const nextLocked = { ...state.lockedUntil };
+      delete nextLocked[cashierId];
+      return {
+        ...(shouldUnlockOnSuccess
+          ? { activeCashier: cashier, isLocked: false }
+          : {}),
+        failedPinAttempts: nextFailed,
+        lockedUntil: nextLocked,
+      };
+    });
+    return true;
+  }
+
+  // Wrong PIN: record attempt
+  const currentAttempts = (get().failedPinAttempts[cashierId] || 0) + 1;
+  const isNowLocked = currentAttempts >= MAX_PIN_ATTEMPTS;
+
+  set((state) => ({
+    failedPinAttempts: {
+      ...state.failedPinAttempts,
+      [cashierId]: currentAttempts,
+    },
+    lockedUntil: isNowLocked
+      ? {
+          ...state.lockedUntil,
+          [cashierId]: Date.now() + LOCKOUT_DURATION_MS,
+        }
+      : state.lockedUntil,
+  }));
+
+  return false;
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   storeSession: null,
   isStoreAuthenticated: false,
   cashiers: [],
   activeCashier: null,
   isLocked: true,
+  failedPinAttempts: {},
+  lockedUntil: {},
 
   setStoreSession: (session) => {
     set({
@@ -79,20 +151,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ activeCashier: cashier, isLocked: true });
   },
 
+  isProfileLocked: (cashierId) => {
+    const lockTime = get().lockedUntil[cashierId];
+    if (!lockTime) return false;
+    return Date.now() < lockTime;
+  },
+
+  getLockoutRemainingTime: (cashierId) => {
+    const lockTime = get().lockedUntil[cashierId];
+    if (!lockTime) return 0;
+    const remaining = lockTime - Date.now();
+    return remaining > 0 ? remaining : 0;
+  },
+
   validatePin: (cashierId, pin) => {
-    const cashier = get().cashiers.find((c) => c.id === cashierId);
-    if (!cashier) return false;
-    return cashier.pin === pin;
+    return processPinAttempt(set, get, cashierId, pin, false);
   },
 
   unlockWithPin: (cashierId, pin) => {
-    const cashier = get().cashiers.find((c) => c.id === cashierId);
-    if (!cashier) return false;
-    if (cashier.pin === pin) {
-      set({ activeCashier: cashier, isLocked: false });
-      return true;
-    }
-    return false;
+    return processPinAttempt(set, get, cashierId, pin, true);
   },
 
   lockSession: () => {
@@ -116,6 +193,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       cashiers: [],
       activeCashier: null,
       isLocked: true,
+      failedPinAttempts: {},
+      lockedUntil: {},
     });
   },
 }));

@@ -109,6 +109,63 @@ describe('LiquidModal & GlassCard UI Components', () => {
       expect(container.className).toMatch(/max-h-/);
       expect(container.className).toMatch(/glass-panel|glass-card|backdrop-blur/);
     });
+
+    it('stabilizes without crashing or losing scroll position during rapid orientation toggling', () => {
+      const rows = Array.from({ length: 50 }, (_, i) => ({
+        id: `tx-${i}`,
+        cliente: `Cliente ${i}`,
+        monto: `$${(i + 1) * 100}`,
+      }));
+
+      render(
+        <LiquidModal isOpen={true} onClose={() => {}} title="Auditoría de Transacciones">
+          <div data-testid="table-container" className="overflow-y-auto max-h-60">
+            <table data-testid="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Cliente</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.id}</td>
+                    <td>{r.cliente}</td>
+                    <td>{r.monto}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </LiquidModal>
+      );
+
+      const tableContainer = screen.getByTestId('table-container');
+      const table = screen.getByTestId('data-table');
+      expect(table).toBeInTheDocument();
+
+      // Set initial scroll position
+      tableContainer.scrollTop = 120;
+      expect(tableContainer.scrollTop).toBe(120);
+
+      // Rapidly toggle orientation 10 times between portrait and landscape
+      for (let i = 0; i < 10; i++) {
+        const isLandscape = i % 2 === 0;
+        window.innerWidth = isLandscape ? 844 : 390;
+        window.innerHeight = isLandscape ? 390 : 844;
+        window.dispatchEvent(new Event('resize'));
+        window.dispatchEvent(new Event('orientationchange'));
+      }
+
+      // Verify UI remains stable, rendered without error, and scroll position is preserved
+      expect(screen.getByTestId('liquid-modal-container')).toBeInTheDocument();
+      expect(screen.getByTestId('data-table')).toBeInTheDocument();
+      expect(screen.getByText('Cliente 0')).toBeInTheDocument();
+      expect(screen.getByText('Cliente 49')).toBeInTheDocument();
+      expect(tableContainer.scrollTop).toBe(120);
+    });
   });
 
   describe('GlassCard', () => {
