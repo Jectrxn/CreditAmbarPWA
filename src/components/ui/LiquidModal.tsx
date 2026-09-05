@@ -81,8 +81,11 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
         aria-modal="true"
         aria-labelledby={title ? 'liquid-modal-title' : undefined}
         className={twMerge(
-          'glass-panel w-full rounded-3xl border border-white/90 shadow-liquid-card text-slate-900',
-          'flex flex-col max-h-[92vh] sm:max-h-[88vh]',
+          'glass-panel relative overflow-hidden w-full rounded-[2.5rem]',
+          'border border-t-white/85 border-x-white/30 border-b-white/18',
+          'bg-white/[0.08] backdrop-blur-[17px] backdrop-saturate-[180%]',
+          'shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.1),0_25px_50px_-12px_rgba(15,23,42,0.30)]',
+          'text-slate-900 flex flex-col max-h-[92vh] sm:max-h-[88vh]',
           'landscape:max-h-[85vh] landscape:my-auto',
           maxWidthMap[maxWidth],
           className
@@ -91,9 +94,9 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between border-b border-slate-200/60 px-6 py-4 shrink-0">
+          <div className="relative z-10 flex items-center justify-between border-b border-white/20 px-6 py-4 shrink-0">
             {title ? (
-              <div id="liquid-modal-title" className="text-lg font-bold text-slate-900 tracking-tight">
+              <div id="liquid-modal-title" className="text-lg font-bold text-slate-900 tracking-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)]">
                 {title}
               </div>
             ) : (
@@ -104,7 +107,7 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar modal"
-                className="rounded-full p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                className="rounded-full p-2 text-slate-400 hover:text-slate-800 hover:bg-white/40 active:bg-white/60 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -113,13 +116,13 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
         )}
 
         {/* Scrollable Body with landscape/portrait adaptation */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 text-slate-700">
+        <div className="relative z-10 flex-1 overflow-y-auto px-6 py-4 text-slate-700">
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="border-t border-slate-200/60 px-6 py-4 bg-slate-50/50 rounded-b-3xl shrink-0 flex items-center justify-end gap-2.5">
+          <div className="relative z-10 border-t border-white/20 px-6 py-4 bg-white/[0.05] backdrop-blur-[17px] rounded-b-[2.5rem] shrink-0 flex items-center justify-end gap-2.5">
             {footer}
           </div>
         )}

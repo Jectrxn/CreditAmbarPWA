@@ -33,12 +33,19 @@ export default {
       backdropBlur: {
         'glass-sm': '8px',
         'glass-md': '16px',
+        'liquid': '17px', // Calibrated Liquid Glass Master default
         'glass-lg': '24px',
         'glass-xl': '40px',
+      },
+      borderRadius: {
+        'organic': '2.5rem',
       },
       boxShadow: {
         'liquid-pill': '0 8px 24px -2px rgba(15, 23, 42, 0.08), 0 2px 6px 0 rgba(15, 23, 42, 0.03), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95)',
         'liquid-card': '0 12px 36px -4px rgba(15, 23, 42, 0.07), 0 4px 12px -2px rgba(15, 23, 42, 0.03), inset 0 1px 2px 0 rgba(255, 255, 255, 0.95)',
+        'liquid-glass': 'inset 0 1px 1px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(0, 0, 0, 0.1), 0 20px 40px -15px rgba(0, 0, 0, 0.2)',
+        'specular-rim': 'inset 0 1px 1px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(0, 0, 0, 0.1), 0 20px 40px -15px rgba(0, 0, 0, 0.2)',
+        'specular-well': 'inset 0 1px 1px rgba(255, 255, 255, 0.3)',
       },
     },
   },

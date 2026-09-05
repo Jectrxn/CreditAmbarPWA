@@ -19,12 +19,12 @@ export interface LiquidGlassProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 export const LiquidGlass: React.FC<LiquidGlassProps> = ({
   displacementScale = 35,
-  blurAmount = 0.25,
-  saturation = 130,
+  blurAmount = 0.71,
+  saturation = 180,
   chromaticAberration = 0,
   elasticity = 0.0,
-  cornerRadius = 29,
-  borderOpacity = 0.10,
+  cornerRadius = 40,
+  borderOpacity = 0.30,
   children,
   className = '',
   style,
@@ -33,8 +33,8 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [transformStyle, setTransformStyle] = useState<string>('translate3d(0, 0, 0)');
 
-  // Blur Amount 0.2 = ~4px blur, matching crystal clear glass
-  const blurPx = Math.max(1, Math.round(blurAmount * 22));
+  // Blur Amount 0.71 = ~17px blur, matching calibrated Liquid Glass formula
+  const blurPx = Math.max(1, Math.round(blurAmount * 24));
 
   // Safeguard: Clamp borderOpacity between 0 and 1 to prevent invalid CSS rgba values
   const safeBorderOp = Math.max(0, Math.min(1, Number(borderOpacity) || 0));
@@ -103,22 +103,27 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
         }}
       />
 
-      {/* 3. Specular Rim & Beveled Glass Surface */}
+      {/* 3. Surface Tension Ambient Specular Layer */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-[inherit] bg-gradient-to-b from-white/25 via-white/5 to-transparent"
+      />
+
+      {/* 4. Specular Rim & Beveled Glass Surface with Multiple Inset Shadows */}
       <span
         className="absolute inset-0 pointer-events-none rounded-[inherit]"
         style={{
-          border: `1.5px solid rgba(255, 255, 255, ${safeBorderOp})`,
+          border: `1px solid rgba(255, 255, 255, ${safeBorderOp})`,
           boxShadow: `
-            inset 0 2px 2px 0 rgba(255, 255, 255, ${Math.min(1, safeBorderOp * 1.5).toFixed(2)}),
-            inset 0 -2px 3px 0 rgba(0, 0, 0, 0.35),
-            0 24px 48px -10px rgba(0, 0, 0, 0.55),
-            0 8px 18px -4px rgba(0, 0, 0, 0.3)
+            inset 0 1px 2px rgba(255, 255, 255, 0.8),
+            inset 0 -2px 4px rgba(255, 255, 255, 0.1),
+            0 25px 50px -12px rgba(0, 0, 0, 0.25)
           `,
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(255, 255, 255, 0.08) 100%)',
+          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%)',
         }}
       />
 
-      {/* 4. Child Content */}
+      {/* 5. Child Content */}
       <div className="relative z-10 h-full w-full">
         {children}
       </div>
