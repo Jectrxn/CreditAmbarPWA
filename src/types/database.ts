@@ -32,6 +32,12 @@ export interface CreditTransaction {
   status: 'pending' | 'completed' | 'cancelled';
   created_at: string;
   synced?: boolean; // Local tracking
+  type?: 'credit_purchase' | 'payment';
+  payment_method?: 'cash' | 'qr';
+  cashier_session_id?: string;
+  edit_reason?: string;
+  updated_at?: string;
+  notes?: string;
 }
 
 export interface TransactionItem {

@@ -44,11 +44,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Credit Transactions & Cash FCC vs QR (PR 3)
 
-- [ ] 3.1 Write failing test (RED) for FCC cash isolation, float declarations, and 10-minute audit immutability in `src/features/transactions/transactionRules.test.ts`.
-- [ ] 3.2 Implement cashier session store enforcing float declarations and FCC cash isolation in `src/features/session/sessionStore.ts` and `src/features/session/CashierSessionModal.tsx`.
-- [ ] 3.3 Implement customer credit account creation and credit limit checks in `src/features/credit/creditService.ts` and `src/features/credit/CustomerCreditCard.tsx`.
-- [ ] 3.4 Implement transaction recording distinguishing Cash FCC from QR payments in `src/features/transactions/TransactionForm.tsx`.
-- [ ] 3.5 Implement 10-minute grace window edit/undo flow and WhatsApp balance link generator in `src/features/transactions/TransactionHistory.tsx` and `src/features/transactions/whatsappHelper.ts`.
+- [x] 3.1 Write failing test (RED) for FCC cash isolation, float declarations, and 10-minute audit immutability in `src/features/transactions/transactionRules.test.ts`.
+- [x] 3.2 Implement cashier session store enforcing float declarations and FCC cash isolation in `src/features/session/sessionStore.ts` and `src/features/session/CashierSessionModal.tsx`.
+- [x] 3.3 Implement customer credit account creation and credit limit checks in `src/features/credit/creditService.ts` and `src/features/credit/CustomerCreditCard.tsx`.
+- [x] 3.4 Implement transaction recording distinguishing Cash FCC from QR payments in `src/features/transactions/TransactionForm.tsx`.
+- [x] 3.5 Implement 10-minute grace window edit/undo flow and WhatsApp balance link generator in `src/features/transactions/TransactionHistory.tsx` and `src/features/transactions/whatsappHelper.ts`.
 
 ## Phase 4: Supervisor Dashboard & Analytics (PR 4)
 
