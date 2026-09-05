@@ -3,7 +3,7 @@ export interface CashierSessionSnapshot {
   cashierId: string;
   cashierName: string;
   storeId: string;
-  status: 'open' | 'closed';
+  status: 'open' | 'closed' | 'closing';
   startingFloat: number;
   currentCashTotal: number;
   cashPaymentsTotal: number;

@@ -6,13 +6,15 @@ export interface CashierSession {
   cashierId: string;
   cashierName: string;
   storeId: string;
-  status: 'open' | 'closed';
+  status: 'open' | 'closed' | 'closing';
   startingFloat: number;
   currentCashTotal: number;
   cashPaymentsTotal: number;
   qrPaymentsTotal: number;
   openedAt: string;
   closedAt?: string;
+  closedBy?: string;
+  closeReason?: string;
 }
 
 export interface OpenSessionParams {
@@ -43,7 +45,9 @@ export interface SessionState {
   openSession: (params: OpenSessionParams) => SessionResult;
   recordPaymentToSession: (params: RecordPaymentParams) => SessionResult;
   recordVoidOrCorrection: (params: RecordPaymentParams) => SessionResult;
-  closeSession: () => CloseSessionResult;
+  closeSession: (params?: { closedBy?: string; closeReason?: string }) => CloseSessionResult;
+  markSessionClosing: (sessionId: string) => SessionResult;
+  forceCloseSession: (sessionId: string, supervisorId?: string, reason?: string) => CloseSessionResult;
   reset: () => void;
 }
 
@@ -90,7 +94,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     if (!session || session.status !== 'open') {
       return {
         success: false,
-        error: 'No active cashier session open to record payment.',
+        error: session?.status === 'closing'
+          ? 'Session is closing and cannot accept new transactions.'
+          : 'No active cashier session open to record payment.',
       };
     }
 
@@ -121,7 +127,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     if (!session || session.status !== 'open') {
       return {
         success: false,
-        error: 'No active cashier session open for correction.',
+        error: session?.status === 'closing'
+          ? 'Session is closing and cannot accept modifications.'
+          : 'No active cashier session open for correction.',
       };
     }
 
@@ -145,9 +153,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     return { success: true };
   },
 
-  closeSession: () => {
+  closeSession: (params) => {
     const session = get().activeSession;
-    if (!session || session.status !== 'open') {
+    if (!session || (session.status !== 'open' && session.status !== 'closing')) {
       return {
         success: false,
         error: 'No active cashier session to close.',
@@ -158,6 +166,55 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       ...session,
       status: 'closed',
       closedAt: new Date().toISOString(),
+      closedBy: params?.closedBy || 'cashier',
+      closeReason: params?.closeReason,
+    };
+
+    set({
+      activeSession: null,
+      lastClosedSession: closedSession,
+    });
+
+    return {
+      success: true,
+      closedSession,
+    };
+  },
+
+  markSessionClosing: (sessionId: string) => {
+    const session = get().activeSession;
+    if (!session || session.id !== sessionId || session.status !== 'open') {
+      return {
+        success: false,
+        error: 'Session not found or not active.',
+      };
+    }
+
+    set({
+      activeSession: {
+        ...session,
+        status: 'closing',
+      },
+    });
+
+    return { success: true };
+  },
+
+  forceCloseSession: (sessionId: string, supervisorId: string = 'supervisor', reason: string = 'Closed by Supervisor') => {
+    const session = get().activeSession;
+    if (!session || session.id !== sessionId || (session.status !== 'open' && session.status !== 'closing')) {
+      return {
+        success: false,
+        error: 'Session not found or not active.',
+      };
+    }
+
+    const closedSession: CashierSession = {
+      ...session,
+      status: 'closed',
+      closedAt: new Date().toISOString(),
+      closedBy: supervisorId,
+      closeReason: reason,
     };
 
     set({

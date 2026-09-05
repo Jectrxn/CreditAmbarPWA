@@ -52,9 +52,9 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: Supervisor Dashboard & Analytics (PR 4)
 
-- [ ] 4.1 Write failing test (RED) for real-time metrics aggregation and offline warning indicators in `src/features/supervisor/supervisorMetrics.test.ts`.
-- [ ] 4.2 Implement real-time metrics aggregation hook for active sessions in `src/features/supervisor/useSupervisorMetrics.ts`.
-- [ ] 4.3 Implement supervisor dashboard with offline status banner in `src/features/supervisor/SupervisorDashboard.tsx`.
-- [ ] 4.4 Write failing test (RED) for force-closing session during active queue sync in `src/features/supervisor/forceClose.test.ts`.
-- [ ] 4.5 Implement supervisor force-close session action ensuring pending transaction flush in `src/features/supervisor/forceCloseAction.ts`.
-- [ ] 4.6 Configure Service Worker asset caching and offline navigation fallback in `src/sw.ts`.
+- [x] 4.1 Write failing test (RED) for real-time metrics aggregation and offline warning indicators in `src/features/supervisor/supervisorMetrics.test.ts`.
+- [x] 4.2 Implement real-time metrics aggregation hook for active sessions in `src/features/supervisor/useSupervisorMetrics.ts`.
+- [x] 4.3 Implement supervisor dashboard with offline status banner in `src/features/supervisor/SupervisorDashboard.tsx`.
+- [x] 4.4 Write failing test (RED) for force-closing session during active queue sync in `src/features/supervisor/forceClose.test.ts`.
+- [x] 4.5 Implement supervisor force-close session action ensuring pending transaction flush in `src/features/supervisor/forceCloseAction.ts`.
+- [x] 4.6 Configure Service Worker asset caching and offline navigation fallback in `src/sw.ts`.
