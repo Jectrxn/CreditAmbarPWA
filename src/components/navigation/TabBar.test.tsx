@@ -82,7 +82,8 @@ describe('TabBar Navigation Component (Strict TDD)', () => {
       const nav = container.querySelector('nav');
       expect(nav).toBeInTheDocument();
       expect(nav?.className).toContain('fixed');
-      expect(nav?.className).toContain('bottom-0');
+      expect(nav?.className).toContain('bottom-4');
+      expect(nav?.className).toContain('rounded-full');
       expect(nav?.className).toContain('backdrop-blur');
     });
   });

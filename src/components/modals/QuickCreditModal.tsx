@@ -172,20 +172,20 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               </p>
             </div>
 
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5 text-left max-w-sm mx-auto">
+            <div className="p-4 bg-white/[0.10] backdrop-blur-md rounded-2xl border border-t-white/80 border-x-white/25 border-b-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] text-xs space-y-1.5 text-left max-w-sm mx-auto">
               <div className="flex justify-between">
-                <span className="text-slate-500">Nuevo Saldo Deuda:</span>
+                <span className="text-slate-500 font-medium">Nuevo Saldo Deuda:</span>
                 <span className="font-bold text-rose-600">S/ {completedTx.customer.balance.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Crédito Disponible:</span>
+                <span className="text-slate-500 font-medium">Crédito Disponible:</span>
                 <span className="font-bold text-emerald-700">
                   S/ {Math.max(0, completedTx.customer.credit_limit - completedTx.customer.balance).toFixed(2)}
                 </span>
               </div>
               {completedTx.transaction.notes && (
-                <div className="flex justify-between border-t border-slate-200 pt-1 text-[11px]">
-                  <span className="text-slate-500">Detalle:</span>
+                <div className="flex justify-between border-t border-white/20 pt-1.5 text-[11px]">
+                  <span className="text-slate-500 font-medium">Detalle:</span>
                   <span className="font-medium text-slate-800">{completedTx.transaction.notes}</span>
                 </div>
               )}
@@ -200,7 +200,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow transition"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-black text-white bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-full border border-t-white/80 border-b-emerald-700/50 shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] transition active:scale-95 cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>Enviar WhatsApp</span>
@@ -209,7 +209,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition"
+                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-slate-700 bg-white/[0.12] hover:bg-white/[0.22] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-full transition active:scale-95 cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]"
               >
                 Cerrar
               </button>
@@ -218,7 +218,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {errorMessage && (
-              <div className="flex items-center gap-2 p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl">
+              <div className="flex items-center gap-2 p-3 text-xs text-rose-700 bg-rose-50/80 backdrop-blur-md border border-rose-200 rounded-2xl">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                 <span>{errorMessage}</span>
               </div>
@@ -232,7 +232,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               <select
                 value={selectedCustomerId}
                 onChange={(e) => setSelectedCustomerId(e.target.value)}
-                className="w-full p-2.5 text-xs font-semibold bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                className="w-full p-2.5 text-xs font-semibold bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
                 required
               >
                 {allCustomers.map((c) => (
@@ -255,7 +255,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                   value={operatorName}
                   onChange={(e) => setOperatorName(e.target.value)}
                   placeholder="Ej. Juan, María"
-                  className="w-full p-2.5 text-xs font-medium bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                  className="w-full p-2.5 text-xs font-medium bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
                   required
                 />
               </div>
@@ -266,7 +266,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                   Monto Total (S/):
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-500">
                     S/
                   </span>
                   <input
@@ -275,7 +275,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                     value={amountInput}
                     onChange={(e) => setAmountInput(e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-3 py-2.5 text-xs font-bold text-slate-900 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                    className="w-full pl-8 pr-3 py-2.5 text-xs font-bold text-slate-900 bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
                     required
                   />
                 </div>
@@ -292,24 +292,24 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
                 placeholder="Ej. 1 Arroz costeño, 1 Aceite Primor, 2 Leche Gloria..."
-                className="w-full p-2.5 text-xs bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                className="w-full p-2.5 text-xs bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
               />
             </div>
 
             {/* Submit */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/20">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl transition"
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-full transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2.5 text-xs font-black text-white bg-amber-600 hover:bg-amber-700 active:bg-amber-800 rounded-xl shadow transition"
+                className="relative overflow-hidden px-6 py-2.5 text-xs font-black text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-full shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-95 transition cursor-pointer"
               >
                 {isSubmitting ? 'Guardando...' : 'Confirmar Fiado'}
               </button>

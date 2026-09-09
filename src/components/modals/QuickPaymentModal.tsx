@@ -167,13 +167,13 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
               </p>
             </div>
 
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5 text-left max-w-sm mx-auto">
+            <div className="p-4 bg-white/[0.10] backdrop-blur-md rounded-2xl border border-t-white/80 border-x-white/25 border-b-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] text-xs space-y-1.5 text-left max-w-sm mx-auto">
               <div className="flex justify-between">
-                <span className="text-slate-500">Saldo pendiente restante:</span>
+                <span className="text-slate-500 font-medium">Saldo pendiente restante:</span>
                 <span className="font-bold text-slate-900">S/ {completedTx.customer.balance.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Método de Cobro:</span>
+                <span className="text-slate-500 font-medium">Método de Cobro:</span>
                 <span className="font-bold text-slate-800 uppercase text-[11px]">
                   {completedTx.transaction.payment_method === 'cash' ? 'Efectivo' : 'QR / Yape / Plin'}
                 </span>
@@ -189,7 +189,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow transition"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-black text-white bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-full border border-t-white/80 border-b-emerald-700/50 shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] transition active:scale-95 cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>Enviar WhatsApp</span>
@@ -198,7 +198,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition"
+                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-slate-700 bg-white/[0.12] hover:bg-white/[0.22] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-full transition active:scale-95 cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]"
               >
                 Cerrar
               </button>
@@ -207,7 +207,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {errorMessage && (
-              <div className="flex items-center gap-2 p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl">
+              <div className="flex items-center gap-2 p-3 text-xs text-rose-700 bg-rose-50/80 backdrop-blur-md border border-rose-200 rounded-2xl">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                 <span>{errorMessage}</span>
               </div>
@@ -227,7 +227,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                     setAmountInput(cust.balance.toString());
                   }
                 }}
-                className="w-full p-2.5 text-xs font-semibold bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/40 focus:outline-none"
+                className="w-full p-2.5 text-xs font-semibold bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-emerald-500/40 focus:outline-none"
                 required
               >
                 {allCustomers.map((c) => (
@@ -247,10 +247,10 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('cash')}
-                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition backdrop-blur-md ${
                     paymentMethod === 'cash'
-                      ? 'bg-emerald-50 border-emerald-400 text-emerald-900 shadow-xs'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      ? 'bg-emerald-500/20 border-t-white/90 border-x-white/30 border-b-emerald-600/40 text-emerald-950 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]'
+                      : 'bg-white/[0.10] border-t-white/70 border-x-white/25 border-b-white/15 text-slate-700 hover:bg-white/[0.18]'
                   }`}
                 >
                   <DollarSign className="w-4 h-4 text-emerald-600" />
@@ -260,10 +260,10 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('qr')}
-                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition backdrop-blur-md ${
                     paymentMethod === 'qr'
-                      ? 'bg-blue-50 border-blue-400 text-blue-900 shadow-xs'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      ? 'bg-blue-500/20 border-t-white/90 border-x-white/30 border-b-blue-600/40 text-blue-950 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]'
+                      : 'bg-white/[0.10] border-t-white/70 border-x-white/25 border-b-white/15 text-slate-700 hover:bg-white/[0.18]'
                   }`}
                 >
                   <QrCode className="w-4 h-4 text-blue-600" />
@@ -289,7 +289,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                 )}
               </div>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-500">
                   S/
                 </span>
                 <input
@@ -298,26 +298,26 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                   value={amountInput}
                   onChange={(e) => setAmountInput(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-3 py-2.5 text-xs font-bold text-slate-900 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/40 focus:outline-none"
+                  className="w-full pl-8 pr-3 py-2.5 text-xs font-bold text-slate-900 bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-emerald-500/40 focus:outline-none"
                   required
                 />
               </div>
             </div>
 
             {/* Submit */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/20">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl transition"
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-full transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow transition"
+                className="relative overflow-hidden px-6 py-2.5 text-xs font-black text-white bg-gradient-to-b from-emerald-500/95 via-emerald-600/90 to-emerald-700/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-emerald-800/50 rounded-full shadow-[0_8px_20px_-2px_rgba(16,185,129,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(6,95,70,0.25)] hover:from-emerald-500 hover:to-emerald-600 active:scale-95 transition cursor-pointer"
               >
                 {isSubmitting ? 'Cobrando...' : 'Confirmar Cobro'}
               </button>
