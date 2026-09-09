@@ -1,58 +1,192 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
 import App from './App';
+import { useAuthStore } from './store/authStore';
 
-describe('App - Master Liquid Glass Card Specification', () => {
-  it('renders Master Liquid Glass Card with exact optical parameters', () => {
-    const { container } = render(<App />);
+describe('App - Application Shell Integration & Routing (Strict TDD)', () => {
+  beforeEach(() => {
+    useAuthStore.getState().reset();
+    useAuthStore.getState().setStoreSession({
+      storeId: 'store-test-1',
+      storeName: 'Bodega Ámbar',
+      authenticatedAt: new Date().toISOString(),
+    });
+    useAuthStore.getState().setCashiers([
+      { id: 'c-1', name: 'Laura Gómez', role: 'cajero', pin: '1234' },
+      { id: 'c-2', name: 'Marcos Rivas', role: 'supervisor', pin: '4321' },
+      { id: 'c-3', name: 'Don Roberto', role: 'jefe', pin: '9999' },
+    ]);
+  });
 
-    const cardTitle = screen.getByText('Liquid Glass Card');
-    expect(cardTitle).toBeInTheDocument();
+  describe('Unauthenticated / Locked State (Terminal Login)', () => {
+    it('renders Terminal de Tienda PIN unlock screen when locked', () => {
+      // By default isLocked is true and activeCashier is null
+      render(<App initialEntries={['/pos']} />);
 
-    // 1. Text drop shadow for legibility
-    expect(cardTitle.className).toContain('drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]');
-
-    const cardDesc = screen.getByText(/Bisel direccional con luz cenital/i);
-    expect(cardDesc.className).toContain('drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]');
-
-    // Find the card root container
-    const cardEl = cardTitle.closest('.rounded-\\[2\\.5rem\\]') as HTMLElement;
-    expect(cardEl).toBeInTheDocument();
-
-    // 2. Translucency: 7% white background + calibrated backdrop blur (17px = -29% of standard 24px)
-    expect(cardEl.className).toContain('bg-white/[0.07]');
-    expect(cardEl.className).toContain('backdrop-blur-[17px]');
-    expect(cardEl.className).toContain('backdrop-saturate-[180%]');
-
-    // 3. Directional bezel lighting: bright top, subtle sides/bottom
-    expect(cardEl.className).toContain('border-t-white/80');
-    expect(cardEl.className).toContain('border-x-white/25');
-    expect(cardEl.className).toContain('border-b-white/15');
-
-    // 4. Sharp specular reflection: ultra-fine 1px inset shadow
-    expect(cardEl.className).toContain(
-      'shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.1),0_20px_40px_-15px_rgba(0,0,0,0.2)]'
-    );
-
-    // 5. Verify NO milky overlay gradient inside card
-    const milkyOverlay = cardEl.querySelector('.from-white\\/18');
-    expect(milkyOverlay).toBeNull();
-
-    // 6. Verify 4 indented bottom pills (no outer border, 6% bg, inset shadow)
-    const pill1 = screen.getByText('bg-white/[0.07]').closest('div') as HTMLElement;
-    const pill2 = screen.getByText('border-t-white/80').closest('div') as HTMLElement;
-    const pill3 = screen.getByText('Inset 1px afilado').closest('div') as HTMLElement;
-    const pill4 = screen.getByText('Sin bordes ext.').closest('div') as HTMLElement;
-
-    [pill1, pill2, pill3, pill4].forEach((pill) => {
-      expect(pill).toBeInTheDocument();
-      expect(pill.className).toContain('bg-white/[0.06]');
-      expect(pill.className).toContain('shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]');
-      expect(pill.className).toContain('border-0');
+      expect(screen.getByText('Terminal de Tienda')).toBeInTheDocument();
+      expect(screen.getByText(/Seleccione su nombre e introduzca su PIN/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /desbloquear terminal/i })).toBeInTheDocument();
+      expect(screen.queryByTestId('page-pos')).not.toBeInTheDocument();
+      expect(screen.queryByRole('navigation', { name: /navegación principal/i })).not.toBeInTheDocument();
     });
 
-    // 7. Verify NO outer p-1 yellow-green gradient bumper wrapper
-    const outerBumper = container.querySelector('.p-1.bg-gradient-to-r');
-    expect(outerBumper).toBeNull();
+    it('unlocks terminal upon entering valid cashier PIN and transitions to routes', async () => {
+      render(<App initialEntries={['/pos']} />);
+
+      // Select cashier Laura Gómez
+      const select = screen.getByRole('combobox');
+      fireEvent.change(select, { target: { value: 'c-1' } });
+
+      // Enter PIN
+      const pinInput = screen.getByPlaceholderText('••••');
+      fireEvent.change(pinInput, { target: { value: '1234' } });
+
+      // Submit unlock form
+      const unlockButton = screen.getByRole('button', { name: /desbloquear terminal/i });
+      fireEvent.click(unlockButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('page-pos')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('Laura Gómez')).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: /navegación principal/i })).toBeInTheDocument();
+    });
+
+    it('shows error message on incorrect PIN', () => {
+      render(<App initialEntries={['/pos']} />);
+
+      const select = screen.getByRole('combobox');
+      fireEvent.change(select, { target: { value: 'c-1' } });
+
+      const pinInput = screen.getByPlaceholderText('••••');
+      fireEvent.change(pinInput, { target: { value: '0000' } });
+
+      const unlockButton = screen.getByRole('button', { name: /desbloquear terminal/i });
+      fireEvent.click(unlockButton);
+
+      expect(screen.getByText(/PIN incorrecto/i)).toBeInTheDocument();
+      expect(screen.queryByTestId('page-pos')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Authenticated Navigation Shell & Routes', () => {
+    beforeEach(() => {
+      // Unlock session as cashier
+      useAuthStore.getState().unlockWithPin('c-1', '1234');
+    });
+
+    it('redirects root route / to /pos and renders PosPage inside AppLayout shell', async () => {
+      render(<App initialEntries={['/']} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('page-pos')).toBeInTheDocument();
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: /caja/i })).toBeInTheDocument();
+
+      // TopBar rendered
+      expect(screen.getByText('CreditAmbar')).toBeInTheDocument();
+      expect(screen.getByTestId('sync-status')).toBeInTheDocument();
+
+      // TabBar rendered
+      const nav = screen.getByRole('navigation', { name: /navegación principal/i });
+      expect(nav).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /caja/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /clientes/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /historial/i })).toBeInTheDocument();
+    });
+
+    it('renders CustomersPage when navigating to /customers', () => {
+      render(<App initialEntries={['/customers']} />);
+
+      expect(screen.getByTestId('page-customers')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /clientes/i })).toBeInTheDocument();
+      expect(screen.queryByTestId('page-pos')).not.toBeInTheDocument();
+    });
+
+    it('renders HistoryPage when navigating to /history', () => {
+      render(<App initialEntries={['/history']} />);
+
+      expect(screen.getByTestId('page-history')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /historial/i })).toBeInTheDocument();
+    });
+
+    it('allows navigating between tabs by clicking TabBar links', async () => {
+      render(<App initialEntries={['/pos']} />);
+
+      expect(screen.getByTestId('page-pos')).toBeInTheDocument();
+
+      // Click Clientes tab
+      const customersLink = screen.getByRole('link', { name: /clientes/i });
+      fireEvent.click(customersLink);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('page-customers')).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId('page-pos')).not.toBeInTheDocument();
+
+      // Click Historial tab
+      const historyLink = screen.getByRole('link', { name: /historial/i });
+      fireEvent.click(historyLink);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('page-history')).toBeInTheDocument();
+      });
+    });
+
+    it('locks the session and returns to login screen when clicking Bloquear in TopBar', async () => {
+      render(<App initialEntries={['/pos']} />);
+
+      expect(screen.getByTestId('page-pos')).toBeInTheDocument();
+
+      const lockButton = screen.getByRole('button', { name: /bloquear/i });
+      fireEvent.click(lockButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Terminal de Tienda')).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId('page-pos')).not.toBeInTheDocument();
+    });
+
+    it('redirects unknown paths to /pos', async () => {
+      render(<App initialEntries={['/non-existent-route']} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('page-pos')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Role-Based Route Protection (/supervisor)', () => {
+    it('redirects unauthorized cashier to /pos when accessing /supervisor', async () => {
+      // Unlock as regular cashier (c-1, role: 'cajero')
+      useAuthStore.getState().unlockWithPin('c-1', '1234');
+
+      render(<App initialEntries={['/supervisor']} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('page-pos')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('page-supervisor')).not.toBeInTheDocument();
+      // TabBar does NOT show supervisor tab for cashier
+      expect(screen.queryByRole('link', { name: /supervisor/i })).not.toBeInTheDocument();
+    });
+
+    it('allows supervisor to access /supervisor and renders SupervisorPage', async () => {
+      // Unlock as supervisor (c-2, role: 'supervisor')
+      useAuthStore.getState().unlockWithPin('c-2', '4321');
+
+      render(<App initialEntries={['/supervisor']} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('page-supervisor')).toBeInTheDocument();
+      });
+
+      expect(screen.getByRole('heading', { level: 1, name: /supervisor/i })).toBeInTheDocument();
+      // TabBar DOES show supervisor tab for supervisor
+      expect(screen.getByRole('link', { name: /supervisor/i })).toBeInTheDocument();
+    });
   });
 });

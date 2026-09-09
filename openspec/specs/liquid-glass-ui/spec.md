@@ -3,6 +3,7 @@
 ## Requirements
 1. The UI MUST implement a "Liquid Glass" design system for all modal overlays.
 2. The UI SHOULD adapt smoothly to both portrait and landscape orientations on mobile devices.
+3. The Top Bar and Bottom Tab Bar components MUST implement the Liquid Glass design system.
 
 ## Scenarios
 
@@ -30,3 +31,16 @@
 * Given the user is actively viewing a data table
 * When the user rapidly toggles between portrait and landscape modes
 * Then the UI MUST stabilize without crashing or losing the scroll position
+
+### Requirement 3: Liquid Glass Navigation Shell
+**Scenario: Navigation shell rendering**
+* Given the application layout is loaded
+* When the Top Bar and Tab Bar are displayed
+* Then both components MUST feature a translucent background with a blur effect
+* And the content scrolling behind them MUST remain partially visible but out of focus
+
+**Scenario: Performance fallback on low-end devices**
+* Given the user is on a device that does not support backdrop-filter or has low performance
+* When the Top Bar and Tab Bar are rendered
+* Then the components MUST fallback to a semi-transparent or solid background
+* And the navigation items MUST remain legible
