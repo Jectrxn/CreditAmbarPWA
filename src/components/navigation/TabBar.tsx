@@ -39,24 +39,30 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
     <>
       <nav
         aria-label="Navegación principal"
-        className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full max-w-sm z-40 rounded-full bg-white/[0.80] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/50 border-b-white/20 shadow-[0_20px_40px_-8px_rgba(15,23,42,0.22),0_4px_12px_rgba(0,0,0,0.05),inset_0_1.5px_2px_rgba(255,255,255,0.95)] px-3 py-1.5 transition-all duration-200 ${className}`}
+        className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full max-w-sm sm:max-w-md z-40 rounded-full bg-white/[0.72] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/50 border-b-white/20 shadow-[0_20px_45px_-8px_rgba(15,23,42,0.18),0_4px_12px_rgba(0,0,0,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] px-3 py-1.5 transition-all duration-200 ${className}`}
       >
-        <div className="flex items-center justify-between w-full">
+        {/* Top specular highlight */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-full bg-gradient-to-b from-white/60 via-white/10 to-transparent"
+        />
+
+        <div className="relative z-10 flex items-center justify-between w-full px-1">
           {/* 1. Inicio */}
           <NavLink
             to="/"
             end
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-full transition-all duration-200 text-[10px] font-bold ${
+              `flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-full transition-all duration-200 text-[10px] font-black ${
                 isActive
-                  ? 'text-amber-800 bg-white/[0.35] backdrop-blur-md border border-t-white/90 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(245,158,11,0.15)]'
+                  ? 'text-amber-800 bg-white/[0.45] backdrop-blur-md border border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(245,158,11,0.2)]'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/[0.15]'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <Home className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-amber-600 scale-110 drop-shadow-xs' : 'text-slate-600'}`} />
+                <Home className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-amber-600 scale-110 drop-shadow-2xs' : 'text-slate-600'}`} />
                 <span>Inicio</span>
               </>
             )}
@@ -66,31 +72,34 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
           <NavLink
             to="/customers"
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-full transition-all duration-200 text-[10px] font-bold ${
+              `flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-full transition-all duration-200 text-[10px] font-black ${
                 isActive
-                  ? 'text-amber-800 bg-white/[0.35] backdrop-blur-md border border-t-white/90 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(245,158,11,0.15)]'
+                  ? 'text-amber-800 bg-white/[0.45] backdrop-blur-md border border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(245,158,11,0.2)]'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/[0.15]'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <Users className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-amber-600 scale-110 drop-shadow-xs' : 'text-slate-600'}`} />
+                <Users className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-amber-600 scale-110 drop-shadow-2xs' : 'text-slate-600'}`} />
                 <span>Clientes</span>
               </>
             )}
           </NavLink>
 
-          {/* 3. Central Prominent Plus Button */}
-          <div className="relative -top-5 flex items-center justify-center">
+          {/* 3. Central Prominent Elevated Plus Button */}
+          <div className="relative -top-6 sm:-top-7 flex items-center justify-center shrink-0">
             <button
               type="button"
               onClick={handlePlusClick}
               aria-label="Registrar nuevo fiado"
-              className="relative overflow-hidden w-13 h-13 rounded-full bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-black flex items-center justify-center shadow-[0_12px_28px_-4px_rgba(245,158,11,0.55),inset_0_2px_3px_rgba(255,255,255,0.95),inset_0_-2px_4px_rgba(180,83,9,0.35)] border-2 border-white/95 transition-all cursor-pointer group"
+              className="relative overflow-hidden w-14 h-14 sm:w-15 sm:h-15 rounded-full bg-gradient-to-b from-amber-300 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 active:scale-90 text-slate-950 font-black flex items-center justify-center shadow-[0_12px_28px_-2px_rgba(245,158,11,0.65),0_4px_12px_rgba(245,158,11,0.45),inset_0_2px_3px_rgba(255,255,255,0.95),inset_0_-2px_4px_rgba(180,83,9,0.4)] border-[3px] border-white transition-all duration-200 cursor-pointer group"
             >
-              <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/40 via-white/10 to-transparent rounded-t-full" />
-              <Plus className="relative z-10 w-6 h-6 stroke-[3] transition-transform group-hover:scale-110 group-active:scale-90" />
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/60 via-white/15 to-transparent rounded-t-full"
+              />
+              <Plus className="relative z-10 w-7 h-7 stroke-[3.5] transition-transform group-hover:scale-110 group-active:rotate-90" />
             </button>
           </div>
 
@@ -98,9 +107,9 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
           <NavLink
             to="/history"
             className={({ isActive }) =>
-              `relative flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-full transition-all duration-200 text-[10px] font-bold ${
+              `relative flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-full transition-all duration-200 text-[10px] font-black ${
                 isActive
-                  ? 'text-amber-800 bg-white/[0.35] backdrop-blur-md border border-t-white/90 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(245,158,11,0.15)]'
+                  ? 'text-amber-800 bg-white/[0.45] backdrop-blur-md border border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(245,158,11,0.2)]'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/[0.15]'
               }`
             }
@@ -108,7 +117,7 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
             {({ isActive }) => (
               <>
                 <div className="relative">
-                  <Receipt className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-amber-600 scale-110 drop-shadow-xs' : 'text-slate-600'}`} />
+                  <Receipt className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-amber-600 scale-110 drop-shadow-2xs' : 'text-slate-600'}`} />
                   {pendingCount > 0 && (
                     <span className="absolute -top-1.5 -right-2.5 px-1.5 py-0.2 text-[9px] font-black bg-rose-500 text-white rounded-full border border-white shadow-xs animate-in zoom-in-50">
                       {pendingCount > 99 ? '99+' : pendingCount}
@@ -124,16 +133,16 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
           <NavLink
             to="/supervisor"
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-full transition-all duration-200 text-[10px] font-bold ${
+              `flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-full transition-all duration-200 text-[10px] font-black ${
                 isActive
-                  ? 'text-amber-800 bg-white/[0.35] backdrop-blur-md border border-t-white/90 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(245,158,11,0.15)]'
+                  ? 'text-amber-800 bg-white/[0.45] backdrop-blur-md border border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(245,158,11,0.2)]'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/[0.15]'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <BarChart3 className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-amber-600 scale-110 drop-shadow-xs' : 'text-slate-600'}`} />
+                <BarChart3 className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'text-amber-600 scale-110 drop-shadow-2xs' : 'text-slate-600'}`} />
                 <span>Reportes</span>
               </>
             )}

@@ -49,11 +49,17 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full max-w-xl mx-auto mt-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/[0.82] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/50 border-b-white/20 shadow-[0_12px_32px_-6px_rgba(15,23,42,0.12),0_2px_6px_rgba(0,0,0,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center justify-between gap-2 transition-all duration-200 ${className}`}
+      className={`sticky top-0 z-40 w-full max-w-sm sm:max-w-md mx-auto mt-2 sm:mt-3 px-3.5 py-1.5 rounded-full bg-white/[0.72] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/50 border-b-white/20 shadow-[0_16px_36px_-8px_rgba(15,23,42,0.14),0_2px_8px_rgba(0,0,0,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center justify-between gap-2 transition-all duration-200 ${className}`}
     >
+      {/* Specular rim reflection */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-full bg-gradient-to-b from-white/60 via-white/10 to-transparent"
+      />
+
       {/* Brand & Store Info */}
-      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-        <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/[0.8] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 p-0.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.06)] flex items-center justify-center shrink-0">
+      <div className="relative z-10 flex items-center gap-2 min-w-0">
+        <div className="h-8 w-8 rounded-full bg-white/[0.85] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 p-0.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.06)] flex items-center justify-center shrink-0">
           <img
             src="/logo-ambar.png"
             alt="Ámbar Bodega"
@@ -65,58 +71,58 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 flex-nowrap">
-            <h1 className="text-sm sm:text-base font-black tracking-tight text-slate-900 drop-shadow-2xs whitespace-nowrap">
+            <h1 className="text-xs sm:text-sm font-black tracking-tight text-slate-900 drop-shadow-2xs whitespace-nowrap">
               CreditAmbar
             </h1>
-            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-950 border border-amber-400/50 font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] shrink-0">
+            <span className="text-[8px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-950 border border-amber-400/50 font-black shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] shrink-0">
               PWA
             </span>
           </div>
-          <p className="text-[10px] font-semibold text-slate-500 truncate max-w-[130px] sm:max-w-[200px]">
+          <p className="text-[9px] font-semibold text-slate-500 truncate max-w-[110px] sm:max-w-[140px]">
             {storeSession ? `${storeSession.storeName} • Bodega & Fiambrería` : 'Ámbar Bodega • Bodega & Fiambrería'}
           </p>
         </div>
       </div>
 
       {/* Right Section: Sync Status & Cashier Profile / Lock Button */}
-      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <div className="relative z-10 flex items-center gap-1.5 shrink-0">
         {/* Sync Status Badge */}
         <div
           data-testid="sync-status"
           data-status={syncStatus}
-          className={`flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-bold border shadow-2xs backdrop-blur-md ${syncConfig.badgeClass}`}
+          className={`flex items-center justify-center p-1.5 rounded-full border shadow-2xs backdrop-blur-md ${syncConfig.badgeClass}`}
           title={`Estado de sincronización: ${syncConfig.label}`}
         >
           {syncConfig.icon}
-          <span className="hidden md:inline text-[11px] font-bold">{syncConfig.label}</span>
+          <span className="sr-only">{syncConfig.label}</span>
         </div>
 
         {/* Cashier Profile Badge & Lock Button */}
         {activeCashier ? (
-          <div className="flex items-center gap-1.5">
-            <div className="text-[11px] bg-white/[0.60] backdrop-blur-md px-2.5 py-1 rounded-full border border-t-white border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85)] text-slate-800 font-bold flex items-center gap-1">
+          <div className="flex items-center gap-1">
+            <div className="text-[10px] bg-white/[0.60] backdrop-blur-md px-2.5 py-1 rounded-full border border-t-white border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85)] text-slate-800 font-black flex items-center gap-1">
               {activeCashier.role === 'supervisor' || activeCashier.role === 'jefe' ? (
                 <Shield className="w-3 h-3 text-amber-600 shrink-0" />
               ) : (
                 <User className="w-3 h-3 text-slate-600 shrink-0" />
               )}
-              <span className="truncate max-w-[70px] sm:max-w-[100px]">{activeCashier.name}</span>
-              <span className="text-[10px] text-amber-800 font-black uppercase">
+              <span className="truncate max-w-[65px] sm:max-w-[85px]">{activeCashier.name}</span>
+              <span className="text-[9px] text-amber-800 uppercase font-black">
                 ({activeCashier.role})
               </span>
             </div>
             <button
               type="button"
               onClick={lockSession}
-              className="p-1.5 rounded-full bg-white/[0.5] hover:bg-white/[0.8] border border-white/60 text-slate-600 hover:text-amber-800 transition cursor-pointer shadow-2xs"
+              className="p-1.5 rounded-full bg-white/[0.5] hover:bg-white/[0.85] border border-white/60 text-slate-600 hover:text-amber-800 transition cursor-pointer shadow-2xs"
               title="Bloquear sesión"
             >
-              <Lock className="w-3.5 h-3.5 text-amber-700" />
+              <Lock className="w-3 h-3 text-amber-700" />
               <span className="sr-only">Bloquear</span>
             </button>
           </div>
         ) : (
-          <span className="text-[11px] font-bold text-slate-700 bg-white/[0.60] backdrop-blur-md px-3 py-1 rounded-full border border-t-white border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85)]">
+          <span className="text-[10px] font-bold text-slate-700 bg-white/[0.60] backdrop-blur-md px-2.5 py-1 rounded-full border border-t-white border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85)]">
             Esperando operador
           </span>
         )}

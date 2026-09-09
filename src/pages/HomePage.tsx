@@ -135,7 +135,7 @@ export const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div data-testid="page-home" className="w-full max-w-xl mx-auto px-1 space-y-2.5 pb-24">
+    <div data-testid="page-home" className="w-full max-w-sm sm:max-w-md mx-auto px-1 space-y-2.5 pb-24">
       {/* Date & Quick Badge Row */}
       <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1 pt-0.5">
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.60] backdrop-blur-[18px] border border-t-white border-x-white/50 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_-2px_rgba(15,23,42,0.04)]">
