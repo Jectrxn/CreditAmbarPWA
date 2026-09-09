@@ -38,7 +38,8 @@ describe('AppLayout Component (Strict TDD)', () => {
     // Verify TabBar elements rendered
     const nav = screen.getByRole('navigation', { name: /navegación principal/i });
     expect(nav).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /caja/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /inicio/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /clientes/i })).toBeInTheDocument();
 
     // Verify Outlet rendered within main landmark
     const main = screen.getByRole('main');
