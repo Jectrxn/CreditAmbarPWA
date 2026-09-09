@@ -49,9 +49,9 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full max-w-sm sm:max-w-md mx-auto mt-2 sm:mt-3 px-3.5 py-1.5 rounded-full bg-white/[0.72] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/50 border-b-white/20 shadow-[0_16px_36px_-8px_rgba(15,23,42,0.14),0_2px_8px_rgba(0,0,0,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center justify-between gap-2 transition-all duration-200 ${className}`}
+      className={`sticky top-0 z-40 w-full max-w-sm sm:max-w-md mx-auto mt-2 sm:mt-3.5 px-3 py-1.5 rounded-full bg-white/[0.60] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/40 border-b-white/15 shadow-[0_16px_36px_-8px_rgba(15,23,42,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center justify-between gap-2 transition-all duration-200 ${className}`}
     >
-      {/* Specular rim reflection */}
+      {/* Top Specular Rim Reflection */}
       <span
         aria-hidden="true"
         className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-full bg-gradient-to-b from-white/60 via-white/10 to-transparent"
@@ -59,7 +59,7 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
 
       {/* Brand & Store Info */}
       <div className="relative z-10 flex items-center gap-2 min-w-0">
-        <div className="h-8 w-8 rounded-full bg-white/[0.85] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 p-0.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.06)] flex items-center justify-center shrink-0">
+        <div className="h-8 w-8 rounded-full bg-white/[0.80] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 p-0.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.06)] flex items-center justify-center shrink-0">
           <img
             src="/logo-ambar.png"
             alt="Ámbar Bodega"
@@ -78,7 +78,7 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
               PWA
             </span>
           </div>
-          <p className="text-[9px] font-semibold text-slate-500 truncate max-w-[110px] sm:max-w-[140px]">
+          <p className="text-[9px] font-semibold text-slate-500 truncate max-w-[120px] sm:max-w-[160px]">
             {storeSession ? `${storeSession.storeName} • Bodega & Fiambrería` : 'Ámbar Bodega • Bodega & Fiambrería'}
           </p>
         </div>
@@ -100,7 +100,7 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
         {/* Cashier Profile Badge & Lock Button */}
         {activeCashier ? (
           <div className="flex items-center gap-1">
-            <div className="text-[10px] bg-white/[0.60] backdrop-blur-md px-2.5 py-1 rounded-full border border-t-white border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85)] text-slate-800 font-black flex items-center gap-1">
+            <div className="text-[10px] bg-white/[0.60] backdrop-blur-md px-2.5 py-1 rounded-full border border-t-white border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85)] text-slate-800 font-bold flex items-center gap-1">
               {activeCashier.role === 'supervisor' || activeCashier.role === 'jefe' ? (
                 <Shield className="w-3 h-3 text-amber-600 shrink-0" />
               ) : (

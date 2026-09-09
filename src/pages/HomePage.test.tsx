@@ -98,10 +98,10 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
   });
 
   describe('Primary Action Buttons & Modals', () => {
-    it('opens QuickCreditModal upon clicking "+ Nuevo Fiado"', async () => {
+    it('opens QuickCreditModal upon clicking "Nuevo Fiado"', async () => {
       renderHomePage();
 
-      const newCreditBtn = screen.getByRole('button', { name: /\+ nuevo fiado/i });
+      const newCreditBtn = screen.getByRole('button', { name: /nuevo fiado/i });
       fireEvent.click(newCreditBtn);
 
       expect(await screen.findByRole('dialog')).toBeInTheDocument();
