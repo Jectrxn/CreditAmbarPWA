@@ -4,6 +4,7 @@ import type { Customer, CreditTransaction } from '../../types/database';
 import { db } from '../../lib/dexie';
 import { useAuthStore } from '../../store/authStore';
 import { generateWhatsAppReceipt } from '../../features/transactions/whatsappHelper';
+import { OperatorSelector } from '../ui/OperatorSelector';
 import {
   AlertCircle,
   CheckCircle2,
@@ -23,11 +24,11 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
   customer: preselectedCustomer,
   onSuccess,
 }) => {
-  const { cashiers, activeCashier, storeSession } = useAuthStore();
+  const { currentOperatorName, storeSession } = useAuthStore();
 
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [operatorName, setOperatorName] = useState<string>('');
+  const [operatorName, setOperatorName] = useState<string>(currentOperatorName || 'Martin');
   const [amountInput, setAmountInput] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
       setCompletedTx(null);
       setAmountInput('');
       setNotes('');
-      setOperatorName(activeCashier?.name || (cashiers[0]?.name ?? 'Mostrador'));
+      setOperatorName(currentOperatorName || 'Martin');
 
       db.customers.toArray().then((list) => {
         setAllCustomers(list);
@@ -54,7 +55,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
         }
       });
     }
-  }, [isOpen, preselectedCustomer, activeCashier?.name, cashiers]);
+  }, [isOpen, preselectedCustomer, currentOperatorName]);
 
   const activeCustomer =
     allCustomers.find((c) => c.id === selectedCustomerId) || preselectedCustomer;
@@ -183,6 +184,10 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                   S/ {Math.max(0, completedTx.customer.credit_limit - completedTx.customer.balance).toFixed(2)}
                 </span>
               </div>
+              <div className="flex justify-between border-t border-white/20 pt-1.5 text-[11px]">
+                <span className="text-slate-500 font-medium">Atendido por:</span>
+                <span className="font-bold text-slate-900">{completedTx.transaction.cashier_pin_hash}</span>
+              </div>
               {completedTx.transaction.notes && (
                 <div className="flex justify-between border-t border-white/20 pt-1.5 text-[11px]">
                   <span className="text-slate-500 font-medium">Detalle:</span>
@@ -244,41 +249,30 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               </select>
             </div>
 
-            {/* Operator / Atendido por */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Atendido por:
-                </label>
+            {/* Operator / Atendido por (1-Touch Liquid Glass) */}
+            <OperatorSelector
+              selectedName={operatorName}
+              onSelect={(name) => setOperatorName(name)}
+            />
+
+            {/* Amount */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Monto Total (S/):
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-500">
+                  S/
+                </span>
                 <input
-                  type="text"
-                  value={operatorName}
-                  onChange={(e) => setOperatorName(e.target.value)}
-                  placeholder="Ej. Juan, María"
-                  className="w-full p-2.5 text-xs font-medium bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                  type="number"
+                  step="0.10"
+                  value={amountInput}
+                  onChange={(e) => setAmountInput(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-3 py-2.5 text-xs font-bold text-slate-900 bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
                   required
                 />
-              </div>
-
-              {/* Amount */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Monto Total (S/):
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-500">
-                    S/
-                  </span>
-                  <input
-                    type="number"
-                    step="0.10"
-                    value={amountInput}
-                    onChange={(e) => setAmountInput(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-8 pr-3 py-2.5 text-xs font-bold text-slate-900 bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
-                    required
-                  />
-                </div>
               </div>
             </div>
 

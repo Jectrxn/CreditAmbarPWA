@@ -268,4 +268,30 @@ describe('authStore - Shared Phone Store Auth & PIN State', () => {
       expect(useAuthStore.getState().isProfileLocked('c-1')).toBe(true);
     });
   });
+
+  describe('Mostrador Operator & Admin Mode (PIN 1234)', () => {
+    it('initializes with default operator Martin and updates correctly', () => {
+      expect(useAuthStore.getState().currentOperatorName).toBe('Martin');
+      useAuthStore.getState().setCurrentOperatorName('Emiliano');
+      expect(useAuthStore.getState().currentOperatorName).toBe('Emiliano');
+    });
+
+    it('unlocks Admin Mode with PIN 1234 and sets supervisor/admin role', () => {
+      expect(useAuthStore.getState().isAdminMode()).toBe(false);
+
+      const success = useAuthStore.getState().unlockAdminMode('1234');
+      expect(success).toBe(true);
+      expect(useAuthStore.getState().isAdminMode()).toBe(true);
+      expect(useAuthStore.getState().hasRole('supervisor')).toBe(true);
+
+      useAuthStore.getState().lockAdminMode();
+      expect(useAuthStore.getState().isAdminMode()).toBe(false);
+    });
+
+    it('rejects invalid PIN for Admin Mode', () => {
+      const success = useAuthStore.getState().unlockAdminMode('9998');
+      expect(success).toBe(false);
+      expect(useAuthStore.getState().isAdminMode()).toBe(false);
+    });
+  });
 });

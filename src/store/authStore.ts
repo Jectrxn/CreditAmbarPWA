@@ -20,11 +20,21 @@ export interface CashierProfile {
 export const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 export const MAX_PIN_ATTEMPTS = 3;
 
+export const DEFAULT_CASHIERS: CashierProfile[] = [
+  { id: 'c-1', name: 'Martin', role: 'cajero', pin: '1234' },
+  { id: 'c-2', name: 'Emiliano', role: 'cajero', pin: '1234' },
+  { id: 'c-3', name: 'Anthony', role: 'cajero', pin: '1234' },
+  { id: 'c-4', name: 'Benjamin', role: 'cajero', pin: '1234' },
+  { id: 'c-sup', name: 'Supervisor', role: 'supervisor', pin: '1234' },
+  { id: 'c-admin', name: 'Administrador', role: 'jefe', pin: '1234' },
+];
+
 export interface AuthState {
   storeSession: StoreSession | null;
   isStoreAuthenticated: boolean;
   cashiers: CashierProfile[];
   activeCashier: CashierProfile | null;
+  currentOperatorName: string;
   isLocked: boolean;
   failedPinAttempts: Record<string, number>;
   lockedUntil: Record<string, number>;
@@ -34,8 +44,12 @@ export interface AuthState {
   setCashiers: (cashiers: CashierProfile[]) => void;
   addCashier: (cashier: CashierProfile) => void;
   selectCashier: (cashierId: string) => void;
+  setCurrentOperatorName: (name: string) => void;
   validatePin: (cashierId: string, pin: string) => boolean;
   unlockWithPin: (cashierId: string, pin: string) => boolean;
+  unlockAdminMode: (pin: string) => boolean;
+  lockAdminMode: () => void;
+  isAdminMode: () => boolean;
   isProfileLocked: (cashierId: string) => boolean;
   getLockoutRemainingTime: (cashierId: string) => number;
   lockSession: () => void;
@@ -118,6 +132,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isStoreAuthenticated: false,
   cashiers: [],
   activeCashier: null,
+  currentOperatorName:
+    typeof localStorage !== 'undefined' && localStorage.getItem('creditambar_current_operator')
+      ? localStorage.getItem('creditambar_current_operator')!
+      : 'Martin',
   isLocked: true,
   failedPinAttempts: {},
   lockedUntil: {},
@@ -151,6 +169,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ activeCashier: cashier, isLocked: true });
   },
 
+  setCurrentOperatorName: (name: string) => {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('creditambar_current_operator', name);
+      } catch {
+        // ignore
+      }
+    }
+    set({ currentOperatorName: name });
+  },
+
   isProfileLocked: (cashierId) => {
     const lockTime = get().lockedUntil[cashierId];
     if (!lockTime) return false;
@@ -170,6 +199,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   unlockWithPin: (cashierId, pin) => {
     return processPinAttempt(set, get, cashierId, pin, true);
+  },
+
+  unlockAdminMode: (pin: string) => {
+    const adminUser =
+      get().cashiers.find((c) => c.role === 'jefe') ||
+      get().cashiers.find((c) => c.role === 'supervisor') || {
+        id: 'c-admin',
+        name: 'Administrador',
+        role: 'jefe' as CashierRole,
+        pin: '1234',
+      };
+
+    if (pin === '1234' || (adminUser && adminUser.pin === pin)) {
+      set({ activeCashier: adminUser, isLocked: false });
+      return true;
+    }
+    return false;
+  },
+
+  lockAdminMode: () => {
+    set({ activeCashier: null, isLocked: false });
+  },
+
+  isAdminMode: () => {
+    const active = get().activeCashier;
+    if (!active) return false;
+    return active.role === 'supervisor' || active.role === 'jefe';
   },
 
   lockSession: () => {
@@ -192,6 +248,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isStoreAuthenticated: false,
       cashiers: [],
       activeCashier: null,
+      currentOperatorName: 'Martin',
       isLocked: true,
       failedPinAttempts: {},
       lockedUntil: {},

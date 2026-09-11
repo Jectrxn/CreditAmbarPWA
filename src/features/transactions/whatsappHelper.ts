@@ -9,6 +9,7 @@ export interface WhatsAppTransactionInfo {
   total_amount: number;
   type?: string;
   created_at: string;
+  cashier_pin_hash?: string;
 }
 
 /**
@@ -51,8 +52,9 @@ export function generateWhatsAppReceipt(
   const formattedAmount = transaction.total_amount.toFixed(2);
   const formattedBalance = customer.balance.toFixed(2);
   const txTypeLabel = transaction.type === 'payment' ? 'Abono / Pago' : 'Nuevo Fiado';
+  const attendedBy = transaction.cashier_pin_hash ? ` (Atendido por: ${transaction.cashier_pin_hash})` : '';
 
-  const message = `Hola ${customer.name}, este es tu comprobante de ${txTypeLabel} por $${formattedAmount} en ${storeName}. Saldo pendiente actual: $${formattedBalance}. (Comprobante ref: ${transaction.id})`;
+  const message = `Hola ${customer.name}, este es tu comprobante de ${txTypeLabel} por $${formattedAmount} en ${storeName}.${attendedBy} Saldo pendiente actual: $${formattedBalance}. (Comprobante ref: ${transaction.id})`;
   const encodedText = encodeURIComponent(message);
 
   if (cleanPhone) {

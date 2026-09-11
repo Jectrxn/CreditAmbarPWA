@@ -27,11 +27,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className = '' }) => {
         <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px]" />
       </div>
 
-      {/* Floating TopBar */}
-      <TopBar />
+      {/* Floating TopBar Container (Aligned with main content column) */}
+      <div className="w-full max-w-sm sm:max-w-md mx-auto px-3.5 pt-2 sm:pt-3.5 sticky top-0 z-40">
+        <TopBar />
+      </div>
 
       {/* Main Content Column (Unified 390px / max-w-sm sm:max-w-md width) */}
-      <main className="flex-1 w-full max-w-sm sm:max-w-md mx-auto px-3.5 py-1.5 relative z-10 pb-28 sm:pb-32 flex flex-col items-center">
+      <main className="flex-1 w-full max-w-sm sm:max-w-md mx-auto px-3.5 py-1.5 relative z-10 pb-24 sm:pb-28 flex flex-col items-center">
         <Outlet />
       </main>
 

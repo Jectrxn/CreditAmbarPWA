@@ -7,7 +7,7 @@ import {
   Navigate,
   useInRouterContext,
 } from 'react-router-dom';
-import { useAuthStore } from './store/authStore';
+import { useAuthStore, DEFAULT_CASHIERS } from './store/authStore';
 import { AppLayout } from './components/navigation/AppLayout';
 import { HomePage } from './pages/HomePage';
 import { PosPage } from './pages/PosPage';
@@ -38,11 +38,7 @@ export function AppContent() {
     }
 
     if (cashiers.length === 0) {
-      setCashiers([
-        { id: 'c-1', name: 'Laura Gómez', role: 'cajero', pin: '1234' },
-        { id: 'c-2', name: 'Marcos Rivas', role: 'supervisor', pin: '4321' },
-        { id: 'c-3', name: 'Don Roberto', role: 'jefe', pin: '9999' },
-      ]);
+      setCashiers(DEFAULT_CASHIERS);
     }
   }, [storeSession, cashiers.length, setStoreSession, setCashiers]);
 

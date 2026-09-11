@@ -31,7 +31,7 @@ describe('App - Application Shell Integration & Routing (Strict TDD)', () => {
       });
 
       // TopBar rendered
-      expect(screen.getByText('CreditAmbar')).toBeInTheDocument();
+      expect(screen.getByText('Ámbar')).toBeInTheDocument();
       expect(screen.getByTestId('sync-status')).toBeInTheDocument();
 
       // TabBar rendered

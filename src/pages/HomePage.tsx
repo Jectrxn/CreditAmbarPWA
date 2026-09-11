@@ -135,7 +135,7 @@ export const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div data-testid="page-home" className="w-full space-y-2.5 pb-24">
+    <div data-testid="page-home" className="w-full space-y-2.5">
       {/* Date & Quick Badge Row */}
       <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-0.5 pt-0.5">
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.55] backdrop-blur-[18px] border border-t-white border-x-white/40 border-b-white/15 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.03)]">
@@ -149,7 +149,7 @@ export const HomePage: React.FC = () => {
 
       {/* Global Search Bar */}
       <div className="relative">
-        <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
         <input
           type="text"
           value={searchQuery}

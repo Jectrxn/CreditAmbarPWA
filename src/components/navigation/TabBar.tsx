@@ -39,7 +39,7 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
     <>
       <nav
         aria-label="Navegación principal"
-        className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-full max-w-sm sm:max-w-md z-40 rounded-full bg-white/[0.72] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/50 border-b-white/20 shadow-[0_20px_45px_-8px_rgba(15,23,42,0.18),0_4px_12px_rgba(0,0,0,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] px-3 py-1.5 transition-all duration-200 ${className}`}
+        className={`fixed bottom-4 sm:bottom-6 left-3.5 right-3.5 sm:left-1/2 sm:-translate-x-1/2 sm:w-full max-w-[356px] sm:max-w-[420px] z-40 rounded-full bg-white/[0.72] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/50 border-b-white/20 shadow-[0_20px_45px_-8px_rgba(15,23,42,0.18),0_4px_12px_rgba(0,0,0,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] px-3 py-1.5 transition-all duration-200 ${className}`}
       >
         {/* Top specular highlight */}
         <span

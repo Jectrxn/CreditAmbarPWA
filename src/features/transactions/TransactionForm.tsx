@@ -4,6 +4,7 @@ import { db } from '../../lib/dexie';
 import { useSessionStore } from '../session/sessionStore';
 import { useAuthStore } from '../../store/authStore';
 import { validateCreditLimit, validateTransactionForFCC } from './transactionRules';
+import { OperatorSelector } from '../../components/ui/OperatorSelector';
 import { DollarSign, QrCode, AlertCircle, ShoppingBag, ArrowDownLeft } from 'lucide-react';
 
 export interface TransactionFormProps {
@@ -21,6 +22,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   onCancel,
   className = '',
 }) => {
+  const { activeCashier, currentOperatorName, storeSession } = useAuthStore();
+  const [operatorName, setOperatorName] = useState<string>(currentOperatorName || 'Martin');
   const [transactionType, setTransactionType] = useState<'payment' | 'credit_purchase'>(defaultType);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qr'>('cash');
   const [amountInput, setAmountInput] = useState<string>('');
@@ -29,7 +32,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const { activeSession, recordPaymentToSession } = useSessionStore();
-  const { activeCashier, storeSession } = useAuthStore();
 
   const availableCredit = Math.max(0, customer.credit_limit - customer.balance);
 
@@ -78,7 +80,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       const txId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
       const now = new Date().toISOString();
       const storeId = customer.store_id || storeSession?.storeId || 'store-default';
-      const cashierPinHash = activeCashier?.pin || 'cashier-default';
+      const cashierPinHash = operatorName || activeCashier?.name || 'Martin';
 
       const transaction: CreditTransaction = {
         id: txId,
@@ -210,6 +212,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           <span>Nuevo Fiado</span>
         </button>
       </div>
+
+      {/* Operator Selection (1-Touch Liquid Glass) */}
+      <OperatorSelector
+        selectedName={operatorName}
+        onSelect={(name) => setOperatorName(name)}
+        label={transactionType === 'payment' ? 'Cobrado por:' : 'Atendido por:'}
+      />
 
       {/* Payment Method Selector (Only for payments) */}
       {transactionType === 'payment' && (

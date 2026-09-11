@@ -31,8 +31,7 @@ describe('AppLayout Component (Strict TDD)', () => {
     );
 
     // Verify TopBar elements rendered
-    expect(screen.getByText('CreditAmbar')).toBeInTheDocument();
-    expect(screen.getByText('Bodega Ámbar • Bodega & Fiambrería')).toBeInTheDocument();
+    expect(screen.getByText('Ámbar')).toBeInTheDocument();
     expect(screen.getByTestId('sync-status')).toBeInTheDocument();
 
     // Verify TabBar elements rendered
@@ -66,7 +65,7 @@ describe('AppLayout Component (Strict TDD)', () => {
     expect(screen.getByText('Clientes Content')).toBeInTheDocument();
 
     // Both TopBar and TabBar remain present
-    expect(screen.getByText('CreditAmbar')).toBeInTheDocument();
+    expect(screen.getByText('Ámbar')).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: /navegación principal/i })).toBeInTheDocument();
   });
 

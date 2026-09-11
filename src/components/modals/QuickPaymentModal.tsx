@@ -4,6 +4,7 @@ import type { Customer, CreditTransaction } from '../../types/database';
 import { db } from '../../lib/dexie';
 import { useAuthStore } from '../../store/authStore';
 import { generateWhatsAppReceipt } from '../../features/transactions/whatsappHelper';
+import { OperatorSelector } from '../ui/OperatorSelector';
 import {
   DollarSign,
   QrCode,
@@ -25,10 +26,11 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
   customer: preselectedCustomer,
   onSuccess,
 }) => {
-  const { storeSession } = useAuthStore();
+  const { currentOperatorName, storeSession } = useAuthStore();
 
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [operatorName, setOperatorName] = useState<string>(currentOperatorName || 'Martin');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qr'>('cash');
   const [amountInput, setAmountInput] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
       setCompletedTx(null);
       setAmountInput('');
       setPaymentMethod('cash');
+      setOperatorName(currentOperatorName || 'Martin');
 
       db.customers.toArray().then((list) => {
         // filter debtors first
@@ -60,7 +63,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
         }
       });
     }
-  }, [isOpen, preselectedCustomer]);
+  }, [isOpen, preselectedCustomer, currentOperatorName]);
 
   const activeCustomer =
     allCustomers.find((c) => c.id === selectedCustomerId) || preselectedCustomer;
@@ -91,7 +94,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
         id: txId,
         store_id: storeId,
         customer_id: activeCustomer.id,
-        cashier_pin_hash: 'caja-directa',
+        cashier_pin_hash: operatorName || 'Mostrador',
         total_amount: amount,
         status: 'completed',
         created_at: now,
@@ -178,6 +181,10 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                   {completedTx.transaction.payment_method === 'cash' ? 'Efectivo' : 'QR / Yape / Plin'}
                 </span>
               </div>
+              <div className="flex justify-between border-t border-white/20 pt-1.5 text-[11px]">
+                <span className="text-slate-500 font-medium">Cobrado por:</span>
+                <span className="font-bold text-slate-900">{completedTx.transaction.cashier_pin_hash}</span>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
@@ -237,6 +244,13 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                 ))}
               </select>
             </div>
+
+            {/* Operator Selection (1-Touch Liquid Glass) */}
+            <OperatorSelector
+              selectedName={operatorName}
+              onSelect={(name) => setOperatorName(name)}
+              label="Cobrado por:"
+            />
 
             {/* Payment Method */}
             <div>

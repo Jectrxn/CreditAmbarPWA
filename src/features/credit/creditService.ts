@@ -86,6 +86,48 @@ export async function listCustomers(storeId: string): Promise<Customer[]> {
   return await db.customers.where('store_id').equals(storeId).toArray();
 }
 
+export interface UpdateCustomerParams {
+  name?: string;
+  phone?: string;
+  creditLimit?: number;
+}
+
+/**
+ * Updates an existing customer profile/limits and queues sync.
+ */
+export async function updateCustomer(
+  customerId: string,
+  updates: UpdateCustomerParams
+): Promise<Customer> {
+  const customer = await db.customers.get(customerId);
+  if (!customer) {
+    throw new Error('Customer not found');
+  }
+
+  const updatedCustomer: Customer = {
+    ...customer,
+    ...(updates.name !== undefined ? { name: updates.name.trim() } : {}),
+    ...(updates.phone !== undefined ? { phone: updates.phone.trim() || undefined } : {}),
+    ...(updates.creditLimit !== undefined ? { credit_limit: updates.creditLimit } : {}),
+  };
+
+  await db.customers.put({
+    ...updatedCustomer,
+    synced: false,
+  });
+
+  await db.syncQueue.add({
+    entity: 'customers',
+    operation: 'UPDATE',
+    payload: updatedCustomer,
+    createdAt: Date.now(),
+    retryCount: 0,
+    status: 'pending',
+  });
+
+  return updatedCustomer;
+}
+
 /**
  * Records a new credit purchase (fiado) for a customer.
  * Enforces credit limit check.

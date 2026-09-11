@@ -94,16 +94,27 @@ describe('TopBar Navigation Component (Strict TDD)', () => {
       expect(screen.getByText('(supervisor)')).toBeInTheDocument();
     });
 
-    it('renders "Esperando operador" when no cashier is authenticated', () => {
-      useAuthStore.setState({ activeCashier: null });
+    it('renders "Activar Admin" button when no cashier is authenticated and opens login modal on click', async () => {
+      useAuthStore.setState({
+        activeCashier: null,
+        cashiers: [
+          { id: 'c-3', name: 'Don Roberto', role: 'jefe', pin: '9999' },
+        ],
+      });
 
       render(<TopBar />);
 
-      expect(screen.getByText(/esperando operador/i)).toBeInTheDocument();
+      const activateAdminBtn = screen.getByRole('button', { name: /activar admin/i });
+      expect(activateAdminBtn).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /bloquear/i })).not.toBeInTheDocument();
+
+      fireEvent.click(activateAdminBtn);
+
+      expect(await screen.findByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByText(/acceso autorizado/i)).toBeInTheDocument();
     });
 
-    it('renders store name from storeSession or fallback message', () => {
+    it('renders minimal brand title Ámbar', () => {
       useAuthStore.setState({
         storeSession: {
           storeId: 'store-100',
@@ -114,8 +125,7 @@ describe('TopBar Navigation Component (Strict TDD)', () => {
 
       render(<TopBar />);
 
-      expect(screen.getByText(/Fiambrería El Ámbar/i)).toBeInTheDocument();
-      expect(screen.getByText('CreditAmbar')).toBeInTheDocument();
+      expect(screen.getByText('Ámbar')).toBeInTheDocument();
     });
   });
 
