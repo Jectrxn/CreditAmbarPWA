@@ -12,12 +12,30 @@ export interface WhatsAppTransactionInfo {
   cashier_pin_hash?: string;
 }
 
+import { useSettingsStore } from '../../store/settingsStore';
+
 /**
  * Sanitizes a phone number by stripping all non-digit characters.
  */
 export function sanitizePhoneNumber(phone?: string): string {
   if (!phone) return '';
   return phone.replace(/[^\d]/g, '');
+}
+
+export function generateWhatsAppMessageText(
+  customer: WhatsAppCustomerInfo,
+  storeName: string = 'CreditAmbar'
+): string {
+  const formattedBalance = customer.balance.toFixed(2);
+  
+  const settings = useSettingsStore.getState().settings;
+  const greeting = settings.whatsappGreeting
+    .replace('{nombre}', customer.name)
+    .replace('{tienda}', storeName);
+  
+  const paymentInfo = settings.paymentAccountInfo ? `\n\n${settings.paymentAccountInfo}` : '';
+
+  return `${greeting} que tienes un saldo pendiente de S/ ${formattedBalance}. Agradecemos tu pronto pago.${paymentInfo}`;
 }
 
 /**
@@ -28,9 +46,7 @@ export function generateWhatsAppPaymentReminder(
   storeName: string = 'CreditAmbar'
 ): string {
   const cleanPhone = sanitizePhoneNumber(customer.phone);
-  const formattedBalance = customer.balance.toFixed(2);
-
-  const message = `Hola ${customer.name}, te recordamos de ${storeName} que tienes un saldo pendiente de $${formattedBalance}. Agradecemos tu pronto pago. ¡Muchas gracias!`;
+  const message = generateWhatsAppMessageText(customer, storeName);
   const encodedText = encodeURIComponent(message);
 
   if (cleanPhone) {

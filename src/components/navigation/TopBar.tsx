@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Lock, Wifi, WifiOff, RefreshCw, AlertCircle, Shield, User, Crown, ShieldCheck } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Lock, Wifi, WifiOff, RefreshCw, AlertCircle, Shield, User, Crown, ShieldCheck, Settings } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useSyncStatus } from '../../hooks/useSyncStatus';
 import type { SyncStatus } from '../../lib/syncManager';
 import { CashierLoginModal } from '../modals/CashierLoginModal';
+import { SettingsModal } from '../modals/SettingsModal';
 
 export interface TopBarProps {
   className?: string;
@@ -48,21 +49,32 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
   const syncStatus = useSyncStatus();
   const syncConfig = syncStatusMap[syncStatus] || syncStatusMap.online;
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  const currentDateFormatted = useMemo(() => {
+    const now = new Date();
+    const str = now.toLocaleDateString('es-PE', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }, []);
 
   return (
     <>
       <header
-        className={`sticky top-0 z-40 w-full px-3 py-1.5 rounded-full bg-white/[0.60] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/40 border-b-white/15 shadow-[0_16px_36px_-8px_rgba(15,23,42,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center justify-between gap-2 transition-all duration-200 ${className}`}
+        className={`sticky top-0 z-40 w-full px-3 py-1.5 rounded-full bg-white/[0.22] hover:bg-white/[0.28] backdrop-blur-[18px] backdrop-saturate-[190%] border border-t-white/95 border-x-white/35 border-b-white/15 shadow-[0_16px_36px_-8px_rgba(15,23,42,0.14),0_4px_16px_rgba(0,0,0,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center justify-between gap-2 transition-all duration-300 ${className}`}
       >
         {/* Top Specular Rim Reflection */}
         <span
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-full bg-gradient-to-b from-white/60 via-white/10 to-transparent"
+          className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-full bg-gradient-to-b from-white/50 via-white/10 to-transparent"
         />
 
         {/* Brand & Store Info */}
         <div className="relative z-10 flex items-center gap-2 min-w-0">
-          <div className="h-8 w-8 rounded-full bg-white/[0.80] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 p-0.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.06)] flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-full bg-white/[0.60] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 p-0.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.06)] flex items-center justify-center shrink-0">
             <img
               src="/logo-ambar.png"
               alt="Ámbar"
@@ -73,9 +85,12 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
             />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-black tracking-tight text-slate-900 drop-shadow-2xs whitespace-nowrap">
+            <h1 className="text-xs sm:text-sm font-black tracking-tight text-slate-900 drop-shadow-2xs whitespace-nowrap leading-tight">
               Ámbar
             </h1>
+            <span className="text-[10px] font-bold text-slate-500 capitalize block leading-none">
+              {currentDateFormatted}
+            </span>
           </div>
         </div>
 
@@ -98,7 +113,7 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
               <button
                 type="button"
                 onClick={() => setIsLoginModalOpen(true)}
-                className="text-[10px] bg-white/[0.60] hover:bg-white/[0.85] active:scale-95 backdrop-blur-md px-2.5 py-1 rounded-full border border-t-white border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85)] text-slate-800 font-bold flex items-center gap-1 cursor-pointer transition"
+                className="text-[10px] bg-white/[0.45] hover:bg-white/[0.75] active:scale-95 backdrop-blur-md px-2.5 py-1 rounded-full border border-t-white border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85)] text-slate-800 font-bold flex items-center gap-1 cursor-pointer transition"
                 title="Cambiar operador o rol"
               >
                 {activeCashier.role === 'jefe' ? (
@@ -113,10 +128,21 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
                   ({activeCashier.role === 'jefe' ? 'Admin' : activeCashier.role})
                 </span>
               </button>
+              {activeCashier.role === 'jefe' && (
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="p-1.5 rounded-full bg-white/[0.45] hover:bg-white/[0.75] border border-white/60 text-slate-600 hover:text-slate-800 transition cursor-pointer shadow-2xs"
+                  title="Ajustes de tienda"
+                >
+                  <Settings className="w-3 h-3 text-slate-700" />
+                  <span className="sr-only">Ajustes</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={lockSession}
-                className="p-1.5 rounded-full bg-white/[0.5] hover:bg-white/[0.85] border border-white/60 text-slate-600 hover:text-amber-800 transition cursor-pointer shadow-2xs"
+                className="p-1.5 rounded-full bg-white/[0.45] hover:bg-white/[0.75] border border-white/60 text-slate-600 hover:text-amber-800 transition cursor-pointer shadow-2xs"
                 title="Bloquear sesión"
               >
                 <Lock className="w-3 h-3 text-amber-700" />
@@ -125,14 +151,14 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
             </div>
           ) : (
             <div className="flex items-center gap-1">
-
               <button
                 type="button"
                 onClick={() => setIsLoginModalOpen(true)}
-                className="text-[10px] font-black text-amber-950 bg-gradient-to-r from-amber-300 to-amber-400 hover:from-amber-200 hover:to-amber-300 active:scale-95 backdrop-blur-md px-2.5 py-1 rounded-full border border-t-white border-b-amber-500/50 shadow-2xs flex items-center gap-1 cursor-pointer transition"
+                aria-label="Ingresar / Activar Admin"
+                className="text-[11px] font-bold text-slate-800 bg-white/[0.50] hover:bg-white/[0.80] hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),0_4px_12px_rgba(245,158,11,0.12)] active:scale-95 backdrop-blur-md px-2 sm:px-2.5 py-1 rounded-full border border-t-white border-x-white/50 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_1px_3px_rgba(15,23,42,0.04)] flex items-center gap-1 cursor-pointer transition-all duration-200"
               >
-                <Shield className="w-3 h-3 text-amber-900 shrink-0" />
-                <span>Activar Admin</span>
+                <Shield className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                <span>Ingresar</span>
               </button>
             </div>
           )}
@@ -143,6 +169,11 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
       <CashierLoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
       />
     </>
   );

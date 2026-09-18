@@ -5,6 +5,7 @@ import { db } from '../../lib/dexie';
 import { useAuthStore } from '../../store/authStore';
 import { updateCustomer } from '../../features/credit/creditService';
 import { generateWhatsAppPaymentReminder } from '../../features/transactions/whatsappHelper';
+import { useReminderStore } from '../../store/reminderStore';
 import {
   Phone,
   MessageSquare,
@@ -12,6 +13,7 @@ import {
   ArrowDownLeft,
   Edit2,
   Check,
+  CheckCircle2,
   X,
   Calendar,
   Clock,
@@ -35,6 +37,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   onCustomerUpdated,
 }) => {
   const { storeSession } = useAuthStore();
+  const { sentReminders, markAsSent } = useReminderStore();
   const [customer, setCustomer] = useState<Customer | undefined>(initialCustomer);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [isLoadingTx, setIsLoadingTx] = useState(false);
@@ -135,7 +138,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         <div className="p-4 rounded-3xl bg-white/[0.60] backdrop-blur-[20px] backdrop-saturate-[180%] border border-t-white border-x-white/40 border-b-white/15 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_6px_20px_-4px_rgba(15,23,42,0.06)] space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-400 to-amber-300 text-slate-950 font-black text-xl flex items-center justify-center shrink-0 border border-white/80 shadow-2xs">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-300 to-amber-200 text-slate-950 font-black text-xl flex items-center justify-center shrink-0 border border-white/90 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_4px_12px_rgba(245,158,11,0.25)]">
                 {initialLetter}
               </div>
 
@@ -227,12 +230,12 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
           {/* Balance Metrics Grid */}
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/20">
-            <div className="p-2.5 rounded-2xl bg-white/[0.60] backdrop-blur-md border border-white/60 shadow-2xs">
+            <div className="p-3 rounded-2xl bg-white/[0.65] backdrop-blur-[16px] border border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(15,23,42,0.04)]">
               <span className="block text-[9px] font-black text-slate-500 uppercase tracking-wider">
                 Deuda Actual
               </span>
               <span
-                className={`block text-base sm:text-lg font-black leading-tight ${
+                className={`block text-base sm:text-lg font-black leading-tight mt-0.5 ${
                   customer.balance > 0 ? 'text-rose-600' : 'text-emerald-600'
                 }`}
               >
@@ -243,11 +246,11 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </span>
             </div>
 
-            <div className="p-2.5 rounded-2xl bg-white/[0.60] backdrop-blur-md border border-white/60 shadow-2xs">
+            <div className="p-3 rounded-2xl bg-white/[0.65] backdrop-blur-[16px] border border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_8px_rgba(15,23,42,0.04)]">
               <span className="block text-[9px] font-black text-slate-500 uppercase tracking-wider">
                 Crédito Disponible
               </span>
-              <span className="block text-base sm:text-lg font-black text-slate-900 leading-tight">
+              <span className="block text-base sm:text-lg font-black text-slate-900 leading-tight mt-0.5">
                 S/ {availableCredit.toFixed(2)}
               </span>
               <span className="block text-[9px] font-bold text-slate-400 mt-0.5">
@@ -285,10 +288,14 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               onClose();
               onOpenCreditModal(customer);
             }}
-            className="relative overflow-hidden flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-full bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/90 backdrop-blur-[16px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 text-slate-950 font-black text-xs shadow-[0_4px_12px_rgba(245,158,11,0.35),inset_0_1px_1.5px_rgba(255,255,255,0.9)] hover:from-amber-400 hover:to-amber-500 active:scale-95 transition cursor-pointer"
+            className="relative overflow-hidden flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-full bg-gradient-to-tr from-amber-400/95 via-amber-300/95 to-amber-200/90 text-slate-950 font-black text-xs border border-t-white/95 border-x-white/40 border-b-amber-600/40 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_8px_20px_rgba(245,158,11,0.25)] hover:from-amber-300 hover:to-amber-100 active:scale-95 transition cursor-pointer"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>+ Fiar</span>
+            <span
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/60 via-white/10 to-transparent rounded-t-full"
+            />
+            <Plus className="w-4 h-4 stroke-[3] relative z-10" />
+            <span className="relative z-10">+ Fiar</span>
           </button>
 
           <button
@@ -297,10 +304,14 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               onClose();
               onOpenPaymentModal(customer);
             }}
-            className="relative overflow-hidden flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-full bg-gradient-to-b from-emerald-500/95 via-emerald-600/90 to-emerald-700/90 backdrop-blur-[16px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-emerald-800/50 text-white font-black text-xs shadow-[0_4px_12px_rgba(16,185,129,0.35),inset_0_1px_1.5px_rgba(255,255,255,0.9)] hover:from-emerald-500 hover:to-emerald-600 active:scale-95 transition cursor-pointer"
+            className="relative overflow-hidden flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-full bg-gradient-to-tr from-emerald-500/90 via-emerald-400/95 to-teal-300/90 text-emerald-950 font-black text-xs border border-t-white/95 border-x-white/40 border-b-emerald-700/40 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_8px_20px_rgba(16,185,129,0.25)] hover:from-emerald-400 hover:to-teal-200 active:scale-95 transition cursor-pointer"
           >
-            <ArrowDownLeft className="w-4 h-4 stroke-[3]" />
-            <span>Abonar / Cobrar</span>
+            <span
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/60 via-white/10 to-transparent rounded-t-full"
+            />
+            <ArrowDownLeft className="w-4 h-4 stroke-[3] relative z-10" />
+            <span className="relative z-10">Abonar / Cobrar</span>
           </button>
         </div>
 
@@ -313,10 +324,24 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-950 font-bold text-xs border border-emerald-500/30 transition active:scale-98 cursor-pointer shadow-2xs"
+            onClick={() => markAsSent(customer.id)}
+            className={`relative overflow-hidden flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-2xl font-bold text-xs border border-t-white/90 border-x-emerald-500/30 border-b-emerald-600/20 backdrop-blur-md transition active:scale-98 cursor-pointer shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.8),0_2px_8px_rgba(16,185,129,0.15)] ${
+              sentReminders.includes(customer.id)
+                ? 'bg-emerald-500/20 text-emerald-950 border-emerald-400/50'
+                : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-950'
+            }`}
           >
-            <MessageSquare className="w-4 h-4 text-emerald-600" />
-            <span>Enviar recordatorio por WhatsApp</span>
+            {sentReminders.includes(customer.id) ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 stroke-[2.5]" />
+                <span>Recordatorio enviado hoy</span>
+              </>
+            ) : (
+              <>
+                <MessageSquare className="w-4 h-4 text-emerald-700 stroke-[2.5]" />
+                <span>Enviar recordatorio por WhatsApp</span>
+              </>
+            )}
           </a>
         )}
 

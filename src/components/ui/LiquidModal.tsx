@@ -10,6 +10,7 @@ export interface LiquidModalProps {
   children: ReactNode;
   footer?: ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  variant?: 'center' | 'bottom-sheet';
   showCloseButton?: boolean;
   closeOnBackdropClick?: boolean;
   className?: string;
@@ -32,6 +33,7 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
   children,
   footer,
   maxWidth = 'md',
+  variant = 'center',
   showCloseButton = true,
   closeOnBackdropClick = true,
   className,
@@ -68,11 +70,18 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
     }
   };
 
+  const isBottomSheet = variant === 'bottom-sheet';
+
   const modalContent = (
     <div
       data-testid={`${testId}-backdrop`}
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-900/30 backdrop-blur-md transition-all duration-300 animate-in fade-in"
+      className={twMerge(
+        'fixed inset-0 z-50 flex transition-all duration-300 animate-in fade-in',
+        isBottomSheet
+          ? 'items-end justify-center bg-black/25 backdrop-blur-xl'
+          : 'items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-900/30 backdrop-blur-md'
+      )}
       role="presentation"
     >
       <div
@@ -81,20 +90,53 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
         aria-modal="true"
         aria-labelledby={title ? 'liquid-modal-title' : undefined}
         className={twMerge(
-          'glass-panel relative overflow-hidden w-full rounded-[2.5rem]',
-          'border border-t-white/85 border-x-white/30 border-b-white/18',
-          'bg-white/[0.08] backdrop-blur-[17px] backdrop-saturate-[180%]',
-          'shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.1),0_25px_50px_-12px_rgba(15,23,42,0.30)]',
-          'text-slate-900 flex flex-col max-h-[92vh] sm:max-h-[88vh]',
-          'landscape:max-h-[85vh] landscape:my-auto',
+          'glass-panel relative overflow-hidden w-full',
+          'border border-t-white/95 border-x-white/40 border-b-white/20',
+          'bg-white/[0.82] backdrop-blur-[24px] backdrop-saturate-[190%]',
+          'text-slate-900 flex flex-col',
+          isBottomSheet
+            ? [
+                'rounded-t-[2rem] rounded-b-none max-w-lg',
+                'max-h-[90vh]',
+                'shadow-[0_-8px_40px_-4px_rgba(15,23,42,0.18),inset_0_1.5px_2px_rgba(255,255,255,0.95)]',
+                'animate-in slide-in-from-bottom-12 duration-300 ease-out',
+              ].join(' ')
+            : [
+                'rounded-[2.5rem]',
+                'max-h-[92vh] sm:max-h-[88vh]',
+                'landscape:max-h-[85vh] landscape:my-auto',
+                'shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_25px_50px_-12px_rgba(15,23,42,0.25)]',
+              ].join(' '),
           maxWidthMap[maxWidth],
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Top Specular Rim Reflection */}
+        <span
+          aria-hidden="true"
+          className={twMerge(
+            'absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/60 via-white/10 to-transparent',
+            isBottomSheet ? 'rounded-t-[2rem]' : 'rounded-t-[2.5rem]'
+          )}
+        />
+
+        {/* Drag Handle (bottom-sheet only) */}
+        {isBottomSheet && (
+          <div className="relative z-10 flex justify-center pt-3 pb-1 shrink-0">
+            <span
+              aria-hidden="true"
+              className="w-9 h-1 rounded-full bg-slate-400/40"
+            />
+          </div>
+        )}
+
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="relative z-10 flex items-center justify-between border-b border-white/20 px-6 py-4 shrink-0">
+          <div className={twMerge(
+            'relative z-10 flex items-center justify-between border-b border-white/30 shrink-0',
+            isBottomSheet ? 'px-5 py-3' : 'px-6 py-4'
+          )}>
             {title ? (
               <div id="liquid-modal-title" className="text-lg font-bold text-slate-900 tracking-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)]">
                 {title}
@@ -107,7 +149,7 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar modal"
-                className="rounded-full p-2 text-slate-400 hover:text-slate-800 hover:bg-white/40 active:bg-white/60 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                className="rounded-full p-2 text-slate-500 hover:text-slate-800 hover:bg-white/50 active:bg-white/70 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -115,14 +157,22 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
           </div>
         )}
 
-        {/* Scrollable Body with landscape/portrait adaptation */}
-        <div className="relative z-10 flex-1 overflow-y-auto px-6 py-4 text-slate-700">
+        {/* Scrollable Body */}
+        <div className={twMerge(
+          'relative z-10 flex-1 overflow-y-auto text-slate-700',
+          isBottomSheet ? 'px-5 py-3' : 'px-6 py-4'
+        )}>
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="relative z-10 border-t border-white/20 px-6 py-4 bg-white/[0.05] backdrop-blur-[17px] rounded-b-[2.5rem] shrink-0 flex items-center justify-end gap-2.5">
+          <div className={twMerge(
+            'relative z-10 border-t border-white/30 bg-white/[0.35] backdrop-blur-[18px] shrink-0 flex items-center justify-end gap-2.5',
+            isBottomSheet
+              ? 'px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
+              : 'px-6 py-4 rounded-b-[2.5rem]'
+          )}>
             {footer}
           </div>
         )}

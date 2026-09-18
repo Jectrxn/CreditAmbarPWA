@@ -253,5 +253,45 @@ describe('CustomersPage Component (Strict TDD)', () => {
         expect(screen.getByText(/\+ S\/ 100\.00/i)).toBeInTheDocument();
       });
     });
+
+    it('renders alphabetical quick jump strip (A-Z) and supports clicking initials', async () => {
+      renderCustomersPage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Angeles')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('A-Z:')).toBeInTheDocument();
+      const letterD = screen.getByRole('button', { name: /ir a letra d/i });
+      const letterZ = screen.getByRole('button', { name: /ir a letra z/i });
+      expect(letterD).toBeInTheDocument();
+      expect(letterZ).toBeInTheDocument();
+
+      fireEvent.click(letterD);
+    });
+
+    it('opens BatchReminderModal when clicking Recordar Deudas and displays debtor accounts', async () => {
+      renderCustomersPage();
+
+      await waitFor(() => {
+        expect(screen.getByText(/cobranza masiva \(2\)/i)).toBeInTheDocument();
+      });
+
+      const batchBtn = screen.getByRole('button', { name: /recordar deudas/i });
+      fireEvent.click(batchBtn);
+
+      expect(await screen.findByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByText(/recordatorios de cobro/i)).toBeInTheDocument();
+      expect(screen.getByText(/total por cobrar/i)).toBeInTheDocument();
+
+      // Close modal
+      const closeBtn = screen.getByTestId('close-batch-modal-btn');
+      fireEvent.click(closeBtn);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/recordatorios de cobro/i)).not.toBeInTheDocument();
+      });
+    });
   });
 });
+

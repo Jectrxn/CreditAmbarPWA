@@ -98,24 +98,12 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
   });
 
   describe('Primary Action Buttons & Modals', () => {
-    it('opens QuickCreditModal upon clicking "Nuevo Fiado"', async () => {
+    it('delegates global actions to TabBar and keeps home dashboard focused on metrics', async () => {
       renderHomePage();
 
-      const newCreditBtn = screen.getByRole('button', { name: /nuevo fiado/i });
-      fireEvent.click(newCreditBtn);
-
-      expect(await screen.findByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText(/registrar nuevo fiado/i)).toBeInTheDocument();
-    });
-
-    it('opens QuickPaymentModal upon clicking "Registrar Abono"', async () => {
-      renderHomePage();
-
-      const paymentBtn = screen.getByRole('button', { name: /registrar abono/i });
-      fireEvent.click(paymentBtn);
-
-      expect(await screen.findByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText(/registrar abono \/ pago/i)).toBeInTheDocument();
+      // Standalone redundant action buttons are deprecated from home view
+      expect(screen.queryByRole('button', { name: /nuevo fiado/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /registrar abono/i })).not.toBeInTheDocument();
     });
   });
 

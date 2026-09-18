@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { TabBar } from './TabBar';
 import { useAuthStore } from '../../store/authStore';
@@ -85,6 +85,101 @@ describe('TabBar Navigation Component (Strict TDD)', () => {
       expect(nav?.className).toContain('bottom-4');
       expect(nav?.className).toContain('rounded-full');
       expect(nav?.className).toContain('backdrop-blur');
+    });
+  });
+
+  describe('Floating Speed Dial Action Menu (Option A Refinements)', () => {
+    it('opens menu with compacted 310px arc container when central button is clicked', () => {
+      renderWithRouter('/');
+
+      const centralPlusBtn = screen.getByRole('button', { name: /registrar nuevo fiado/i });
+      expect(screen.queryByRole('menu', { name: /acciones rápidas/i })).not.toBeInTheDocument();
+
+      fireEvent.click(centralPlusBtn);
+
+      const menu = screen.getByRole('menu', { name: /acciones rápidas/i });
+      expect(menu).toBeInTheDocument();
+      expect(menu.className).toContain('max-w-[310px]');
+      expect(menu.className).toContain('grid-cols-3');
+    });
+
+    it('renders 3 action orbs with authentic translucent Liquid Glass micro-capsules and caustic ambient halos', () => {
+      renderWithRouter('/');
+
+      const centralPlusBtn = screen.getByRole('button', { name: /registrar nuevo fiado/i });
+      fireEvent.click(centralPlusBtn);
+
+      const fiadoBtn = screen.getByRole('menuitem', { name: /registrar nuevo fiado/i });
+      const abonarBtn = screen.getByRole('menuitem', { name: /registrar abono/i });
+      const clienteBtn = screen.getByRole('menuitem', { name: /registrar nuevo cliente/i });
+
+      expect(fiadoBtn).toBeInTheDocument();
+      expect(abonarBtn).toBeInTheDocument();
+      expect(clienteBtn).toBeInTheDocument();
+
+      // Verify Option A Micro-Capsule badges
+      const fiadoBadge = screen.getByText('Nuevo Fiado');
+      const abonarBadge = screen.getByText('Abonar');
+      const clienteBadge = screen.getByText('Cliente');
+
+      for (const badge of [fiadoBadge, abonarBadge, clienteBadge]) {
+        expect(badge.className).toContain('bg-white/[0.35]');
+        expect(badge.className).toContain('backdrop-blur-[16px]');
+        expect(badge.className).toContain('border-white/80');
+        expect(badge.className).toContain('text-slate-900');
+        expect(badge.className).toContain('font-extrabold');
+        expect(badge.className).toContain('shadow-sm');
+      }
+
+      // Verify caustic colored ambient glow outer collar halos
+      const fiadoHalo = fiadoBtn.querySelector('div');
+      const abonarHalo = abonarBtn.querySelector('div');
+      const clienteHalo = clienteBtn.querySelector('div');
+
+      expect(fiadoHalo?.className).toContain('shadow-[0_8px_24px_rgba(245,158,11,0.28)]');
+      expect(abonarHalo?.className).toContain('shadow-[0_8px_24px_rgba(16,185,129,0.28)]');
+      expect(clienteHalo?.className).toContain('shadow-[0_8px_24px_rgba(14,165,233,0.28)]');
+    });
+
+    it('closes the Speed Dial menu when clicking the backdrop', () => {
+      const { container } = renderWithRouter('/');
+
+      const centralPlusBtn = screen.getByRole('button', { name: /registrar nuevo fiado/i });
+      fireEvent.click(centralPlusBtn);
+
+      expect(screen.getByRole('menu', { name: /acciones rápidas/i })).toBeInTheDocument();
+
+      // Find and click the glass backdrop
+      const backdrop = container.querySelector('.bg-slate-950\\/35');
+      expect(backdrop).toBeInTheDocument();
+      fireEvent.click(backdrop!);
+
+      expect(screen.queryByRole('menu', { name: /acciones rápidas/i })).not.toBeInTheDocument();
+    });
+
+    it('closes the Speed Dial menu when pressing Escape key', () => {
+      renderWithRouter('/');
+
+      const centralPlusBtn = screen.getByRole('button', { name: /registrar nuevo fiado/i });
+      fireEvent.click(centralPlusBtn);
+
+      expect(screen.getByRole('menu', { name: /acciones rápidas/i })).toBeInTheDocument();
+
+      fireEvent.keyDown(window, { key: 'Escape' });
+
+      expect(screen.queryByRole('menu', { name: /acciones rápidas/i })).not.toBeInTheDocument();
+    });
+
+    it('closes the Speed Dial menu when selecting an action', () => {
+      renderWithRouter('/');
+
+      const centralPlusBtn = screen.getByRole('button', { name: /registrar nuevo fiado/i });
+      fireEvent.click(centralPlusBtn);
+
+      const fiadoBtn = screen.getByRole('menuitem', { name: /registrar nuevo fiado/i });
+      fireEvent.click(fiadoBtn);
+
+      expect(screen.queryByRole('menu', { name: /acciones rápidas/i })).not.toBeInTheDocument();
     });
   });
 });

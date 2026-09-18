@@ -165,7 +165,7 @@ export const CashierLoginModal: React.FC<CashierLoginModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="cashier-login-title"
-        className="relative w-full sm:max-w-sm mt-auto sm:mt-0 flex flex-col overflow-hidden max-h-[92vh] animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-8 duration-500 pb-safe rounded-t-[2.5rem] rounded-b-none sm:rounded-b-[2.5rem] bg-white/[0.60] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white border-x-white/40 border-b-white/15 shadow-[0_16px_36px_-8px_rgba(15,23,42,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95)]"
+        className="relative w-full sm:max-w-sm mt-auto sm:mt-0 flex flex-col overflow-hidden max-h-[92vh] animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-8 duration-500 pb-safe rounded-t-[2.5rem] rounded-b-none sm:rounded-b-[2.5rem] bg-white/[0.80] backdrop-blur-[24px] backdrop-saturate-[190%] border border-t-white/95 border-x-white/40 border-b-white/20 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.25),inset_0_1.5px_2px_rgba(255,255,255,0.95)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Specular Rim Reflection */}
@@ -272,8 +272,12 @@ export const CashierLoginModal: React.FC<CashierLoginModalProps> = ({
                         <p className={`text-[11px] font-black tracking-wide ${isSelected ? 'text-amber-950' : 'text-slate-900'}`}>
                           {roleInfo.label}
                         </p>
-                        <p className="text-[9px] font-bold text-slate-700 truncate w-full max-w-[80px] mx-auto">
-                          {cashier.name}
+                        <p className="text-[9px] font-bold text-slate-600 truncate w-full max-w-[90px] mx-auto">
+                          {cashier.name !== roleInfo.label && cashier.name !== 'Administrador'
+                            ? cashier.name
+                            : cashier.role === 'jefe'
+                            ? 'Control Total'
+                            : 'Autorizaciones'}
                         </p>
                       </div>
                     </div>
@@ -285,12 +289,12 @@ export const CashierLoginModal: React.FC<CashierLoginModalProps> = ({
 
           {/* PIN Entry Area */}
           {selectedCashier && (
-            <div className="p-4 rounded-[32px] bg-white/[0.85] backdrop-blur-2xl backdrop-saturate-[180%] border border-t-white border-x-white/40 border-b-white/10 shadow-[0_16px_32px_-12px_rgba(15,23,42,0.1),inset_0_2px_3px_rgba(255,255,255,0.9)] space-y-5 text-center">
+            <div className="p-4 rounded-[32px] bg-white/[0.85] backdrop-blur-2xl backdrop-saturate-[180%] border border-t-white border-x-white/50 border-b-white/20 shadow-[0_16px_32px_-12px_rgba(15,23,42,0.1),inset_0_2px_3px_rgba(255,255,255,0.95)] space-y-5 text-center">
               <div>
                 <p className="text-[11px] font-black tracking-widest text-slate-800 uppercase drop-shadow-sm">
                   PIN de {selectedCashier.role === 'jefe' ? 'Administrador' : 'Supervisor'}
                 </p>
-                <p className="text-[10px] text-slate-600 font-semibold mt-1">
+                <p className="text-[10px] text-slate-500 font-semibold mt-1">
                   Ingrese su código de 4 dígitos
                 </p>
               </div>
@@ -304,10 +308,10 @@ export const CashierLoginModal: React.FC<CashierLoginModalProps> = ({
                       key={index}
                       className={`w-4 h-4 rounded-full border transition-all duration-300 ${
                         isSuccessFeedback
-                          ? 'bg-emerald-400 border-emerald-300 scale-110 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
+                          ? 'bg-emerald-400 border-emerald-300 scale-110 shadow-[0_0_10px_rgba(52,211,153,0.6)]'
                           : isFilled
-                          ? 'bg-amber-400 border-amber-300 scale-110 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
-                          : 'bg-white/50 border-slate-300/50 shadow-inner'
+                          ? 'bg-gradient-to-tr from-amber-500 to-amber-400 border-amber-300 scale-110 shadow-[0_0_10px_rgba(245,158,11,0.5)]'
+                          : 'bg-slate-200/80 border-slate-300 shadow-inner'
                       }`}
                     />
                   );
@@ -328,7 +332,7 @@ export const CashierLoginModal: React.FC<CashierLoginModalProps> = ({
                     key={num}
                     type="button"
                     onClick={() => handleKeypadPress(num)}
-                    className="py-3 text-lg font-black text-slate-900 bg-white/90 hover:bg-white active:scale-90 backdrop-blur-md rounded-2xl border border-t-white border-x-white/80 border-b-white/40 shadow-[0_4px_10px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.9)] transition-all cursor-pointer"
+                    className="py-3 text-lg font-black text-slate-800 bg-white/95 hover:bg-amber-50/60 hover:text-amber-950 active:bg-amber-100/80 active:shadow-[0_0_12px_rgba(245,158,11,0.35),inset_0_1.5px_2px_rgba(255,255,255,0.95)] active:scale-90 backdrop-blur-md rounded-2xl border border-t-white/95 border-x-white/80 border-b-slate-200/60 shadow-[0_4px_10px_rgba(15,23,42,0.05),inset_0_1.5px_2px_rgba(255,255,255,0.95)] transition-all duration-150 cursor-pointer"
                   >
                     {num}
                   </button>
@@ -337,7 +341,7 @@ export const CashierLoginModal: React.FC<CashierLoginModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleKeypadPress('0')}
-                  className="py-3 text-lg font-black text-slate-900 bg-white/90 hover:bg-white active:scale-90 backdrop-blur-md rounded-2xl border border-t-white border-x-white/80 border-b-white/40 shadow-[0_4px_10px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.9)] transition-all cursor-pointer"
+                  className="py-3 text-lg font-black text-slate-800 bg-white/95 hover:bg-amber-50/60 hover:text-amber-950 active:bg-amber-100/80 active:shadow-[0_0_12px_rgba(245,158,11,0.35),inset_0_1.5px_2px_rgba(255,255,255,0.95)] active:scale-90 backdrop-blur-md rounded-2xl border border-t-white/95 border-x-white/80 border-b-slate-200/60 shadow-[0_4px_10px_rgba(15,23,42,0.05),inset_0_1.5px_2px_rgba(255,255,255,0.95)] transition-all duration-150 cursor-pointer"
                 >
                   0
                 </button>
@@ -345,7 +349,7 @@ export const CashierLoginModal: React.FC<CashierLoginModalProps> = ({
                   type="button"
                   onClick={handleBackspace}
                   aria-label="Borrar dígito"
-                  className="py-3 flex items-center justify-center text-slate-700 hover:text-slate-900 bg-white/90 hover:bg-white active:scale-90 backdrop-blur-md rounded-2xl border border-t-white border-x-white/80 border-b-white/40 shadow-[0_4px_10px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.9)] transition-all cursor-pointer"
+                  className="py-3 flex items-center justify-center text-slate-600 hover:text-rose-700 bg-white/95 hover:bg-rose-50/60 active:bg-rose-100/80 active:shadow-[0_0_12px_rgba(244,63,94,0.35),inset_0_1.5px_2px_rgba(255,255,255,0.95)] active:scale-90 backdrop-blur-md rounded-2xl border border-t-white/95 border-x-white/80 border-b-slate-200/60 shadow-[0_4px_10px_rgba(15,23,42,0.05),inset_0_1.5px_2px_rgba(255,255,255,0.95)] transition-all duration-150 cursor-pointer"
                 >
                   <Delete className="w-5 h-5" />
                 </button>

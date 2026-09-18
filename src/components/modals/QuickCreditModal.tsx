@@ -9,6 +9,9 @@ import {
   AlertCircle,
   CheckCircle2,
   MessageSquare,
+  Users,
+  Wallet,
+  FileText,
 } from 'lucide-react';
 
 export interface QuickCreditModalProps {
@@ -157,13 +160,21 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={completedTx ? '¡Fiado Registrado!' : '+ Registrar Nuevo Fiado'}
+      variant="bottom-sheet"
       maxWidth="md"
     >
-      <div className="py-2 space-y-4">
+      <div className="py-1 space-y-4">
         {completedTx ? (
+          /* ─── SUCCESS STATE ─── */
           <div className="text-center space-y-4 py-2">
-            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-7 h-7" />
+            {/* Success Orb */}
+            <div className="relative w-14 h-14 mx-auto">
+              <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_30%,#fde68a_0%,#f59e0b_55%,#d97706_100%)] shadow-[0_8px_22px_rgba(245,158,11,0.40),inset_0_1.5px_2px_rgba(255,255,255,0.95)] border border-white/80" />
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_38%_25%,rgba(255,255,255,0.85)_0%,rgba(255,255,255,0.2)_35%,transparent_60%)] pointer-events-none"
+              />
+              <CheckCircle2 className="absolute inset-0 m-auto w-7 h-7 text-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]" />
             </div>
 
             <div>
@@ -173,7 +184,8 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               </p>
             </div>
 
-            <div className="p-4 bg-white/[0.10] backdrop-blur-md rounded-2xl border border-t-white/80 border-x-white/25 border-b-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] text-xs space-y-1.5 text-left max-w-sm mx-auto">
+            {/* Summary Glass Card */}
+            <div className="p-4 bg-white/[0.40] backdrop-blur-[14px] rounded-2xl border border-white/70 border-t-white/90 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.04)] text-xs space-y-1.5 text-left max-w-sm mx-auto">
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Nuevo Saldo Deuda:</span>
                 <span className="font-bold text-rose-600">S/ {completedTx.customer.balance.toFixed(2)}</span>
@@ -184,19 +196,20 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                   S/ {Math.max(0, completedTx.customer.credit_limit - completedTx.customer.balance).toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between border-t border-white/20 pt-1.5 text-[11px]">
+              <div className="flex justify-between border-t border-white/40 pt-1.5 text-[11px]">
                 <span className="text-slate-500 font-medium">Atendido por:</span>
                 <span className="font-bold text-slate-900">{completedTx.transaction.cashier_pin_hash}</span>
               </div>
               {completedTx.transaction.notes && (
-                <div className="flex justify-between border-t border-white/20 pt-1.5 text-[11px]">
+                <div className="flex justify-between border-t border-white/40 pt-1.5 text-[11px]">
                   <span className="text-slate-500 font-medium">Detalle:</span>
                   <span className="font-medium text-slate-800">{completedTx.transaction.notes}</span>
                 </div>
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2 pt-2 pb-[env(safe-area-inset-bottom,0px)]">
               <a
                 href={generateWhatsAppReceipt(
                   completedTx.transaction,
@@ -205,23 +218,25 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-black text-white bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-full border border-t-white/80 border-b-emerald-700/50 shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] transition active:scale-95 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 px-5 py-3 text-xs font-black text-white bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-2xl border border-t-white/80 border-b-emerald-700/50 shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] transition active:scale-[0.97] cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>Enviar WhatsApp</span>
+                <span>Enviar Recibo por WhatsApp</span>
               </a>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-slate-700 bg-white/[0.12] hover:bg-white/[0.22] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-full transition active:scale-95 cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]"
+                className="w-full px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-2xl transition cursor-pointer active:scale-[0.97]"
               >
                 Cerrar
               </button>
             </div>
           </div>
         ) : (
+          /* ─── FORM STATE ─── */
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Error Alert */}
             {errorMessage && (
               <div className="flex items-center gap-2 p-3 text-xs text-rose-700 bg-rose-50/80 backdrop-blur-md border border-rose-200 rounded-2xl">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -229,15 +244,16 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               </div>
             )}
 
-            {/* Customer Select */}
+            {/* ── Customer Select ── */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Cliente:
+              <label className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                <Users className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Cliente</span>
               </label>
               <select
                 value={selectedCustomerId}
                 onChange={(e) => setSelectedCustomerId(e.target.value)}
-                className="w-full p-2.5 text-xs font-semibold bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                className="w-full p-3 text-sm font-semibold text-slate-900 bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all appearance-none cursor-pointer"
                 required
               >
                 {allCustomers.map((c) => (
@@ -247,21 +263,34 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                   </option>
                 ))}
               </select>
+
+              {/* Dynamic Credit Info Chip */}
+              {activeCustomer && (
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-[10px] font-bold text-amber-800/80 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-400/30">
+                    Deuda: S/ {activeCustomer.balance.toFixed(2)}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-800/80 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                    Disponible: S/ {availableCredit.toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Operator / Atendido por (1-Touch Liquid Glass) */}
+            {/* ── Operator / Atendido por (1-Touch Liquid Glass) ── */}
             <OperatorSelector
               selectedName={operatorName}
               onSelect={(name) => setOperatorName(name)}
             />
 
-            {/* Amount */}
+            {/* ── Amount ── */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Monto Total (S/):
+              <label className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                <Wallet className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Monto Total (S/)</span>
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-500">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-sm font-bold text-slate-400 pointer-events-none">
                   S/
                 </span>
                 <input
@@ -270,42 +299,46 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                   value={amountInput}
                   onChange={(e) => setAmountInput(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-3 py-2.5 text-xs font-bold text-slate-900 bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                  className="w-full pl-9 pr-4 py-3 text-lg font-bold text-slate-900 bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all"
                   required
                 />
               </div>
             </div>
 
-            {/* Products / Notes */}
+            {/* ── Products / Notes ── */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Productos / Detalle del Fiado:
+              <label className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                <FileText className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Detalle del Fiado</span>
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
                 placeholder="Ej. 1 Arroz costeño, 1 Aceite Primor, 2 Leche Gloria..."
-                className="w-full p-2.5 text-xs bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-amber-500/40 focus:outline-none"
+                className="w-full p-3 text-sm bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all resize-none"
               />
             </div>
 
-            {/* Submit */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/20">
+            {/* ── Submit Buttons ── */}
+            <div className="space-y-2 pt-2 pb-[env(safe-area-inset-bottom,0px)]">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="relative overflow-hidden w-full py-3.5 text-sm font-black text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-2xl shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-[0.97] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {/* Specular highlight */}
+                <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-2xl bg-gradient-to-b from-white/50 via-white/10 to-transparent" />
+                <span className="relative z-10">{isSubmitting ? 'Guardando...' : 'Confirmar Fiado'}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-full transition cursor-pointer"
+                className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 rounded-2xl transition cursor-pointer"
               >
                 Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="relative overflow-hidden px-6 py-2.5 text-xs font-black text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-full shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-95 transition cursor-pointer"
-              >
-                {isSubmitting ? 'Guardando...' : 'Confirmar Fiado'}
               </button>
             </div>
           </form>

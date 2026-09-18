@@ -89,8 +89,8 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
       <div className="py-2 space-y-4">
         {createdCustomer ? (
           <div className="text-center space-y-4 py-2">
-            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner border border-emerald-300">
-              <CheckCircle2 className="w-8 h-8" />
+            <div className="w-14 h-14 bg-gradient-to-tr from-emerald-400 via-emerald-300 to-teal-200 text-emerald-950 rounded-2xl flex items-center justify-center mx-auto border border-white/90 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_4px_12px_rgba(16,185,129,0.25)]">
+              <CheckCircle2 className="w-8 h-8 stroke-[2.5]" />
             </div>
 
             <div>
@@ -100,7 +100,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
               </p>
             </div>
 
-            <div className="p-4 bg-white/[0.10] backdrop-blur-md rounded-2xl border border-t-white/80 border-x-white/25 border-b-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] text-xs space-y-2 text-left max-w-sm mx-auto">
+            <div className="p-4 bg-white/[0.60] backdrop-blur-[20px] backdrop-saturate-[180%] rounded-2xl border border-t-white/95 border-x-white/35 border-b-white/15 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_4px_16px_rgba(15,23,42,0.06)] text-xs space-y-2 text-left max-w-sm mx-auto">
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Límite de Crédito:</span>
                 <span className="font-bold text-emerald-700">S/ {createdCustomer.credit_limit.toFixed(2)}</span>
@@ -121,7 +121,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
               <button
                 type="button"
                 onClick={handleClose}
-                className="w-full sm:w-auto px-6 py-2.5 text-xs font-black text-slate-950 bg-gradient-to-b from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-500 rounded-full border border-t-white/80 border-b-amber-600/50 shadow-md transition active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto px-6 py-2.5 text-xs font-black text-slate-950 bg-gradient-to-tr from-amber-400/95 via-amber-300/95 to-amber-200/90 hover:from-amber-300 hover:to-amber-100 rounded-full border border-t-white/95 border-x-white/40 border-b-amber-600/40 shadow-[0_8px_20px_rgba(245,158,11,0.3),inset_0_1.5px_2px_rgba(255,255,255,0.95)] transition active:scale-95 cursor-pointer"
               >
                 Listo / Cerrar
               </button>
@@ -148,7 +148,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej. Diego | Los Angeles, Sr. Otoya"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white/[0.60] backdrop-blur-md border border-t-white/90 border-x-white/40 border-b-white/20 rounded-2xl text-slate-900 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.8)] focus:outline-none focus:bg-white/80 focus:ring-2 focus:ring-amber-500/40"
+                  className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white/[0.65] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.85] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
                   required
                   autoFocus
                 />
@@ -167,7 +167,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Ej. 927268714"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white/[0.60] backdrop-blur-md border border-t-white/90 border-x-white/40 border-b-white/20 rounded-2xl text-slate-900 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.8)] focus:outline-none focus:bg-white/80 focus:ring-2 focus:ring-amber-500/40"
+                  className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white/[0.65] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.85] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
                 />
               </div>
             </div>
@@ -186,7 +186,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   value={creditLimit}
                   onChange={(e) => setCreditLimit(e.target.value)}
                   placeholder="100.00"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs font-bold bg-white/[0.60] backdrop-blur-md border border-t-white/90 border-x-white/40 border-b-white/20 rounded-2xl text-slate-900 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.8)] focus:outline-none focus:bg-white/80 focus:ring-2 focus:ring-amber-500/40"
+                  className="w-full pl-10 pr-4 py-2.5 text-xs font-bold bg-white/[0.65] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.85] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
                 />
               </div>
               <p className="text-[10px] text-slate-500 mt-1 pl-1">
@@ -207,9 +207,13 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="relative overflow-hidden px-6 py-2.5 text-xs font-black text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-full shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-95 transition cursor-pointer"
+                className="relative overflow-hidden px-6 py-2.5 text-xs font-black text-slate-950 bg-gradient-to-tr from-amber-400/95 via-amber-300/95 to-amber-200/90 backdrop-blur-[14px] border border-t-white/95 border-x-white/40 border-b-amber-600/40 rounded-full shadow-[0_8px_20px_rgba(245,158,11,0.35),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:from-amber-300 hover:to-amber-100 active:scale-95 transition cursor-pointer"
               >
-                {isSubmitting ? 'Registrando...' : 'Guardar Cliente'}
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/60 via-white/10 to-transparent rounded-t-full"
+                />
+                <span className="relative z-10">{isSubmitting ? 'Registrando...' : 'Guardar Cliente'}</span>
               </button>
             </div>
           </form>
