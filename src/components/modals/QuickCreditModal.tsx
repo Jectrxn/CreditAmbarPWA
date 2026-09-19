@@ -186,7 +186,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     <LiquidModal
       isOpen={isOpen}
       onClose={onClose}
-      title={completedTx ? '¡Fiado Registrado!' : '+ Registrar Nuevo Fiado'}
+      title={completedTx ? '¡Fiado Registrado!' : 'Registrar Nuevo Fiado'}
       variant="bottom-sheet"
       maxWidth="md"
     >

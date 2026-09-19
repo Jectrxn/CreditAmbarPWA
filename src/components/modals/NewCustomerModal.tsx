@@ -82,7 +82,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
     <LiquidModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={createdCustomer ? '¡Cliente Registrado!' : '+ Nuevo Cliente'}
+      title={createdCustomer ? '¡Cliente Registrado!' : 'Nuevo Cliente'}
       maxWidth="md"
       data-testid="new-customer-modal"
     >
