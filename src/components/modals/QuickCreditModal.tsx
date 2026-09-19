@@ -67,6 +67,33 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     ? Math.max(0, activeCustomer.credit_limit - activeCustomer.balance)
     : 0;
 
+  // CTA guard: never offer "Confirmar Fiado" in an invalid state.
+  // Mirrors handleSubmit validation so the button, not an error alert, is the first line of defense.
+  const parsedAmount = parseFloat(amountInput);
+  const isAmountValid =
+    !isNaN(parsedAmount) && parsedAmount > 0 && parsedAmount <= availableCredit;
+  const isFormValid =
+    Boolean(activeCustomer) && operatorName.trim().length > 0 && isAmountValid;
+
+  // Live balance preview: show the operator the resulting debt BEFORE confirming.
+  const showBalancePreview =
+    Boolean(activeCustomer) && !isNaN(parsedAmount) && parsedAmount > 0;
+  const previewOverBy = showBalancePreview ? parsedAmount - availableCredit : 0;
+  const isOverLimit = previewOverBy > 0;
+  const previewNewBalance = activeCustomer
+    ? activeCustomer.balance + (showBalancePreview ? parsedAmount : 0)
+    : 0;
+  const previewRemaining = activeCustomer
+    ? Math.max(0, availableCredit - (showBalancePreview ? parsedAmount : 0))
+    : 0;
+
+  // Kiosk speed: quick-add chips sum onto the current amount.
+  const QUICK_AMOUNTS = [10, 20, 50];
+  const addQuickAmount = (delta: number) => {
+    const current = !isNaN(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0;
+    setAmountInput(String(Math.round((current + delta) * 100) / 100));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -258,8 +285,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               >
                 {allCustomers.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} — (Debe: S/ {c.balance.toFixed(2)} | Disp: S/{' '}
-                    {Math.max(0, c.credit_limit - c.balance).toFixed(2)})
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -277,10 +303,11 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               )}
             </div>
 
-            {/* ── Operator / Atendido por (1-Touch Liquid Glass) ── */}
+            {/* ── Operator / Atendido por (compact row: no vertical push) ── */}
             <OperatorSelector
               selectedName={operatorName}
               onSelect={(name) => setOperatorName(name)}
+              layout="row"
             />
 
             {/* ── Amount ── */}
@@ -296,6 +323,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                 <input
                   type="number"
                   step="0.10"
+                  inputMode="decimal"
                   value={amountInput}
                   onChange={(e) => setAmountInput(e.target.value)}
                   placeholder="0.00"
@@ -303,6 +331,55 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                   required
                 />
               </div>
+
+              {/* ── Quick-add chips (kiosk speed) ── */}
+              <div className="flex items-center gap-1.5 mt-1.5" role="group" aria-label="Montos rápidos">
+                {QUICK_AMOUNTS.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => addQuickAmount(q)}
+                    className="px-2.5 py-1 text-[11px] font-black text-amber-800 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 rounded-full border border-amber-400/30 transition cursor-pointer"
+                  >
+                    +{q}
+                  </button>
+                ))}
+              </div>
+
+              {/* ── Live balance preview ── */}
+              {showBalancePreview &&
+                (isOverLimit ? (
+                  <div
+                    aria-live="polite"
+                    className="flex items-center gap-1.5 mt-1.5 text-[11px] font-bold text-rose-700"
+                  >
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Excede el disponible por S/ {previewOverBy.toFixed(2)}
+                    </span>
+                  </div>
+                ) : (
+                  <div
+                    aria-live="polite"
+                    className="flex items-center gap-2 mt-1.5 text-[11px] font-semibold text-slate-600"
+                  >
+                    <span>
+                      Nuevo saldo:{' '}
+                      <span className="font-bold text-slate-900">
+                        S/ {previewNewBalance.toFixed(2)}
+                      </span>
+                    </span>
+                    <span aria-hidden="true" className="text-slate-300">
+                      ·
+                    </span>
+                    <span>
+                      Restante:{' '}
+                      <span className="font-bold text-emerald-700">
+                        S/ {previewRemaining.toFixed(2)}
+                      </span>
+                    </span>
+                  </div>
+                ))}
             </div>
 
             {/* ── Products / Notes ── */}
@@ -324,21 +401,12 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
             <div className="space-y-2 pt-2 pb-[env(safe-area-inset-bottom,0px)]">
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isFormValid}
                 className="relative overflow-hidden w-full py-3.5 text-sm font-black text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-2xl shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-[0.97] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {/* Specular highlight */}
                 <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-2xl bg-gradient-to-b from-white/50 via-white/10 to-transparent" />
                 <span className="relative z-10">{isSubmitting ? 'Guardando...' : 'Confirmar Fiado'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 rounded-2xl transition cursor-pointer"
-              >
-                Cancelar
               </button>
             </div>
           </form>

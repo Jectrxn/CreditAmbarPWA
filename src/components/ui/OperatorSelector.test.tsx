@@ -40,4 +40,20 @@ describe('OperatorSelector - 1-Touch Liquid Glass Cashier Selection', () => {
     expect(onSelect).toHaveBeenCalledWith('Anthony');
     expect(useAuthStore.getState().currentOperatorName).toBe('Anthony');
   });
+
+  it('row layout renders the same operators without the grid', () => {
+    const onSelect = vi.fn();
+    const { container } = render(
+      <OperatorSelector selectedName="Martin" onSelect={onSelect} layout="row" />
+    );
+
+    expect(screen.getByText('Martin')).toBeInTheDocument();
+    expect(screen.getByText('Benjamin')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Martin/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    // No 2-col grid in row mode
+    expect(container.querySelector('.grid-cols-2')).not.toBeInTheDocument();
+  });
 });
