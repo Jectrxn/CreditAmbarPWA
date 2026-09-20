@@ -19,11 +19,17 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
   beforeEach(async () => {
     await db.customers.clear();
     await db.creditTransactions.clear();
+    await db.products.clear();
     await db.syncQueue.clear();
 
     await db.customers.put(mockCustomer);
 
     useAuthStore.getState().reset();
+    useAuthStore.getState().setStoreSession({
+      storeId: 'store-1',
+      storeName: 'Ámbar Bodega',
+      authenticatedAt: new Date().toISOString(),
+    });
     useAuthStore.getState().setCashiers(DEFAULT_CASHIERS);
     useAuthStore.getState().setCurrentOperatorName('Martin');
   });
@@ -144,5 +150,112 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     // 70 <= 150 available -> CTA enabled with preview
     expect(submitBtn).not.toBeDisabled();
     expect(await screen.findByText(/Nuevo saldo/i)).toBeInTheDocument();
+  });
+
+  it('suggests catalog products while typing and inserts the tapped name', async () => {
+    await db.products.put({
+      id: 'prod-1',
+      store_id: 'store-1',
+      name: 'Arroz costeño',
+      price: 5.5,
+      created_at: new Date().toISOString(),
+      synced: false,
+    });
+
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
+
+    await screen.findByText(/Carlos Mendoza/i);
+    const notesInput = screen.getByPlaceholderText(/1 Arroz costeño/i) as HTMLTextAreaElement;
+
+    fireEvent.change(notesInput, { target: { value: 'arr' } });
+
+    const option = await screen.findByRole('option', { name: /Arroz costeño/i });
+    expect(option).toHaveTextContent('S/ 5.50');
+
+    fireEvent.click(option);
+    expect(notesInput.value).toBe('Arroz costeño');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+    // Multi-item detalle: only the current word (after the last comma) is replaced
+    fireEvent.change(notesInput, { target: { value: '1 Leche, arr' } });
+    const secondOption = await screen.findByRole('option', { name: /Arroz costeño/i });
+    fireEvent.click(secondOption);
+    expect(notesInput.value).toBe('1 Leche, Arroz costeño');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('closes the suggestion popover on Escape', async () => {
+    await db.products.put({
+      id: 'prod-1',
+      store_id: 'store-1',
+      name: 'Arroz costeño',
+      price: 5.5,
+      created_at: new Date().toISOString(),
+      synced: false,
+    });
+
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
+
+    await screen.findByText(/Carlos Mendoza/i);
+    const notesInput = screen.getByPlaceholderText(/1 Arroz costeño/i) as HTMLTextAreaElement;
+
+    fireEvent.change(notesInput, { target: { value: 'arr' } });
+    await screen.findByRole('option', { name: /Arroz costeño/i });
+
+    fireEvent.keyDown(notesInput, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('offers Crear-flow when there is no match and creates the product inline', async () => {
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
+
+    await screen.findByText(/Carlos Mendoza/i);
+    const notesInput = screen.getByPlaceholderText(/1 Arroz costeño/i) as HTMLTextAreaElement;
+
+    fireEvent.change(notesInput, { target: { value: 'quinu' } });
+
+    const createOption = await screen.findByRole('option', { name: /Crear.*quinu/i });
+    fireEvent.click(createOption);
+
+    const priceInput = await screen.findByLabelText(/Precio del nuevo producto/i);
+    fireEvent.change(priceInput, { target: { value: '4.50' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar/i }));
+
+    await waitFor(() => {
+      expect(notesInput.value).toBe('quinu');
+    });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+    const stored = await db.products.where('store_id').equals('store-1').toArray();
+    expect(stored.some((p) => p.name === 'quinu' && p.price === 4.5)).toBe(true);
+
+    const queued = await db.syncQueue.where('entity').equals('products').first();
+    expect(queued).toBeDefined();
+    expect(queued?.operation).toBe('INSERT');
+  });
+
+  it('lists only active-store customers in the picker (T3)', async () => {
+    await db.customers.put({
+      id: 'cust-other-store',
+      store_id: 'store-test',
+      name: 'Other Store Person',
+      credit_limit: 200,
+      balance: 0,
+      created_at: new Date().toISOString(),
+    });
+    useAuthStore.getState().setStoreSession({
+      storeId: 'store-1',
+      storeName: 'Ámbar Bodega',
+      authenticatedAt: new Date().toISOString(),
+    });
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} />);
+
+    await screen.findByText(/Carlos Mendoza/i);
+    const picker = screen.getByRole('button', { name: /cliente: carlos mendoza/i });
+    fireEvent.click(picker);
+
+    await screen.findByRole('listbox');
+    expect(screen.getByRole('option', { name: /Carlos Mendoza/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Other Store Person/i })).not.toBeInTheDocument();
   });
 });

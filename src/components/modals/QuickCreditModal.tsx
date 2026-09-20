@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LiquidModal } from '../ui/LiquidModal';
-import type { Customer, CreditTransaction } from '../../types/database';
+import type { Customer, CreditTransaction, Product } from '../../types/database';
 import { db } from '../../lib/dexie';
-import { useAuthStore } from '../../store/authStore';
+import { searchProducts, createProduct } from '../../features/products/productService';
+import { useAuthStore, useActiveStoreId } from '../../store/authStore';
 import { generateWhatsAppReceipt } from '../../features/transactions/whatsappHelper';
 import { OperatorSelector } from '../ui/OperatorSelector';
+import { GlassSelect } from '../ui/GlassSelect';
 import {
   AlertCircle,
   CheckCircle2,
@@ -21,6 +23,15 @@ export interface QuickCreditModalProps {
   onSuccess?: (tx: CreditTransaction) => void;
 }
 
+/**
+ * Current word being typed in the detalle field: text after the last
+ * comma/semicolon/newline, trimmed. Used as the catalog lookup key.
+ */
+const getCurrentWord = (text: string): string => {
+  const segments = text.split(/[,;\n]/);
+  return segments[segments.length - 1].trim();
+};
+
 export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
   isOpen,
   onClose,
@@ -28,6 +39,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
   onSuccess,
 }) => {
   const { currentOperatorName, storeSession } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
 
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
@@ -41,6 +53,15 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     customer: Customer;
   } | null>(null);
 
+  // Product autocomplete state (detalle field)
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [showSugPopover, setShowSugPopover] = useState(false);
+  const [creatingProduct, setCreatingProduct] = useState(false);
+  const [newPriceInput, setNewPriceInput] = useState('');
+  const notesWrapRef = useRef<HTMLDivElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const searchSeq = useRef(0);
+
   useEffect(() => {
     if (isOpen) {
       setErrorMessage(null);
@@ -49,7 +70,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
       setNotes('');
       setOperatorName(currentOperatorName || 'Martin');
 
-      db.customers.toArray().then((list) => {
+      db.customers.where('store_id').equals(activeStoreId).toArray().then((list) => {
         setAllCustomers(list);
         if (preselectedCustomer) {
           setSelectedCustomerId(preselectedCustomer.id);
@@ -58,7 +79,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
         }
       });
     }
-  }, [isOpen, preselectedCustomer, currentOperatorName]);
+  }, [isOpen, preselectedCustomer, currentOperatorName, activeStoreId]);
 
   const activeCustomer =
     allCustomers.find((c) => c.id === selectedCustomerId) || preselectedCustomer;
@@ -94,6 +115,78 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     setAmountInput(String(Math.round((current + delta) * 100) / 100));
   };
 
+  const resolveStoreId = (): string =>
+    activeCustomer?.store_id || activeStoreId;
+
+  // Pointer-down outside closes the suggestion popover (mirrors GlassSelect).
+  useEffect(() => {
+    if (!showSugPopover) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (notesWrapRef.current && !notesWrapRef.current.contains(e.target as Node)) {
+        setShowSugPopover(false);
+        setCreatingProduct(false);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [showSugPopover]);
+
+  // Local Dexie lookup is sub-ms, so no debounce: every keystroke queries
+  // directly. A sequence guard drops stale async results.
+  const handleNotesChange = (value: string) => {
+    setNotes(value);
+    setCreatingProduct(false);
+    setNewPriceInput('');
+    const word = getCurrentWord(value);
+    if (word.length < 2) {
+      setSuggestions([]);
+      setShowSugPopover(false);
+      return;
+    }
+    const seq = ++searchSeq.current;
+    searchProducts(resolveStoreId(), word)
+      .then((matches) => {
+        if (searchSeq.current !== seq) return;
+        setSuggestions(matches);
+        setShowSugPopover(true);
+      })
+      .catch(() => {
+        if (searchSeq.current !== seq) return;
+        setSuggestions([]);
+        setShowSugPopover(false);
+      });
+  };
+
+  // Replace the current word with the chosen product name, keep focus.
+  const insertProductName = (name: string) => {
+    setNotes((prev) => {
+      const idx = Math.max(prev.lastIndexOf(','), prev.lastIndexOf(';'), prev.lastIndexOf('\n'));
+      const prefix = idx >= 0 ? prev.slice(0, idx + 1) : '';
+      return prefix ? `${prefix} ${name}` : name;
+    });
+    setSuggestions([]);
+    setShowSugPopover(false);
+    setCreatingProduct(false);
+    setNewPriceInput('');
+    notesRef.current?.focus();
+  };
+
+  const handleCreateProduct = async () => {
+    const word = getCurrentWord(notes);
+    const price = parseFloat(newPriceInput);
+    if (isNaN(price) || price < 0) {
+      setErrorMessage('Ingrese un precio válido mayor o igual a cero.');
+      return;
+    }
+    try {
+      await createProduct({ storeId: resolveStoreId(), name: word, price });
+      setErrorMessage(null);
+      insertProductName(word);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Error al crear el producto.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -121,7 +214,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     try {
       const txId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
       const now = new Date().toISOString();
-      const storeId = activeCustomer.store_id || storeSession?.storeId || 'store-default';
+      const storeId = activeCustomer.store_id || activeStoreId;
 
       const transaction: CreditTransaction = {
         id: txId,
@@ -277,18 +370,12 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                 <Users className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>Cliente</span>
               </label>
-              <select
+              <GlassSelect
+                options={allCustomers.map((c) => ({ value: c.id, label: c.name }))}
                 value={selectedCustomerId}
-                onChange={(e) => setSelectedCustomerId(e.target.value)}
-                className="w-full p-3 text-sm font-semibold text-slate-900 bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all appearance-none cursor-pointer"
-                required
-              >
-                {allCustomers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedCustomerId}
+                ariaLabel="Cliente"
+              />
 
               {/* Dynamic Credit Info Chip */}
               {activeCustomer && (
@@ -383,18 +470,110 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
             </div>
 
             {/* ── Products / Notes ── */}
-            <div>
+            <div ref={notesWrapRef} className="relative">
               <label className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
                 <FileText className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>Detalle del Fiado</span>
               </label>
               <textarea
+                ref={notesRef}
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => handleNotesChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape' && showSugPopover) {
+                    e.stopPropagation();
+                    setShowSugPopover(false);
+                    setCreatingProduct(false);
+                  }
+                }}
+                aria-expanded={showSugPopover}
+                aria-autocomplete="list"
+                aria-controls="product-suggestions"
                 rows={2}
                 placeholder="Ej. 1 Arroz costeño, 1 Aceite Primor, 2 Leche Gloria..."
                 className="w-full p-3 text-sm bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all resize-none"
               />
+
+              {/* ── Product suggestion popover (GlassSelect Liquid Glass tokens) ── */}
+              {showSugPopover && (
+                <div className="absolute z-50 mt-1.5 w-full rounded-2xl overflow-hidden bg-white/[0.82] backdrop-blur-[24px] border border-t-2 border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_12px_32px_rgba(15,23,42,0.18)]">
+                  {/* Top-half specular sheen (non-interactive) */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-1/2 z-10 bg-gradient-to-b from-white/50 via-white/10 to-transparent pointer-events-none rounded-t-2xl"
+                  />
+                  {!creatingProduct ? (
+                    <ul
+                      role="listbox"
+                      id="product-suggestions"
+                      aria-label="Sugerencias de productos"
+                      className="relative max-h-48 overflow-y-auto p-1.5 space-y-0.5"
+                    >
+                      {suggestions.map((p) => (
+                        <li
+                          key={p.id}
+                          role="option"
+                          aria-selected="false"
+                          onClick={() => insertProductName(p.name)}
+                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-colors text-slate-700 hover:bg-white/[0.60] hover:text-slate-950"
+                        >
+                          <span className="truncate">{p.name}</span>
+                          <span className="shrink-0 text-xs font-bold text-amber-700">
+                            S/ {p.price.toFixed(2)}
+                          </span>
+                        </li>
+                      ))}
+                      {suggestions.length === 0 && (
+                        <li
+                          role="option"
+                          aria-selected="false"
+                          onClick={() => setCreatingProduct(true)}
+                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-colors text-slate-700 hover:bg-white/[0.60] hover:text-slate-950"
+                        >
+                          <span className="truncate">Crear &quot;{getCurrentWord(notes)}&quot;</span>
+                        </li>
+                      )}
+                    </ul>
+                  ) : (
+                    <div className="relative p-2 space-y-1.5">
+                      <p className="px-1 text-xs font-bold text-slate-700">
+                        Crear &quot;{getCurrentWord(notes)}&quot;
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative flex-1">
+                          <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs font-bold text-slate-400 pointer-events-none">
+                            S/
+                          </span>
+                          <input
+                            type="number"
+                            step="0.10"
+                            inputMode="decimal"
+                            autoFocus
+                            aria-label="Precio del nuevo producto"
+                            value={newPriceInput}
+                            onChange={(e) => setNewPriceInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleCreateProduct();
+                              }
+                            }}
+                            placeholder="0.00"
+                            className="w-full pl-8 pr-2 py-2 text-sm font-bold text-slate-900 bg-white/[0.50] backdrop-blur-md border border-white/80 rounded-xl focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleCreateProduct}
+                          className="px-3 py-2 text-xs font-black text-slate-950 bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 rounded-xl border border-t-white/80 border-b-amber-600/40 shadow-[0_4px_14px_rgba(245,158,11,0.4),inset_0_1.5px_2px_rgba(255,255,255,0.95)] active:scale-95 transition cursor-pointer"
+                        >
+                          Guardar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* ── Submit Buttons ── */}
