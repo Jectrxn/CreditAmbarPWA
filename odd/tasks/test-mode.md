@@ -38,7 +38,7 @@ Probar internamente contra el Supabase real sin contaminar los datos de producci
 - [x] T3. Read-path fixes + tests (route: delegated writer, TDD) — DONE: RED 22 fail → GREEN 282/282 + tsc limpio
 - [x] T4. Migración 0002 (seeds) — DONE archivo, SIN ejecutar remoto (lo corre el usuario)
 - [x] T5. Visual verify (route: inline, parent) — DONE 2026-09-20 con env placeholder (cero sync a prod): badge ON/OFF, métricas 0 vs 35.50, clientes 0 vs 2, creado Test Partition solo visible en test, persistencia tras reload, aislamiento bidireccional. NIT visual: badge MODO PRUEBA roza el logo a 390px (follow-up, no bloquea)
-- [ ] T6. Commits (solo con autorización explícita)
+- [x] T6. Commits — DONE 2026-09-20 (`f9e3f66`; keyboard en `6d092b7`)
 
 ## Authorized scope
  Rama actual; commits y escrituras remotas solo con pedido explícito.

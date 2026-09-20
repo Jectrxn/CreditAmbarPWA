@@ -29,7 +29,7 @@ Velocidad de kiosco: seleccionar en 1 toque en vez de tipear. Base para futuros 
 - [x] T1. `productService`: searchProducts(storeId, query), createProduct({storeId, name, price}) + syncQueue — con tests (route: delegated) — DONE 2026-09-19, 6 tests
 - [x] T2. Autocompletado + creación al vuelo en Detalle — con tests UI (route: delegated, mismo writer) — DONE 2026-09-19, 3 tests UI; full suite 253/253 + tsc limpio
 - [x] T3. Visual verify Playwright: sugerencia, selección, creación al vuelo (route: inline, parent) — DONE 2026-09-19: Crear "Arroz costeño" + precio 4.50, luego "arr" sugiere con precio, tap inserta; capturas aprobadas, estilo glass correcto
-- [ ] T4. Commit (solo con autorización explícita)
+- [ ] T4. Commit — DONE 2026-09-20 (`74f9db8`, con GlassSelect + modal changes)
 
 ## Authorized scope
  Rama de trabajo actual del usuario; commits y push solo con pedido explícito.
