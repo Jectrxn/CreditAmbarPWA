@@ -124,6 +124,24 @@ describe('PosPage Component (Strict TDD)', () => {
       expect(screen.getByRole('button', { name: /cambiar cliente|otro cliente/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/monto/i)).toBeInTheDocument();
     });
+
+    it('excludes customers from other stores (T3)', async () => {
+      await db.customers.put({
+        id: 'cust-other',
+        store_id: 'store-test',
+        name: 'Test Lab Intruder',
+        phone: '000000000',
+        credit_limit: 500,
+        balance: 10,
+        created_at: new Date().toISOString(),
+      });
+      render(<PosPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Juan Perez')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Test Lab Intruder')).not.toBeInTheDocument();
+    });
   });
 
   describe('Transaction Completion and WhatsApp Receipt', () => {

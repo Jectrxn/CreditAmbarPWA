@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Customer, CreditTransaction } from '../../types/database';
 import { db } from '../../lib/dexie';
 import { useSessionStore } from '../session/sessionStore';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../../store/authStore';
 import { validateCreditLimit, validateTransactionForFCC } from './transactionRules';
 import { OperatorSelector } from '../../components/ui/OperatorSelector';
 import { DollarSign, QrCode, AlertCircle, ShoppingBag, ArrowDownLeft } from 'lucide-react';
@@ -22,7 +22,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   onCancel,
   className = '',
 }) => {
-  const { activeCashier, currentOperatorName, storeSession } = useAuthStore();
+  const { activeCashier, currentOperatorName } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
   const [operatorName, setOperatorName] = useState<string>(currentOperatorName || 'Martin');
   const [transactionType, setTransactionType] = useState<'payment' | 'credit_purchase'>(defaultType);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qr'>('cash');
@@ -79,7 +80,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
       const txId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
       const now = new Date().toISOString();
-      const storeId = customer.store_id || storeSession?.storeId || 'store-default';
+      const storeId = customer.store_id || activeStoreId;
       const cashierPinHash = operatorName || activeCashier?.name || 'Martin';
 
       const transaction: CreditTransaction = {

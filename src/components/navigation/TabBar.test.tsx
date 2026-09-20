@@ -182,4 +182,41 @@ describe('TabBar Navigation Component (Strict TDD)', () => {
       expect(screen.queryByRole('menu', { name: /acciones rápidas/i })).not.toBeInTheDocument();
     });
   });
+
+  describe('Pending badge store partitioning (T3)', () => {
+    it('counts only active-store debtors in the Cobros badge', async () => {
+      const { db } = await import('../../lib/dexie');
+      await db.customers.clear();
+      await db.customers.bulkPut([
+        {
+          id: 'c-active',
+          store_id: 'store-1',
+          name: 'Active Debtor',
+          credit_limit: 200,
+          balance: 50,
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 'c-other',
+          store_id: 'store-test',
+          name: 'Other Store Debtor',
+          credit_limit: 200,
+          balance: 60,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+      useAuthStore.getState().setStoreSession({
+        storeId: 'store-1',
+        storeName: 'Ámbar Bodega',
+        authenticatedAt: new Date().toISOString(),
+      });
+
+      renderWithRouter('/history');
+
+      const badge = await screen.findByText('1', { selector: 'span' });
+      expect(badge).toBeInTheDocument();
+      expect(screen.queryByText('2')).not.toBeInTheDocument();
+      await db.customers.clear();
+    });
+  });
 });

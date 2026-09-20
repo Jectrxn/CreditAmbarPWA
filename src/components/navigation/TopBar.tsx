@@ -46,6 +46,7 @@ const syncStatusMap: Record<SyncStatus, SyncConfig> = {
 
 export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
   const { activeCashier, lockSession } = useAuthStore();
+  const isTestMode = useAuthStore((s) => s.isTestMode);
   const syncStatus = useSyncStatus();
   const syncConfig = syncStatusMap[syncStatus] || syncStatusMap.online;
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -96,6 +97,15 @@ export const TopBar: React.FC<TopBarProps> = ({ className = '' }) => {
 
         {/* Right Section: Sync Status & Cashier Profile / Lock Button */}
         <div className="relative z-10 flex items-center gap-1.5 shrink-0">
+          {/* Test mode badge: persistent on every page while active */}
+          {isTestMode && (
+            <span
+              data-testid="test-mode-badge"
+              className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/15 border border-amber-400/40 text-amber-800 shadow-2xs backdrop-blur-md"
+            >
+              Modo Prueba
+            </span>
+          )}
           {/* Sync Status Badge */}
           <div
             data-testid="sync-status"

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Customer, CreditTransaction } from '../types/database';
 import { db } from '../lib/dexie';
 import { useSessionStore } from '../features/session/sessionStore';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../store/authStore';
 import { CashierSessionModal } from '../features/session/CashierSessionModal';
 import { TransactionForm } from '../features/transactions/TransactionForm';
 import { generateWhatsAppReceipt } from '../features/transactions/whatsappHelper';
@@ -22,6 +22,7 @@ import {
 export const PosPage: React.FC = () => {
   const { activeSession } = useSessionStore();
   const { storeSession } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
 
   const [isSessionModalOpen, setIsSessionModalOpen] = useState<boolean>(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -31,10 +32,10 @@ export const PosPage: React.FC = () => {
   const [lastTransaction, setLastTransaction] = useState<CreditTransaction | null>(null);
   const [lastTransactionCustomer, setLastTransactionCustomer] = useState<Customer | null>(null);
 
-  const loadCustomers = async () => {
+  const loadCustomers = async (storeId: string) => {
     setIsLoadingCustomers(true);
     try {
-      const list = await db.customers.toArray();
+      const list = await db.customers.where('store_id').equals(storeId).toArray();
       setCustomers(list);
     } catch (err) {
       console.error('Error loading customers from Dexie:', err);
@@ -44,8 +45,8 @@ export const PosPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadCustomers();
-  }, []);
+    loadCustomers(activeStoreId);
+  }, [activeStoreId]);
 
   const filteredCustomers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -60,7 +61,7 @@ export const PosPage: React.FC = () => {
   const handleTransactionSuccess = async (tx: CreditTransaction) => {
     setLastTransaction(tx);
     setLastTransactionCustomer(selectedCustomer);
-    await loadCustomers();
+    await loadCustomers(activeStoreId);
   };
 
   const handleNewOperation = () => {

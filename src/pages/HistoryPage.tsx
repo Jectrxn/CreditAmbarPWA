@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../lib/dexie';
 import type { Customer, CreditTransaction } from '../types/database';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../store/authStore';
 import { QuickPaymentModal } from '../components/modals/QuickPaymentModal';
 import { QuickCreditModal } from '../components/modals/QuickCreditModal';
 import { CustomerDetailModal } from '../components/modals/CustomerDetailModal';
@@ -35,6 +35,7 @@ type SortOption = 'highest_debt' | 'lowest_debt' | 'name_asc' | 'recent';
 
 export const HistoryPage: React.FC = () => {
   const { storeSession } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
 
   const [viewMode, setViewMode] = useState<ViewMode>('receivable');
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -65,16 +66,16 @@ export const HistoryPage: React.FC = () => {
   const [auditErrorMessage, setAuditErrorMessage] = useState<string | null>(null);
   const [isAuditSubmitting, setIsAuditSubmitting] = useState<boolean>(false);
 
-  const loadData = async () => {
+  const loadData = async (storeId: string) => {
     try {
-      const [allCustomers, allTx] = await Promise.all([
-        db.customers.toArray(),
-        db.creditTransactions.toArray(),
+      const [storeCustomers, storeTx] = await Promise.all([
+        db.customers.where('store_id').equals(storeId).toArray(),
+        db.creditTransactions.where('store_id').equals(storeId).toArray(),
       ]);
-      setCustomers(allCustomers);
+      setCustomers(storeCustomers);
       // Sort newest first
       setTransactions(
-        allTx.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        storeTx.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       );
     } catch (err) {
       console.error('Error loading cobros & movements data:', err);
@@ -84,8 +85,8 @@ export const HistoryPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(activeStoreId);
+  }, [activeStoreId]);
 
   const customerMap = useMemo(() => {
     const map = new Map<string, Customer>();
@@ -207,7 +208,7 @@ export const HistoryPage: React.FC = () => {
   };
 
   const handleModalSuccess = () => {
-    loadData();
+    loadData(activeStoreId);
   };
 
   // 10-Minute Audit Window Check
@@ -288,7 +289,7 @@ export const HistoryPage: React.FC = () => {
       }
 
       setEditingTx(null);
-      await loadData();
+      await loadData(activeStoreId);
     } catch (err: any) {
       setAuditErrorMessage(err?.message || 'Error al guardar la corrección.');
     } finally {
@@ -359,7 +360,7 @@ export const HistoryPage: React.FC = () => {
       }
 
       setCancellingTx(null);
-      await loadData();
+      await loadData(activeStoreId);
     } catch (err: any) {
       setAuditErrorMessage(err?.message || 'Error al anular la transacción.');
     } finally {
@@ -417,7 +418,7 @@ export const HistoryPage: React.FC = () => {
         });
       }
 
-      await loadData();
+      await loadData(activeStoreId);
     } catch (err) {
       console.error('Error undoing cancel:', err);
     }

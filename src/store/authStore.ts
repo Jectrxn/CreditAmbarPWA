@@ -20,6 +20,34 @@ export interface CashierProfile {
 export const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 export const MAX_PIN_ATTEMPTS = 3;
 
+// Isolated store used by test mode: all reads/writes resolve here while
+// isTestMode is on, keeping production data (ambar-store-1) untouched.
+export const TEST_STORE_ID = 'store-test';
+
+const TEST_MODE_STORAGE_KEY = 'creditambar_test_mode';
+
+function readPersistedTestMode(): boolean {
+  if (typeof localStorage === 'undefined') return false;
+  try {
+    return localStorage.getItem(TEST_MODE_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function persistTestMode(enabled: boolean): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    if (enabled) {
+      localStorage.setItem(TEST_MODE_STORAGE_KEY, '1');
+    } else {
+      localStorage.removeItem(TEST_MODE_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export const DEFAULT_CASHIERS: CashierProfile[] = [
   { id: 'c-1', name: 'Martin', role: 'cajero', pin: '1234' },
   { id: 'c-2', name: 'Emiliano', role: 'cajero', pin: '1234' },
@@ -38,6 +66,7 @@ export interface AuthState {
   isLocked: boolean;
   failedPinAttempts: Record<string, number>;
   lockedUntil: Record<string, number>;
+  isTestMode: boolean;
 
   setStoreSession: (session: StoreSession | null) => void;
   clearStoreSession: () => void;
@@ -55,6 +84,9 @@ export interface AuthState {
   lockSession: () => void;
   logoutCashier: () => void;
   hasRole: (requiredRole: CashierRole) => boolean;
+  enableTestMode: () => void;
+  disableTestMode: () => void;
+  getActiveStoreId: () => string;
   reset: () => void;
 }
 
@@ -139,6 +171,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLocked: true,
   failedPinAttempts: {},
   lockedUntil: {},
+  isTestMode: readPersistedTestMode(),
 
   setStoreSession: (session) => {
     set({
@@ -242,6 +275,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return ROLE_RANK[active.role] >= ROLE_RANK[requiredRole];
   },
 
+  enableTestMode: () => {
+    persistTestMode(true);
+    set({ isTestMode: true });
+  },
+
+  disableTestMode: () => {
+    persistTestMode(false);
+    set({ isTestMode: false });
+  },
+
+  getActiveStoreId: () => {
+    if (get().isTestMode) return TEST_STORE_ID;
+    return get().storeSession?.storeId || 'store-default';
+  },
+
   reset: () => {
     set({
       storeSession: null,
@@ -252,6 +300,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isLocked: true,
       failedPinAttempts: {},
       lockedUntil: {},
+      isTestMode: false,
     });
   },
 }));
+
+/**
+ * Resolves the store every read/write path must scope to: the isolated
+ * test store while test mode is on, otherwise the session store (with a
+ * legacy fallback for sessions that predate store assignment).
+ */
+export function useActiveStoreId(): string {
+  const isTestMode = useAuthStore((s) => s.isTestMode);
+  const storeSession = useAuthStore((s) => s.storeSession);
+  if (isTestMode) return TEST_STORE_ID;
+  return storeSession?.storeId || 'store-default';
+}

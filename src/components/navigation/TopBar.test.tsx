@@ -163,4 +163,26 @@ describe('TopBar Navigation Component (Strict TDD)', () => {
       expect(header?.className).toContain('backdrop-blur');
     });
   });
+
+  describe('Test mode badge (T2)', () => {
+    it('hides the MODO PRUEBA badge when test mode is off', () => {
+      render(<TopBar />);
+      expect(screen.queryByTestId('test-mode-badge')).not.toBeInTheDocument();
+    });
+
+    it('shows a persistent MODO PRUEBA pill while test mode is active', () => {
+      useAuthStore.getState().enableTestMode();
+      try {
+        render(<TopBar />);
+        const badge = screen.getByTestId('test-mode-badge');
+        expect(badge).toBeInTheDocument();
+        expect(badge).toHaveTextContent(/modo prueba/i);
+        expect(badge.className).toContain('bg-amber-500/15');
+        expect(badge.className).toContain('border-amber-400/40');
+        expect(badge.className).toContain('text-amber-800');
+      } finally {
+        useAuthStore.getState().disableTestMode();
+      }
+    });
+  });
 });

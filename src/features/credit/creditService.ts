@@ -73,10 +73,27 @@ export async function createCreditAccount({
 }
 
 /**
+ * Minimal cross-store guard: when the caller scopes to an active store,
+ * refuse to operate on a customer record owned by another store.
+ */
+function assertSameStore(customer: Customer, expectedStoreId?: string): void {
+  if (expectedStoreId !== undefined && customer.store_id !== expectedStoreId) {
+    throw new Error('Customer belongs to a different store');
+  }
+}
+
+/**
  * Retrieves a customer credit account by ID from local IndexedDB.
  */
-export async function getCustomerCreditAccount(customerId: string): Promise<Customer | undefined> {
-  return await db.customers.get(customerId);
+export async function getCustomerCreditAccount(
+  customerId: string,
+  expectedStoreId?: string
+): Promise<Customer | undefined> {
+  const customer = await db.customers.get(customerId);
+  if (customer) {
+    assertSameStore(customer, expectedStoreId);
+  }
+  return customer;
 }
 
 /**
@@ -97,12 +114,14 @@ export interface UpdateCustomerParams {
  */
 export async function updateCustomer(
   customerId: string,
-  updates: UpdateCustomerParams
+  updates: UpdateCustomerParams,
+  expectedStoreId?: string
 ): Promise<Customer> {
   const customer = await db.customers.get(customerId);
   if (!customer) {
     throw new Error('Customer not found');
   }
+  assertSameStore(customer, expectedStoreId);
 
   const updatedCustomer: Customer = {
     ...customer,
@@ -134,13 +153,23 @@ export async function updateCustomer(
  */
 export async function recordCreditPurchase(
   customerId: string,
-  amount: number
+  amount: number,
+  expectedStoreId?: string
 ): Promise<CreditOperationResult> {
   const customer = await db.customers.get(customerId);
   if (!customer) {
     return {
       success: false,
       error: 'Customer not found',
+    };
+  }
+
+  try {
+    assertSameStore(customer, expectedStoreId);
+  } catch {
+    return {
+      success: false,
+      error: 'Customer belongs to a different store',
     };
   }
 
@@ -183,13 +212,23 @@ export async function recordCreditPurchase(
  */
 export async function recordCreditPayment(
   customerId: string,
-  amount: number
+  amount: number,
+  expectedStoreId?: string
 ): Promise<CreditOperationResult> {
   const customer = await db.customers.get(customerId);
   if (!customer) {
     return {
       success: false,
       error: 'Customer not found',
+    };
+  }
+
+  try {
+    assertSameStore(customer, expectedStoreId);
+  } catch {
+    return {
+      success: false,
+      error: 'Customer belongs to a different store',
     };
   }
 

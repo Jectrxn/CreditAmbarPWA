@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LiquidModal } from '../ui/LiquidModal';
 import type { Customer, CreditTransaction } from '../../types/database';
 import { db } from '../../lib/dexie';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../../store/authStore';
 import { generateWhatsAppReceipt } from '../../features/transactions/whatsappHelper';
 import { OperatorSelector } from '../ui/OperatorSelector';
 import {
@@ -27,6 +27,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
   onSuccess,
 }) => {
   const { currentOperatorName, storeSession } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
 
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
@@ -48,7 +49,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
       setPaymentMethod('cash');
       setOperatorName(currentOperatorName || 'Martin');
 
-      db.customers.toArray().then((list) => {
+      db.customers.where('store_id').equals(activeStoreId).toArray().then((list) => {
         // filter debtors first
         const debtors = list.filter((c) => c.balance > 0);
         setAllCustomers(list);
@@ -63,7 +64,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
         }
       });
     }
-  }, [isOpen, preselectedCustomer, currentOperatorName]);
+  }, [isOpen, preselectedCustomer, currentOperatorName, activeStoreId]);
 
   const activeCustomer =
     allCustomers.find((c) => c.id === selectedCustomerId) || preselectedCustomer;
@@ -88,7 +89,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
     try {
       const txId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
       const now = new Date().toISOString();
-      const storeId = activeCustomer.store_id || storeSession?.storeId || 'store-default';
+      const storeId = activeCustomer.store_id || activeStoreId;
 
       const transaction: CreditTransaction = {
         id: txId,

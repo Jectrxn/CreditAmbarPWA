@@ -24,6 +24,11 @@ describe('QuickPaymentModal - Cashier Selection & Abono Flow', () => {
     await db.customers.put(mockCustomer);
 
     useAuthStore.getState().reset();
+    useAuthStore.getState().setStoreSession({
+      storeId: 'store-1',
+      storeName: 'Ámbar Bodega',
+      authenticatedAt: new Date().toISOString(),
+    });
     useAuthStore.getState().setCashiers(DEFAULT_CASHIERS);
     useAuthStore.getState().setCurrentOperatorName('Martin');
   });
@@ -81,5 +86,31 @@ describe('QuickPaymentModal - Cashier Selection & Abono Flow', () => {
     // Check confirmation screen
     expect(screen.getByText(/abono registrado con éxito/i)).toBeInTheDocument();
     expect(screen.getByText('Benjamin')).toBeInTheDocument();
+  });
+
+  it('lists only active-store customers in the picker (T3)', async () => {
+    await db.customers.put({
+      id: 'cust-other-store',
+      store_id: 'store-test',
+      name: 'Other Store Person',
+      credit_limit: 200,
+      balance: 10,
+      created_at: new Date().toISOString(),
+    });
+    useAuthStore.getState().setStoreSession({
+      storeId: 'store-1',
+      storeName: 'Ámbar Bodega',
+      authenticatedAt: new Date().toISOString(),
+    });
+    render(<QuickPaymentModal isOpen={true} onClose={() => {}} />);
+
+    await screen.findByText(/Lucía Flores/i);
+    // Native select picker lists only active-store customers
+    expect(
+      screen.getByRole('option', { name: /Lucía Flores/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: /Other Store Person/i })
+    ).not.toBeInTheDocument();
   });
 });

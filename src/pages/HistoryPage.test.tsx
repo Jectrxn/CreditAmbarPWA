@@ -275,4 +275,43 @@ describe('HistoryPage / Cobros Component (Strict TDD)', () => {
       expect(screen.queryByText('Compra víveres')).not.toBeInTheDocument();
     });
   });
+
+  describe('Store partitioning (T3)', () => {
+    it('excludes customers and movements from other stores', async () => {
+      await db.customers.put({
+        id: 'cust-other',
+        store_id: 'store-test',
+        name: 'Test Lab Intruder',
+        phone: '000000000',
+        credit_limit: 500,
+        balance: 400,
+        created_at: '2026-09-06T10:00:00Z',
+      });
+      await db.creditTransactions.put({
+        id: 'tx-other',
+        store_id: 'store-test',
+        customer_id: 'cust-other',
+        cashier_pin_hash: 'admin',
+        total_amount: 400,
+        status: 'completed',
+        created_at: new Date().toISOString(),
+        synced: false,
+        type: 'credit_purchase',
+        notes: 'Intruder purchase',
+      });
+      renderHistoryPage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Angeles')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Test Lab Intruder')).not.toBeInTheDocument();
+
+      const movementsTab = screen.getByRole('button', { name: /registro de movimientos/i });
+      fireEvent.click(movementsTab);
+      await waitFor(() => {
+        expect(screen.getByText('Compra víveres')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Intruder purchase')).not.toBeInTheDocument();
+    });
+  });
 });

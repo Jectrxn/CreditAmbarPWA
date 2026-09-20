@@ -152,4 +152,58 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
       expect(screen.getByText(/registrar nuevo fiado/i)).toBeInTheDocument();
     });
   });
+
+  describe('Store partitioning (T3)', () => {
+    const otherStoreCustomer: Customer = {
+      id: 'cust-other',
+      store_id: 'store-test',
+      name: 'Test Lab Customer',
+      phone: '+51000000000',
+      credit_limit: 500,
+      balance: 999.99,
+      created_at: new Date().toISOString(),
+    };
+
+    const otherStoreTx: CreditTransaction = {
+      id: 'tx-other',
+      store_id: 'store-test',
+      customer_id: 'cust-other',
+      cashier_pin_hash: 'admin',
+      total_amount: 777,
+      status: 'completed',
+      created_at: new Date().toISOString(),
+      synced: false,
+      type: 'credit_purchase',
+    };
+
+    it('excludes customers and transactions from other stores', async () => {
+      await db.customers.put(otherStoreCustomer);
+      await db.creditTransactions.put(otherStoreTx);
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Pinos')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Test Lab Customer')).not.toBeInTheDocument();
+      // Total receivable must not include the 999.99 from the other store
+      expect(screen.queryByText(/2,020\.99/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/1,021\.00/i)).toBeInTheDocument();
+    });
+
+    it('shows only the test store rows while test mode is active', async () => {
+      await db.customers.put(otherStoreCustomer);
+      await db.creditTransactions.put(otherStoreTx);
+      useAuthStore.getState().enableTestMode();
+      try {
+        renderHomePage();
+
+        await waitFor(() => {
+          expect(screen.getByText('Test Lab Customer')).toBeInTheDocument();
+        });
+        expect(screen.queryByText('Diego | Los Pinos')).not.toBeInTheDocument();
+      } finally {
+        useAuthStore.getState().disableTestMode();
+      }
+    });
+  });
 });

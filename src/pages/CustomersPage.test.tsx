@@ -292,6 +292,47 @@ describe('CustomersPage Component (Strict TDD)', () => {
         expect(screen.queryByText(/recordatorios de cobro/i)).not.toBeInTheDocument();
       });
     });
+
+    it('excludes customers from other stores (T3)', async () => {
+      await db.customers.put({
+        id: 'cust-other',
+        store_id: 'store-test',
+        name: 'Test Lab Intruder',
+        phone: '000000000',
+        credit_limit: 500,
+        balance: 400,
+        created_at: '2026-09-06T10:00:00Z',
+      });
+      renderCustomersPage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Angeles')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Test Lab Intruder')).not.toBeInTheDocument();
+    });
+
+    it('shows only the test store rows while test mode is active (T3)', async () => {
+      await db.customers.put({
+        id: 'cust-other',
+        store_id: 'store-test',
+        name: 'Test Lab Only',
+        phone: '000000000',
+        credit_limit: 500,
+        balance: 400,
+        created_at: '2026-09-06T10:00:00Z',
+      });
+      useAuthStore.getState().enableTestMode();
+      try {
+        renderCustomersPage();
+
+        await waitFor(() => {
+          expect(screen.getByText('Test Lab Only')).toBeInTheDocument();
+        });
+        expect(screen.queryByText('Diego | Los Angeles')).not.toBeInTheDocument();
+      } finally {
+        useAuthStore.getState().disableTestMode();
+      }
+    });
   });
 });
 

@@ -23,7 +23,7 @@ import { AdvancedFiltersModal, type AdvancedFilters } from '../components/modals
 import { calculateOldestUnpaidDate } from '../features/transactions/debtAgeCalculator';
 
 import { useUIStore } from '../store/uiStore';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../store/authStore';
 import { useReminderStore } from '../store/reminderStore';
 import { generateWhatsAppPaymentReminder } from '../features/transactions/whatsappHelper';
 import { triggerHaptic } from '../utils/haptics';
@@ -34,6 +34,7 @@ type SortOption = 'highest_debt' | 'lowest_debt' | 'name_asc' | 'recent';
 
 export const CustomersPage: React.FC = () => {
   const { storeSession } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
   const { setTabBarHidden } = useUIStore();
   const { sentReminders, markAsSent } = useReminderStore();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -71,18 +72,18 @@ export const CustomersPage: React.FC = () => {
     minAgeDays: null,
   });
 
-  const loadData = async () => {
+  const loadData = async (storeId: string) => {
     try {
-      const allCustomers = await db.customers.toArray();
-      setCustomers(allCustomers);
+      const storeCustomers = await db.customers.where('store_id').equals(storeId).toArray();
+      setCustomers(storeCustomers);
       
       // Compute debt age map for all customers
-      const allTxs = await db.creditTransactions.toArray();
+      const storeTxs = await db.creditTransactions.where('store_id').equals(storeId).toArray();
       const newDebtAgeMap: Record<string, Date | null> = {};
       
-      for (const cust of allCustomers) {
+      for (const cust of storeCustomers) {
         if (cust.balance > 0) {
-          const custTxs = allTxs.filter(t => t.customer_id === cust.id);
+          const custTxs = storeTxs.filter(t => t.customer_id === cust.id);
           newDebtAgeMap[cust.id] = calculateOldestUnpaidDate(custTxs);
         }
       }
@@ -96,8 +97,8 @@ export const CustomersPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(activeStoreId);
+  }, [activeStoreId]);
 
   // Aggregated Stats
   const stats = useMemo(() => {
@@ -239,7 +240,7 @@ export const CustomersPage: React.FC = () => {
   };
 
   const handleModalSuccess = () => {
-    loadData();
+    loadData(activeStoreId);
   };
 
   return (

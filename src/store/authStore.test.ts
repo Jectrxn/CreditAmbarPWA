@@ -294,4 +294,62 @@ describe('authStore - Shared Phone Store Auth & PIN State', () => {
       expect(useAuthStore.getState().isAdminMode()).toBe(false);
     });
   });
+
+  describe('Test Mode partition (T2)', () => {
+    const TEST_KEY = 'creditambar_test_mode';
+
+    beforeEach(() => {
+      try {
+        localStorage.removeItem(TEST_KEY);
+      } catch {
+        // ignore
+      }
+      useAuthStore.getState().reset();
+      useAuthStore.getState().disableTestMode();
+    });
+
+    it('exposes TEST_STORE_ID constant for the isolated test store', async () => {
+      const mod = await import('./authStore');
+      expect(mod.TEST_STORE_ID).toBe('store-test');
+    });
+
+    it('defaults isTestMode to false and resolves active store from session', () => {
+      useAuthStore.getState().setStoreSession({
+        storeId: 'ambar-store-1',
+        storeName: 'Ámbar Bodega',
+        authenticatedAt: new Date().toISOString(),
+      });
+      expect(useAuthStore.getState().isTestMode).toBe(false);
+      expect(useAuthStore.getState().getActiveStoreId()).toBe('ambar-store-1');
+    });
+
+    it('enableTestMode switches active store to store-test and persists the flag', () => {
+      useAuthStore.getState().setStoreSession({
+        storeId: 'ambar-store-1',
+        storeName: 'Ámbar Bodega',
+        authenticatedAt: new Date().toISOString(),
+      });
+      useAuthStore.getState().enableTestMode();
+      expect(useAuthStore.getState().isTestMode).toBe(true);
+      expect(useAuthStore.getState().getActiveStoreId()).toBe('store-test');
+      expect(localStorage.getItem(TEST_KEY)).toBe('1');
+    });
+
+    it('disableTestMode restores the session store and clears persistence', () => {
+      useAuthStore.getState().setStoreSession({
+        storeId: 'ambar-store-1',
+        storeName: 'Ámbar Bodega',
+        authenticatedAt: new Date().toISOString(),
+      });
+      useAuthStore.getState().enableTestMode();
+      useAuthStore.getState().disableTestMode();
+      expect(useAuthStore.getState().isTestMode).toBe(false);
+      expect(useAuthStore.getState().getActiveStoreId()).toBe('ambar-store-1');
+      expect(localStorage.getItem(TEST_KEY)).toBeNull();
+    });
+
+    it('falls back to store-default when no session exists and test mode is off', () => {
+      expect(useAuthStore.getState().getActiveStoreId()).toBe('store-default');
+    });
+  });
 });

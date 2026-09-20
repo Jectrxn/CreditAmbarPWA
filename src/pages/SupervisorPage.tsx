@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../lib/dexie';
 import type { Customer, CreditTransaction } from '../types/database';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../store/authStore';
 import { CashierLoginModal } from '../components/modals/CashierLoginModal';
 import {
   Sparkles,
@@ -19,21 +19,22 @@ import {
 type PeriodFilter = 'today' | 'week' | 'month';
 
 export const SupervisorPage: React.FC = () => {
-  const { isAdminMode } = useAuthStore();
+  const { isAdminMode, isTestMode, enableTestMode, disableTestMode } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activePeriod, setActivePeriod] = useState<PeriodFilter>('month');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
 
-  const loadData = async () => {
+  const loadData = async (storeId: string) => {
     try {
-      const [allCustomers, allTx] = await Promise.all([
-        db.customers.toArray(),
-        db.creditTransactions.toArray(),
+      const [storeCustomers, storeTx] = await Promise.all([
+        db.customers.where('store_id').equals(storeId).toArray(),
+        db.creditTransactions.where('store_id').equals(storeId).toArray(),
       ]);
-      setCustomers(allCustomers);
-      setTransactions(allTx);
+      setCustomers(storeCustomers);
+      setTransactions(storeTx);
     } catch (err) {
       console.error('Error loading reports data:', err);
     } finally {
@@ -42,8 +43,8 @@ export const SupervisorPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(activeStoreId);
+  }, [activeStoreId]);
 
   // Filter transactions by selected period
   const filteredTransactions = useMemo(() => {
@@ -218,6 +219,32 @@ export const SupervisorPage: React.FC = () => {
           <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200">
             PIN 1234 Verificado
           </span>
+        </div>
+      )}
+
+      {/* Test Mode section: PIN-gated behind supervisor/admin mode */}
+      {isAdminMode() && (
+        <div className="p-3 rounded-2xl bg-amber-500/10 backdrop-blur-md border border-t-white border-x-white/40 border-b-amber-500/25 shadow-2xs flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-black text-amber-950 truncate">Modo Prueba</p>
+            <p className="text-[10px] text-amber-900/80 font-medium truncate">
+              Operar sobre la tienda de prueba sin tocar los datos reales.
+            </p>
+          </div>
+          <button
+            type="button"
+            data-testid="test-mode-toggle"
+            aria-pressed={isTestMode}
+            aria-label={isTestMode ? 'Desactivar modo prueba' : 'Activar modo prueba'}
+            onClick={() => (isTestMode ? disableTestMode() : enableTestMode())}
+            className={`px-3 py-1 text-[11px] font-black rounded-full border shadow-xs shrink-0 cursor-pointer active:scale-95 transition ${
+              isTestMode
+                ? 'text-slate-950 bg-gradient-to-r from-amber-300 to-amber-400 hover:from-amber-200 hover:to-amber-300 border-white/80'
+                : 'text-slate-700 bg-white/[0.60] hover:bg-white/[0.80] border-white/60'
+            }`}
+          >
+            {isTestMode ? 'Prueba: ON' : 'Prueba: OFF'}
+          </button>
         </div>
       )}
 

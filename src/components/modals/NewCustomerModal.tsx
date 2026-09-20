@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LiquidModal } from '../ui/LiquidModal';
 import type { Customer } from '../../types/database';
 import { createCreditAccount, DEFAULT_CREDIT_LIMIT } from '../../features/credit/creditService';
-import { useAuthStore } from '../../store/authStore';
+import { useActiveStoreId } from '../../store/authStore';
 import { AlertCircle, User, Phone, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export interface NewCustomerModalProps {
@@ -16,7 +16,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { storeSession } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [creditLimit, setCreditLimit] = useState(DEFAULT_CREDIT_LIMIT.toString());
@@ -57,7 +57,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const storeId = storeSession?.storeId || 'store-default';
+      const storeId = activeStoreId;
       const newCust = await createCreditAccount({
         storeId,
         name: trimmedName,

@@ -150,4 +150,43 @@ describe('creditService - Account Creation & Limit Enforcement', () => {
       expect(result.error).toMatch(/customer not found/i);
     });
   });
+
+  describe('Active-store guard (T3)', () => {
+    it('getCustomerCreditAccount throws when the customer belongs to another store', async () => {
+      const customer = await createCreditAccount({ storeId: 'store-1', name: 'Guarded One' });
+      await expect(getCustomerCreditAccount(customer.id, 'store-test')).rejects.toThrow(
+        /different store/i
+      );
+    });
+
+    it('updateCustomer throws when the customer belongs to another store', async () => {
+      const { updateCustomer } = await import('./creditService');
+      const customer = await createCreditAccount({ storeId: 'store-1', name: 'Guarded Two' });
+      await expect(
+        updateCustomer(customer.id, { name: 'Hacked' }, 'store-test')
+      ).rejects.toThrow(/different store/i);
+    });
+
+    it('recordCreditPurchase fails when the customer belongs to another store', async () => {
+      const customer = await createCreditAccount({
+        storeId: 'store-1',
+        name: 'Guarded Three',
+        creditLimit: 500,
+      });
+      const result = await recordCreditPurchase(customer.id, 50, 'store-test');
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/different store/i);
+    });
+
+    it('recordCreditPayment fails when the customer belongs to another store', async () => {
+      const customer = await createCreditAccount({
+        storeId: 'store-1',
+        name: 'Guarded Four',
+        creditLimit: 500,
+      });
+      const result = await recordCreditPayment(customer.id, 10, 'store-test');
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/different store/i);
+    });
+  });
 });

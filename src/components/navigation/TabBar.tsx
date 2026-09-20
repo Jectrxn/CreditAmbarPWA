@@ -7,6 +7,7 @@ import { QuickPaymentModal } from '../modals/QuickPaymentModal';
 import { NewCustomerModal } from '../modals/NewCustomerModal';
 
 import { useUIStore } from '../../store/uiStore';
+import { useActiveStoreId } from '../../store/authStore';
 
 export interface TabBarProps {
   className?: string;
@@ -21,6 +22,7 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
   const [isNewCustomerOpen, setIsNewCustomerOpen] = useState<boolean>(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState<boolean>(false);
   const isTabBarHidden = useUIStore((s) => s.isTabBarHidden);
+  const activeStoreId = useActiveStoreId();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -33,10 +35,10 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
   }, [searchParams]);
 
   useEffect(() => {
-    // Count customers with pending debts for the badge
+    // Count active-store customers with pending debts for the badge
     const updateCount = async () => {
       try {
-        const customers = await db.customers.toArray();
+        const customers = await db.customers.where('store_id').equals(activeStoreId).toArray();
         const count = customers.filter((c) => c.balance > 0).length;
         setPendingCount(count);
       } catch (err) {
@@ -44,7 +46,7 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
       }
     };
     updateCount();
-  }, []);
+  }, [activeStoreId]);
 
   useEffect(() => {
     // Detect mobile virtual keyboard via visualViewport resize

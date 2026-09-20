@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LiquidModal } from '../../components/ui/LiquidModal';
 import { useSessionStore } from './sessionStore';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../../store/authStore';
 import { DollarSign, QrCode, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export interface CashierSessionModalProps {
@@ -11,7 +11,8 @@ export interface CashierSessionModalProps {
 
 export const CashierSessionModal: React.FC<CashierSessionModalProps> = ({ isOpen, onClose }) => {
   const { activeSession, openSession, closeSession } = useSessionStore();
-  const { activeCashier, storeSession } = useAuthStore();
+  const { activeCashier } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
 
   const [floatInput, setFloatInput] = useState<string>('50');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -28,7 +29,7 @@ export const CashierSessionModal: React.FC<CashierSessionModalProps> = ({ isOpen
 
     const cashierId = activeCashier?.id || 'cajero-default';
     const cashierName = activeCashier?.name || 'Cajero';
-    const storeId = storeSession?.storeId || 'store-default';
+    const storeId = activeStoreId;
 
     const res = openSession({
       cashierId,

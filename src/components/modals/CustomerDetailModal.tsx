@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LiquidModal } from '../ui/LiquidModal';
 import type { Customer, CreditTransaction } from '../../types/database';
 import { db } from '../../lib/dexie';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../../store/authStore';
 import { updateCustomer } from '../../features/credit/creditService';
 import { generateWhatsAppPaymentReminder } from '../../features/transactions/whatsappHelper';
 import { useReminderStore } from '../../store/reminderStore';
@@ -37,6 +37,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   onCustomerUpdated,
 }) => {
   const { storeSession } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
   const { sentReminders, markAsSent } = useReminderStore();
   const [customer, setCustomer] = useState<Customer | undefined>(initialCustomer);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
@@ -59,21 +60,23 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
       setEditName(initialCustomer.name);
       setEditPhone(initialCustomer.phone || '');
       setEditLimit(initialCustomer.credit_limit.toString());
-      loadCustomerTransactions(initialCustomer.id);
+      loadCustomerTransactions(initialCustomer.id, activeStoreId);
     }
   }, [initialCustomer, isOpen]);
 
-  const loadCustomerTransactions = async (customerId: string) => {
+  const loadCustomerTransactions = async (customerId: string, storeId: string) => {
     setIsLoadingTx(true);
     try {
-      const allTx = await db.creditTransactions
+      const ownTx = await db.creditTransactions
         .where('customer_id')
         .equals(customerId)
         .toArray();
       // Sort newest first
-      const sorted = allTx.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      const sorted = ownTx
+        .filter((t) => t.store_id === storeId)
+        .sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       setTransactions(sorted);
     } catch (err) {
       console.error('Error loading customer transactions:', err);
@@ -108,7 +111,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
         name: editName.trim(),
         phone: editPhone.trim() || undefined,
         creditLimit: limitNum,
-      });
+      }, activeStoreId);
       setCustomer(updated);
       setIsEditing(false);
       onCustomerUpdated?.();

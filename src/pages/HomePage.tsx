@@ -21,12 +21,13 @@ import {
 } from 'lucide-react';
 import { QuickCreditModal } from '../components/modals/QuickCreditModal';
 import { QuickPaymentModal } from '../components/modals/QuickPaymentModal';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, useActiveStoreId } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import { generateWhatsAppPaymentReminder } from '../features/transactions/whatsappHelper';
 
 export const HomePage: React.FC = () => {
   const { storeSession } = useAuthStore();
+  const activeStoreId = useActiveStoreId();
   const setTabBarHidden = useUIStore((s) => s.setTabBarHidden);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
@@ -85,14 +86,14 @@ export const HomePage: React.FC = () => {
     };
   }, [isSearchFocused, searchQuery, setTabBarHidden]);
 
-  const loadData = async () => {
+  const loadData = async (storeId: string) => {
     try {
-      const [allCustomers, allTransactions] = await Promise.all([
-        db.customers.toArray(),
-        db.creditTransactions.toArray(),
+      const [storeCustomers, storeTransactions] = await Promise.all([
+        db.customers.where('store_id').equals(storeId).toArray(),
+        db.creditTransactions.where('store_id').equals(storeId).toArray(),
       ]);
-      setCustomers(allCustomers);
-      setTransactions(allTransactions);
+      setCustomers(storeCustomers);
+      setTransactions(storeTransactions);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
@@ -101,8 +102,8 @@ export const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(activeStoreId);
+  }, [activeStoreId]);
 
   // Aggregated calculations
   const stats = useMemo(() => {
@@ -214,7 +215,7 @@ export const HomePage: React.FC = () => {
   };
 
   const handleTransactionSuccess = () => {
-    loadData();
+    loadData(activeStoreId);
     setToastMessage('¡Operación registrada con éxito!');
     setTimeout(() => setToastMessage(null), 3000);
   };
