@@ -1,7 +1,52 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { LiquidModal } from './LiquidModal';
 import { GlassCard } from './GlassCard';
+
+const ORIGINAL_INNER_HEIGHT = window.innerHeight;
+
+function mockVisualViewport(height: number, offsetTop = 0) {
+  const listeners: Record<string, Set<(...args: unknown[]) => void>> = {};
+  const vv = {
+    height,
+    offsetTop,
+    addEventListener: vi.fn((type: string, cb: (...args: unknown[]) => void) => {
+      if (!listeners[type]) listeners[type] = new Set();
+      listeners[type].add(cb);
+    }),
+    removeEventListener: vi.fn((type: string, cb: (...args: unknown[]) => void) => {
+      listeners[type]?.delete(cb);
+    }),
+    _dispatch: (type: string) => {
+      listeners[type]?.forEach((cb) => cb());
+    },
+  };
+  Object.defineProperty(window, 'visualViewport', {
+    configurable: true,
+    writable: true,
+    value: vv,
+  });
+  return vv;
+}
+
+function setInnerHeight(value: number) {
+  Object.defineProperty(window, 'innerHeight', {
+    configurable: true,
+    writable: true,
+    value,
+  });
+}
+
+beforeEach(() => {
+  setInnerHeight(ORIGINAL_INNER_HEIGHT);
+});
+
+afterEach(() => {
+  // @ts-expect-error - cleanup mock between tests
+  delete window.visualViewport;
+  setInnerHeight(ORIGINAL_INNER_HEIGHT);
+  vi.restoreAllMocks();
+});
 
 describe('LiquidModal & GlassCard UI Components', () => {
   describe('LiquidModal', () => {
@@ -165,6 +210,79 @@ describe('LiquidModal & GlassCard UI Components', () => {
       expect(screen.getByText('Cliente 0')).toBeInTheDocument();
       expect(screen.getByText('Cliente 49')).toBeInTheDocument();
       expect(tableContainer.scrollTop).toBe(120);
+    });
+  });
+
+  describe('LiquidModal bottom-sheet iOS keyboard awareness', () => {
+    it('applies keyboard padding when mocked visualViewport shrinks', () => {
+      setInnerHeight(844);
+      mockVisualViewport(500, 0);
+      render(
+        <LiquidModal isOpen={true} onClose={() => {}} variant="bottom-sheet">
+          <p>Sheet content</p>
+        </LiquidModal>
+      );
+      const container = screen.getByTestId('liquid-modal-container');
+      // keyboardHeight = 844 - 500 - 0 = 344
+      expect(container.style.paddingBottom).toBe('344px');
+    });
+
+    it('removes keyboard padding when viewport restores', () => {
+      setInnerHeight(844);
+      const vv = mockVisualViewport(500, 0);
+      render(
+        <LiquidModal isOpen={true} onClose={() => {}} variant="bottom-sheet">
+          <p>Sheet content</p>
+        </LiquidModal>
+      );
+      expect(screen.getByTestId('liquid-modal-container').style.paddingBottom).toBe('344px');
+
+      act(() => {
+        vv.height = 844;
+        vv._dispatch('resize');
+      });
+      const padding = screen.getByTestId('liquid-modal-container').style.paddingBottom;
+      expect(padding === '' || padding === '0px').toBe(true);
+    });
+
+    it('does not crash when visualViewport is undefined', () => {
+      // @ts-expect-error - simulate SSR/jsdom without visualViewport
+      delete window.visualViewport;
+      expect(() => {
+        render(
+          <LiquidModal isOpen={true} onClose={() => {}} variant="bottom-sheet">
+            <p>Sheet content</p>
+          </LiquidModal>
+        );
+      }).not.toThrow();
+      expect(screen.getByTestId('liquid-modal-container')).toBeInTheDocument();
+    });
+
+    it('scrolls focused element into view on focusin when keyboard is open', () => {
+      setInnerHeight(844);
+      mockVisualViewport(500, 0);
+      render(
+        <LiquidModal isOpen={true} onClose={() => {}} variant="bottom-sheet">
+          <input aria-label="nota" />
+        </LiquidModal>
+      );
+      const input = screen.getByLabelText('nota') as HTMLInputElement;
+      const scrollSpy = vi.fn();
+      input.scrollIntoView = scrollSpy;
+      fireEvent.focusIn(input);
+      expect(scrollSpy).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' });
+    });
+
+    it('leaves center variant unchanged when keyboard opens', () => {
+      setInnerHeight(844);
+      mockVisualViewport(500, 0);
+      render(
+        <LiquidModal isOpen={true} onClose={() => {}} variant="center">
+          <p>Center content</p>
+        </LiquidModal>
+      );
+      const container = screen.getByTestId('liquid-modal-container');
+      expect(container.style.paddingBottom).toBe('');
     });
   });
 

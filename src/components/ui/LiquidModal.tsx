@@ -1,4 +1,4 @@
-import React, { useEffect, ReactNode, useCallback } from 'react';
+import React, { useEffect, useRef, useState, ReactNode, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import { X } from 'lucide-react';
@@ -49,6 +49,66 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
     [onClose]
   );
 
+  const isBottomSheet = variant === 'bottom-sheet';
+
+  // iOS keyboard awareness (bottom-sheet only): track visible viewport height.
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [visibleHeight, setVisibleHeight] = useState<number | null>(null);
+  const keyboardHeightRef = useRef(0);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !isBottomSheet) return;
+    if (typeof window === 'undefined') return;
+
+    const compute = () => {
+      const vv =
+        (window as Window & { visualViewport?: VisualViewport }).visualViewport ??
+        undefined;
+      if (!vv || typeof vv.height !== 'number') {
+        keyboardHeightRef.current = 0;
+        setKeyboardHeight(0);
+        setVisibleHeight(null);
+        return;
+      }
+      const offsetTop = typeof vv.offsetTop === 'number' ? vv.offsetTop : 0;
+      const kh = Math.max(0, window.innerHeight - vv.height - offsetTop);
+      keyboardHeightRef.current = kh;
+      setKeyboardHeight(kh);
+      setVisibleHeight(vv.height);
+    };
+
+    compute();
+
+    const vv = (window as Window & { visualViewport?: VisualViewport })
+      .visualViewport;
+    if (!vv || typeof vv.addEventListener !== 'function') return;
+    vv.addEventListener('resize', compute);
+    window.addEventListener('resize', compute);
+    return () => {
+      vv.removeEventListener?.('resize', compute);
+      window.removeEventListener('resize', compute);
+    };
+  }, [isOpen, isBottomSheet]);
+
+  // Auto-scroll focused field above the iOS keyboard.
+  useEffect(() => {
+    if (!isOpen || !isBottomSheet) return;
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    const onFocusIn = (e: FocusEvent) => {
+      if (keyboardHeightRef.current <= 0) return;
+      const target = e.target as HTMLElement | null;
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    };
+    sheet.addEventListener('focusin', onFocusIn);
+    return () => {
+      sheet.removeEventListener('focusin', onFocusIn);
+    };
+  }, [isOpen, isBottomSheet]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -70,8 +130,6 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
     }
   };
 
-  const isBottomSheet = variant === 'bottom-sheet';
-
   const modalContent = (
     <div
       data-testid={`${testId}-backdrop`}
@@ -86,9 +144,18 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
     >
       <div
         data-testid={`${testId}-container`}
+        ref={isBottomSheet ? sheetRef : undefined}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'liquid-modal-title' : undefined}
+        style={
+          isBottomSheet
+            ? {
+                ...(keyboardHeight > 0 ? { paddingBottom: keyboardHeight } : {}),
+                ...(visibleHeight != null ? { maxHeight: visibleHeight } : {}),
+              }
+            : undefined
+        }
         className={twMerge(
           'glass-panel relative overflow-hidden w-full',
           'border border-t-white/95 border-x-white/40 border-b-white/20',
