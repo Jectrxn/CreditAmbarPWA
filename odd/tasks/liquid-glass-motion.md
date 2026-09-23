@@ -125,7 +125,26 @@ Screenshots are written to the untracked `.playwright-mcp/` directory and are no
   from Tailwind's `delay-*`, so the existing stagger works as written.
 - P2/P3/P4/P5 items from the review remain open and untouched.
 
+## RDD assessment
+
+Boundary: branch point `3502043` (no prior acknowledged review on this branch).
+
+| Attempt | Result |
+|---------|--------|
+| `assess --base-ref 3502043 --committed-only` | `risk: high`, reason `unassessable` — failed closed because untracked files needed an explicit declaration |
+| `assess ... --untracked-scope=exclude --expected-untracked-inventory=sha256:7745ec7f…` | `risk: medium`, reason `configuration_change` (`package-lock.json`); `changed_lines: 322`; **`review_due: false`, `review_due_reason: under_budget`** |
+
+Untracked exclusion was the honest declaration: every untracked path is either
+pre-existing work unrelated to this change (`ProductPicker.*`, `odd/tasks/product-picker.md`,
+`skills-lock.json`, `.agents/skills/`) or a Playwright verification artifact. All 7 files of
+this change are committed.
+
+Per the ODD protocol, `under_budget` means the boundary stays pending until a later commit
+reaches the ~400 authored-line delivery budget. No further commits are planned, so the slice
+closes under budget and no review fires. Recorded, not skipped.
+
 ## Next step
 
-Branch is complete and green. Remaining: RDD assessment, then the user's decision on
-commit/push/PR. No further code changes authorized.
+Branch is complete, green, and self-verified with real-browser evidence. Native authority
+found no review due. Remaining decisions belong to the user: request a review anyway,
+push, and open a PR. No further code changes authorized.
