@@ -320,32 +320,37 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
           </button>
 
           {/* 2. Registrar Abono (Liquid Emerald Orb — Crowned Arc) */}
-          <button
-            type="button"
-            role="menuitem"
-            aria-label="Registrar abono"
-            onClick={() => {
-              setIsMenuOpen(false);
-              setIsQuickPaymentOpen(true);
-            }}
-            className="pointer-events-auto flex flex-col items-center group cursor-pointer -translate-y-3 animate-in zoom-in-50 slide-in-from-bottom-10 duration-300 delay-75 ease-out fill-mode-both"
-          >
-            {/* Liquid Glass Halo Collar with Esmeralda Caustic Ambient Glow */}
-            <div className="p-2 rounded-full bg-white/[0.30] backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/90 shadow-[0_8px_24px_rgba(16,185,129,0.28)] group-hover:bg-white/[0.45] group-hover:scale-105 transition-all duration-200">
-              <div className="relative overflow-hidden w-14 h-14 sm:w-15 sm:h-15 rounded-full bg-[radial-gradient(circle_at_35%_30%,#a7f3d0_0%,#10b981_55%,#047857_100%)] flex items-center justify-center shadow-[0_8px_22px_rgba(16,185,129,0.40),inset_0_1.5px_2px_rgba(255,255,255,0.95),inset_0_-2px_4px_rgba(4,120,87,0.35)] border border-white/80 active:scale-90 transition-transform duration-200">
-                {/* 3D Specular Radial Sphere Highlight */}
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-0 pointer-events-none rounded-full bg-[radial-gradient(circle_at_38%_25%,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.25)_35%,transparent_60%)]"
-                />
-                <CheckCircle2 className="relative z-10 w-6 h-6 stroke-[2.8] text-emerald-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]" />
+          {/* The crowned arc offset lives on this wrapper, never on the button: a static
+              transform utility and the enter animation both write `transform`, and under
+              `fill-mode-both` the animation's end state cancels the arc once it settles. */}
+          <div className="pointer-events-auto -translate-y-3">
+            <button
+              type="button"
+              role="menuitem"
+              aria-label="Registrar abono"
+              onClick={() => {
+                setIsMenuOpen(false);
+                setIsQuickPaymentOpen(true);
+              }}
+              className="flex flex-col items-center group cursor-pointer animate-in zoom-in-50 slide-in-from-bottom-10 duration-300 delay-75 ease-out fill-mode-both"
+            >
+              {/* Liquid Glass Halo Collar with Esmeralda Caustic Ambient Glow */}
+              <div className="p-2 rounded-full bg-white/[0.30] backdrop-blur-[20px] backdrop-saturate-[180%] border border-white/90 shadow-[0_8px_24px_rgba(16,185,129,0.28)] group-hover:bg-white/[0.45] group-hover:scale-105 transition-all duration-200">
+                <div className="relative overflow-hidden w-14 h-14 sm:w-15 sm:h-15 rounded-full bg-[radial-gradient(circle_at_35%_30%,#a7f3d0_0%,#10b981_55%,#047857_100%)] flex items-center justify-center shadow-[0_8px_22px_rgba(16,185,129,0.40),inset_0_1.5px_2px_rgba(255,255,255,0.95),inset_0_-2px_4px_rgba(4,120,87,0.35)] border border-white/80 active:scale-90 transition-transform duration-200">
+                  {/* 3D Specular Radial Sphere Highlight */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 pointer-events-none rounded-full bg-[radial-gradient(circle_at_38%_25%,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.25)_35%,transparent_60%)]"
+                  />
+                  <CheckCircle2 className="relative z-10 w-6 h-6 stroke-[2.8] text-emerald-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]" />
+                </div>
               </div>
-            </div>
-            {/* Translucent Liquid Glass Micro-Capsule */}
-            <span className="mt-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.35] backdrop-blur-[16px] border border-white/80 text-slate-900 font-extrabold text-[10.5px] shadow-sm tracking-tight whitespace-nowrap select-none group-hover:scale-105 transition-all duration-200">
-              Abonar
-            </span>
-          </button>
+              {/* Translucent Liquid Glass Micro-Capsule */}
+              <span className="mt-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.35] backdrop-blur-[16px] border border-white/80 text-slate-900 font-extrabold text-[10.5px] shadow-sm tracking-tight whitespace-nowrap select-none group-hover:scale-105 transition-all duration-200">
+                Abonar
+              </span>
+            </button>
+          </div>
 
           {/* 3. Nuevo Cliente (Liquid Sky Orb) */}
           <button

@@ -72,8 +72,8 @@ absent, so the visual language does not land despite elaborate class names in th
 
 | ID | Task | Route | Trigger evidence | Status |
 |----|------|-------|------------------|--------|
-| W1 | Register `tailwindcss-animate` so enter/exit utilities compile | inline | 2 mechanical files (dep install + 3-line config); no unresolved design | pending |
-| W2 | Separate crowned-orb arc offset from enter animation | inline | 1 non-trivial file, fully mapped by prior reads | pending |
+| W1 | Register `tailwindcss-animate` so enter/exit utilities compile | inline | 2 mechanical files (dep install + 3-line config); no unresolved design | done — `421150d` |
+| W2 | Separate crowned-orb arc offset from enter animation | inline | 1 non-trivial file, fully mapped by prior reads | done |
 | W3 | Make scrim rule-§4 compliant (drop blur + mask dock band) | inline | 1 non-trivial file, same component | pending |
 
 Route note: the three units touch two files total and are fully understood from the
@@ -84,11 +84,26 @@ No mapping or writer delegation trigger fires.
 
 - Baseline established: `vitest run` → 39 files / 303 tests passing, 16.5s.
 - Branch `fix/liquid-glass-motion` created from `main`.
+- W1 done — plugin registered, commit `421150d`.
+- W2 done — crowned orb arc offset moved to a wrapper; the button now carries only the
+  enter animation. Behaviour note: activating the plugin in W1 is what made the
+  `-translate-y-3` / `slide-in-from-bottom-10` collision live, so W2 repairs a regression
+  that W1 exposes; the branch as a whole is coherent.
 
 ## Verification evidence
 
-_(filled per task as checks are observed)_
+| Check | Command | Result |
+|-------|---------|--------|
+| W1 RED | `npx vitest run tests/tailwind-animation-config.test.ts` | 1 failed (`expected '' to contain 'animate-in'`), 1 passed (core utilities compile → harness valid) |
+| W1 GREEN | same | 2 passed |
+| W1 real compile | `npx tailwindcss -i ./src/index.css` over app content | `animate-in`, `zoom-in-50/95`, `slide-in-from-bottom-8/12`, `slide-in-from-top-3`, `fill-mode-both`, `fade-in` all emit; `@keyframes enter` + `@keyframes exit` present |
+| W2 RED | `npx vitest run src/components/navigation/TabBar.test.tsx` | 1 failed (`expected true to be false`) |
+| W2 GREEN | same | 12 passed |
+| Full suite | `npm test` | 40 files / 306 tests passing (baseline 303 + 3 new) |
+| Types | `npx tsc --noEmit` | exit 0 |
+
+Not yet run: browser visual verification of the crowned arc and the scrim after W3.
 
 ## Next step
 
-W1 — write the failing compile test (RED).
+W3 — make the scrim rule-§4 compliant.
