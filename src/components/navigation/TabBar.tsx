@@ -275,10 +275,13 @@ export const TabBar: React.FC<TabBarProps> = ({ className = '', onNewCreditClick
         </div>
       </nav>
 
-      {/* Backdrop for Quick Actions Menu with Deep Cinematic Glass Blur */}
+      {/* Backdrop for Quick Actions Menu — dim only, never a blur mask */}
+      {/* GEMINI.md §4: the dock's backdrop-filter samples everything painted below it, so a
+          blurred (or fully opaque) scrim here blinds it from the real content. We dim without
+          blur and mask the dock's sampling band out, so the glass keeps refracting live content. */}
       {isMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[12px] backdrop-saturate-[160%] animate-in fade-in duration-300"
+          className="fixed inset-0 z-40 bg-slate-950/35 animate-in fade-in duration-300 [mask-image:linear-gradient(to_top,transparent_0px,transparent_140px,black_230px)]"
           onClick={() => setIsMenuOpen(false)}
           aria-hidden="true"
         />

@@ -74,7 +74,7 @@ absent, so the visual language does not land despite elaborate class names in th
 |----|------|-------|------------------|--------|
 | W1 | Register `tailwindcss-animate` so enter/exit utilities compile | inline | 2 mechanical files (dep install + 3-line config); no unresolved design | done — `421150d` |
 | W2 | Separate crowned-orb arc offset from enter animation | inline | 1 non-trivial file, fully mapped by prior reads | done |
-| W3 | Make scrim rule-§4 compliant (drop blur + mask dock band) | inline | 1 non-trivial file, same component | pending |
+| W3 | Make scrim rule-§4 compliant (drop blur + mask dock band) | inline | 1 non-trivial file, same component | done |
 
 Route note: the three units touch two files total and are fully understood from the
 exploration already performed, so the smallest useful topology is direct inline.
@@ -89,6 +89,8 @@ No mapping or writer delegation trigger fires.
   enter animation. Behaviour note: activating the plugin in W1 is what made the
   `-translate-y-3` / `slide-in-from-bottom-10` collision live, so W2 repairs a regression
   that W1 exposes; the branch as a whole is coherent.
+- W3 done — scrim is now dim-only, with its bottom band masked out. Autoprefixer already
+  emits `-webkit-mask-image`, so the hand-written prefix class was redundant and dropped.
 
 ## Verification evidence
 
@@ -99,11 +101,31 @@ No mapping or writer delegation trigger fires.
 | W1 real compile | `npx tailwindcss -i ./src/index.css` over app content | `animate-in`, `zoom-in-50/95`, `slide-in-from-bottom-8/12`, `slide-in-from-top-3`, `fill-mode-both`, `fade-in` all emit; `@keyframes enter` + `@keyframes exit` present |
 | W2 RED | `npx vitest run src/components/navigation/TabBar.test.tsx` | 1 failed (`expected true to be false`) |
 | W2 GREEN | same | 12 passed |
-| Full suite | `npm test` | 40 files / 306 tests passing (baseline 303 + 3 new) |
+| W3 RED | `npx vitest run src/components/navigation/TabBar.test.tsx` | 1 failed (`expected '...backdrop-blur-[12px]...' not to contain 'backdrop-blur'`) |
+| W3 GREEN | same | 13 passed |
+| Full suite (final) | `npm test` | 40 files / 307 tests passing (baseline 303 + 4 new) |
 | Types | `npx tsc --noEmit` | exit 0 |
+| Browser — animation live | `getComputedStyle` on the 3 orbs | `animationName: "enter"`, `0.3s`, `fillMode: "both"`, delays `0 / 0.075s / 0.15s` |
+| Browser — arc preserved | `getComputedStyle` on the centre orb wrapper | `transform: matrix(1,0,0,1,0,-12)` (-12px = `-translate-y-3`); the button itself settled to identity, so the two transforms no longer collide |
+| Browser — scrim | `getComputedStyle` on the scrim | `backdropFilter: "none"`, `maskImage: linear-gradient(to top, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 140px, rgb(0,0,0) 230px)` |
+| Browser — dock intact | `getComputedStyle` on `nav` | `blur(18px) saturate(1.9)` still applied |
+| Browser — hit-testing | `elementFromPoint` | dimmed band → scrim (dismisses); undimmed band → page content / dock (taps pass through, dock and `×` stay interactive) |
+| Browser — console | Playwright console log | 0 errors, 0 warnings |
+| Visual | `.playwright-mcp/w3-closed.png`, `.playwright-mcp/w3-open.png` | crowned arc renders, dock stays warm and refractive instead of muddied |
 
-Not yet run: browser visual verification of the crowned arc and the scrim after W3.
+Screenshots are written to the untracked `.playwright-mcp/` directory and are not committed.
+
+## Known trades / follow-ups
+
+- **Dim horizon:** removing the blur and masking the dock band leaves a soft gradient edge
+  where the dim fades in (~230px from the viewport bottom). It is deliberate — it is the
+  price of keeping the glass live — but it is visible and is a candidate for a softer
+  multi-stop mask or a dock-anchored radial scrim later.
+- `delay-*` mapping is confirmed: `tailwindcss-animate@1.0.7` does drive `animation-delay`
+  from Tailwind's `delay-*`, so the existing stagger works as written.
+- P2/P3/P4/P5 items from the review remain open and untouched.
 
 ## Next step
 
-W3 — make the scrim rule-§4 compliant.
+Branch is complete and green. Remaining: RDD assessment, then the user's decision on
+commit/push/PR. No further code changes authorized.
