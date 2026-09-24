@@ -30,6 +30,7 @@ The current modal suffers from "card-in-a-card" syndrome with triple framing, cr
 - Transformed "Guardar Cliente" into a full-width ergonomic bottom CTA with specular highlight and reactive disabled state, placing "Cancelar" centered below it.
 - Verified TypeScript compilation: `npx tsc --noEmit` clean.
 - Verified unit and integration tests: `CustomersPage.test.tsx` 14/14 passing.
+- Committed in `f166ca2`.
 - Conducted visual inspection at 390px mobile viewport capturing resting, focused, filled, and success states:
   - `new_customer_redesign_screenshot.png`
   - `new_customer_filled_screenshot.png`
