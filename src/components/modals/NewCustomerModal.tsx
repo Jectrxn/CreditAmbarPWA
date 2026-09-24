@@ -11,6 +11,8 @@ export interface NewCustomerModalProps {
   onSuccess?: (customer: Customer) => void;
 }
 
+const PRESET_LIMITS = [50, 100, 200, 300];
+
 export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
   isOpen,
   onClose,
@@ -87,7 +89,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
       maxWidth="md"
       data-testid="new-customer-modal"
     >
-      <div className="py-2 space-y-4">
+      <div className="py-1 space-y-4">
         {createdCustomer ? (
           <div className="text-center space-y-4 py-2">
             <div className="w-14 h-14 bg-gradient-to-tr from-emerald-400 via-emerald-300 to-teal-200 text-emerald-950 rounded-2xl flex items-center justify-center mx-auto border border-white/90 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_4px_12px_rgba(16,185,129,0.25)]">
@@ -112,24 +114,28 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
               </div>
               {createdCustomer.phone && (
                 <div className="flex justify-between border-t border-white/20 pt-1.5 text-[11px]">
-                  <span className="text-slate-500 font-medium">Teléfono:</span>
+                  <span className="text-slate-500 font-medium">Teléfono / WhatsApp:</span>
                   <span className="font-bold text-slate-800">{createdCustomer.phone}</span>
                 </div>
               )}
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
               <button
                 type="button"
                 onClick={handleClose}
-                className="w-full sm:w-auto px-6 py-2.5 text-xs font-black text-slate-950 bg-gradient-to-tr from-amber-400/95 via-amber-300/95 to-amber-200/90 hover:from-amber-300 hover:to-amber-100 rounded-full border border-t-white/95 border-x-white/40 border-b-amber-600/40 shadow-[0_8px_20px_rgba(245,158,11,0.3),inset_0_1.5px_2px_rgba(255,255,255,0.95)] transition active:scale-95 cursor-pointer"
+                className="relative overflow-hidden w-full py-3.5 text-sm font-black text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-2xl shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-[0.98] transition cursor-pointer"
               >
-                Listo / Cerrar
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-2xl bg-gradient-to-b from-white/50 via-white/10 to-transparent"
+                />
+                <span className="relative z-10">Listo / Cerrar</span>
               </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5 rounded-[1.75rem] border border-t-white/95 border-x-white/45 border-b-amber-200/35 bg-gradient-to-b from-amber-50/35 via-white/[0.28] to-white/[0.10] p-4 backdrop-blur-[22px] backdrop-saturate-[175%] shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_10px_28px_-10px_rgba(120,83,12,0.22)] sm:p-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {errorMessage && (
               <div className="flex items-center gap-2 p-3 text-xs text-rose-700 bg-rose-50/90 backdrop-blur-md border border-rose-200 rounded-2xl">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -139,17 +145,19 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
 
             {/* Customer Name */}
             <div>
-              <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1.5">
-                Nombre y Apellido / Apodo <span className="text-rose-500">*</span>
+              <label className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
+                <User className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>
+                  Nombre y Apellido / Apodo <span className="text-rose-500">*</span>
+                </span>
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej. Diego | Los Angeles, Sr. Otoya"
-                  className="w-full pl-10 pr-4 py-3 text-sm font-bold bg-white/[0.72] backdrop-blur-md border border-t-white/95 border-x-white/40 border-b-white/20 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_3px_10px_rgba(15,23,42,0.04)] focus:outline-none focus:bg-white/[0.90] focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400"
+                  className="w-full px-4 py-3 text-sm font-bold bg-white/[0.65] backdrop-blur-md border border-t-white/95 border-x-white/40 border-b-white/20 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.03)] focus:outline-none focus:bg-white/[0.90] focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 placeholder:text-slate-400 placeholder:font-normal"
                   required
                   autoFocus
                 />
@@ -158,28 +166,67 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
 
             {/* Phone Number */}
             <div>
-              <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1.5">
-                Teléfono / WhatsApp <span className="text-slate-400 font-normal">(Opcional)</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                  <Phone className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Teléfono / WhatsApp</span>
+                </label>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Opcional
+                </span>
+              </div>
               <div className="relative">
-                <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Ej. 927268714"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white/[0.52] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.80] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                  className="w-full px-4 py-2.5 text-xs font-semibold bg-white/[0.55] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.85] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 placeholder:text-slate-400"
                 />
               </div>
+              <p className="text-[10px] font-medium text-slate-400/90 mt-1 pl-1">
+                Recomendado para enviar comprobantes digitales por WhatsApp.
+              </p>
             </div>
 
             {/* Credit Limit */}
-            <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-100/55 via-amber-50/35 to-white/[0.18] p-3 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.95),0_6px_18px_-8px_rgba(180,83,9,0.28)]">
-              <label className="block text-[11px] font-black text-amber-900 uppercase tracking-[0.14em] mb-1.5">
-                Límite de Fiado Máximo (S/)
-              </label>
-              <div className="relative">
-                <ShieldCheck className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/50 via-amber-100/20 to-transparent p-3.5 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.95),0_4px_14px_-6px_rgba(180,83,9,0.15)]">
+              <div className="flex items-center justify-between mb-2">
+                <label className="flex items-center gap-1.5 text-[11px] font-black text-amber-900 uppercase tracking-wider">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Límite de Fiado Máximo</span>
+                </label>
+                <span className="text-[10px] font-bold text-amber-800/80 bg-amber-100/60 border border-amber-200/50 px-2 py-0.5 rounded-full">
+                  Sugerido: S/ 100
+                </span>
+              </div>
+
+              {/* Quick Preset Chips */}
+              <div className="flex items-center gap-1.5 mb-2.5">
+                {PRESET_LIMITS.map((amount) => {
+                  const isSelected = parseFloat(creditLimit) === amount;
+                  return (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => setCreditLimit(amount.toString())}
+                      className={`flex-1 py-1.5 px-2 text-xs font-black rounded-xl border transition-all active:scale-95 cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-400/90 text-amber-950 border-amber-300 shadow-[0_2px_8px_rgba(245,158,11,0.25),inset_0_1px_1px_rgba(255,255,255,0.9)]'
+                          : 'bg-white/[0.60] text-slate-700 border-white/80 hover:bg-white/[0.85] shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]'
+                      }`}
+                    >
+                      S/ {amount}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom Input */}
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 z-10 pointer-events-none text-xs font-black text-amber-900 select-none">
+                  S/
+                </span>
                 <input
                   type="number"
                   step="10"
@@ -187,34 +234,41 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   value={creditLimit}
                   onChange={(e) => setCreditLimit(e.target.value)}
                   placeholder="100.00"
-                  className="w-full pl-10 pr-4 py-3 text-base font-black bg-white/[0.78] backdrop-blur-md border border-t-white/95 border-x-amber-100/70 border-b-amber-300/50 rounded-2xl text-slate-950 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_4px_12px_rgba(180,83,9,0.10)] focus:outline-none focus:bg-white/[0.95] focus:ring-2 focus:ring-amber-400/60 focus:border-amber-400"
+                  className="w-full pl-9 pr-4 py-2.5 text-base font-black bg-white/[0.85] backdrop-blur-md border border-t-white/95 border-x-amber-100/70 border-b-amber-300/50 rounded-xl text-slate-950 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_8px_rgba(180,83,9,0.06)] focus:outline-none focus:bg-white focus:ring-2 focus:ring-amber-400/60 focus:border-amber-400"
                 />
               </div>
-              <p className="text-[10px] font-semibold text-amber-800/75 mt-1.5 pl-1">
-                Límite por defecto sugerido para clientes nuevos: S/ 100.00.
-              </p>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-4 border-t border-white/30">
+            {/* Actions: Ergonomic Full-width CTA */}
+            <div className="space-y-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+              <button
+                type="submit"
+                disabled={isSubmitting || !name.trim()}
+                className="relative overflow-hidden w-full py-3.5 text-sm font-black text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-2xl shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-[0.98] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-2xl bg-gradient-to-b from-white/50 via-white/10 to-transparent"
+                />
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                      <span>Registrando...</span>
+                    </>
+                  ) : (
+                    'Guardar Cliente'
+                  )}
+                </span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-white/25 hover:text-slate-800 rounded-full transition cursor-pointer"
+                className="w-full py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
               >
                 Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="relative overflow-hidden px-6 py-3 text-sm font-black text-slate-950 bg-gradient-to-tr from-amber-400/95 via-amber-300/95 to-amber-200/90 backdrop-blur-[14px] border border-t-white/95 border-x-white/45 border-b-amber-600/45 rounded-full shadow-[0_10px_24px_rgba(245,158,11,0.42),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:from-amber-300 hover:to-amber-100 active:scale-[0.98] transition cursor-pointer sm:min-w-[9.5rem]"
-              >
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/60 via-white/10 to-transparent rounded-t-full"
-                />
-                <span className="relative z-10">{isSubmitting ? 'Registrando...' : 'Guardar Cliente'}</span>
               </button>
             </div>
           </form>
