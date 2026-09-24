@@ -19,6 +19,7 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
   beforeEach(async () => {
     await db.customers.clear();
     await db.creditTransactions.clear();
+    await db.transactionItems.clear();
     await db.products.clear();
     await db.syncQueue.clear();
 
@@ -33,6 +34,11 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     useAuthStore.getState().setCashiers(DEFAULT_CASHIERS);
     useAuthStore.getState().setCurrentOperatorName('Martin');
   });
+
+  const openManualAmount = () => {
+    fireEvent.click(screen.getByRole('button', { name: /ajustar manualmente/i }));
+    return screen.getByLabelText('Monto manual del fiado') as HTMLInputElement;
+  };
 
   it('renders with 4 cashiers in OperatorSelector and preselects current operator', async () => {
     render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
@@ -67,8 +73,8 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     fireEvent.click(anthonyBtn);
     expect(anthonyBtn).toHaveAttribute('aria-pressed', 'true');
 
-    // Enter amount
-    const amountInput = screen.getByPlaceholderText('0.00');
+    // Manual entry is an explicit adjustment path.
+    const amountInput = openManualAmount();
     fireEvent.change(amountInput, { target: { value: '25.50' } });
 
     // Confirm
@@ -96,7 +102,7 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     // Empty amount -> disabled
     expect(submitBtn).toBeDisabled();
 
-    const amountInput = screen.getByPlaceholderText('0.00');
+    const amountInput = openManualAmount();
 
     // Zero amount -> still disabled
     fireEvent.change(amountInput, { target: { value: '0' } });
@@ -115,7 +121,7 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
 
     await screen.findByText(/Carlos Mendoza/i);
-    const amountInput = screen.getByPlaceholderText('0.00');
+    const amountInput = openManualAmount();
 
     // No preview before typing
     expect(screen.queryByText(/Nuevo saldo/i)).not.toBeInTheDocument();
@@ -138,7 +144,7 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
 
     await screen.findByText(/Carlos Mendoza/i);
-    const amountInput = screen.getByPlaceholderText('0.00') as HTMLInputElement;
+    const amountInput = openManualAmount();
     const submitBtn = screen.getByRole('button', { name: /confirmar fiado/i });
 
     fireEvent.click(screen.getByRole('button', { name: '+20' }));
@@ -152,7 +158,7 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     expect(await screen.findByText(/Nuevo saldo/i)).toBeInTheDocument();
   });
 
-  it('suggests catalog products while typing and inserts the tapped name', async () => {
+  it('searches the catalog and adds tapped products as line rows', async () => {
     await db.products.put({
       id: 'prod-1',
       store_id: 'store-1',
@@ -165,22 +171,15 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
 
     await screen.findByText(/Carlos Mendoza/i);
-    const notesInput = screen.getByPlaceholderText(/1 Arroz costeño/i) as HTMLTextAreaElement;
+    const search = screen.getByLabelText(/buscar producto/i);
 
-    fireEvent.change(notesInput, { target: { value: 'arr' } });
-
+    fireEvent.change(search, { target: { value: 'arr' } });
     const option = await screen.findByRole('option', { name: /Arroz costeño/i });
     expect(option).toHaveTextContent('S/ 5.50');
 
     fireEvent.click(option);
-    expect(notesInput.value).toBe('Arroz costeño');
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-
-    // Multi-item detalle: only the current word (after the last comma) is replaced
-    fireEvent.change(notesInput, { target: { value: '1 Leche, arr' } });
-    const secondOption = await screen.findByRole('option', { name: /Arroz costeño/i });
-    fireEvent.click(secondOption);
-    expect(notesInput.value).toBe('1 Leche, Arroz costeño');
+    expect(await screen.findByText('Arroz costeño')).toBeInTheDocument();
+    expect(screen.getAllByText('S/ 5.50')).toHaveLength(2);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
@@ -197,12 +196,12 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
 
     await screen.findByText(/Carlos Mendoza/i);
-    const notesInput = screen.getByPlaceholderText(/1 Arroz costeño/i) as HTMLTextAreaElement;
+    const search = screen.getByLabelText(/buscar producto/i);
 
-    fireEvent.change(notesInput, { target: { value: 'arr' } });
+    fireEvent.change(search, { target: { value: 'arr' } });
     await screen.findByRole('option', { name: /Arroz costeño/i });
 
-    fireEvent.keyDown(notesInput, { key: 'Escape' });
+    fireEvent.keyDown(search, { key: 'Escape' });
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
@@ -210,9 +209,9 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
 
     await screen.findByText(/Carlos Mendoza/i);
-    const notesInput = screen.getByPlaceholderText(/1 Arroz costeño/i) as HTMLTextAreaElement;
+    const search = screen.getByLabelText(/buscar producto/i);
 
-    fireEvent.change(notesInput, { target: { value: 'quinu' } });
+    fireEvent.change(search, { target: { value: 'quinu' } });
 
     const createOption = await screen.findByRole('option', { name: /Crear.*quinu/i });
     fireEvent.click(createOption);
@@ -222,7 +221,7 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /Guardar/i }));
 
     await waitFor(() => {
-      expect(notesInput.value).toBe('quinu');
+      expect(screen.getByText('quinu')).toBeInTheDocument();
     });
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
 
@@ -257,5 +256,87 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     await screen.findByRole('listbox');
     expect(screen.getByRole('option', { name: /Carlos Mendoza/i })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /Other Store Person/i })).not.toBeInTheDocument();
+  });
+
+  it('calculates and displays the product-line total automatically', async () => {
+    await db.products.bulkPut([
+      { id: 'prod-arroz', store_id: 'store-1', name: 'Arroz costeño', price: 5.5, created_at: new Date().toISOString(), synced: false },
+      { id: 'prod-leche', store_id: 'store-1', name: 'Leche Gloria', price: 4.5, created_at: new Date().toISOString(), synced: false },
+    ]);
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
+    await screen.findByText(/Carlos Mendoza/i);
+
+    const search = screen.getByLabelText(/buscar producto/i);
+    fireEvent.change(search, { target: { value: 'arro' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Arroz costeño/i }));
+    fireEvent.change(search, { target: { value: 'lech' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Leche Gloria/i }));
+    fireEvent.change(search, { target: { value: 'lech' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Leche Gloria/i }));
+
+    expect(screen.getByText('S/ 14.50')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Monto manual del fiado')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirmar fiado/i })).not.toBeDisabled();
+  });
+
+  it('persists the automatic total and product price snapshots', async () => {
+    await db.products.put({
+      id: 'prod-1', store_id: 'store-1', name: 'Arroz costeño', price: 5.5,
+      created_at: new Date().toISOString(), synced: false,
+    });
+    const onSuccess = vi.fn();
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} onSuccess={onSuccess} />);
+    await screen.findByText(/Carlos Mendoza/i);
+    const search = screen.getByLabelText(/buscar producto/i);
+    fireEvent.change(search, { target: { value: 'arr' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Arroz costeño/i }));
+    fireEvent.click(screen.getByRole('button', { name: /confirmar fiado/i }));
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    const tx = onSuccess.mock.calls[0][0];
+    expect(tx.total_amount).toBe(5.5);
+    const stored = await db.transactionItems.where('transaction_id').equals(tx.id).toArray();
+    expect(stored).toEqual(expect.arrayContaining([
+      expect.objectContaining({ product_id: 'prod-1', quantity: 1, unit_price: 5.5 }),
+    ]));
+    expect(await db.syncQueue.where('entity').equals('transaction_items').count()).toBe(1);
+  });
+
+  it('manual adjustment is explicit, visible, and can restore the automatic total', async () => {
+    await db.products.put({
+      id: 'prod-1', store_id: 'store-1', name: 'Arroz costeño', price: 5.5,
+      created_at: new Date().toISOString(), synced: false,
+    });
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
+    await screen.findByText(/Carlos Mendoza/i);
+    const search = screen.getByLabelText(/buscar producto/i);
+    fireEvent.change(search, { target: { value: 'arr' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Arroz costeño/i }));
+
+    const toggle = screen.getByRole('button', { name: /ajustar manualmente/i });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(toggle);
+    const input = screen.getByLabelText('Monto manual del fiado') as HTMLInputElement;
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(input).toHaveValue(5.5);
+    fireEvent.change(input, { target: { value: '5' } });
+    expect(screen.getByText(/difiere S\/ 0\.50 del detalle/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /usar total automático/i }));
+    expect(screen.getAllByText('S/ 5.50')).toHaveLength(2);
+    expect(screen.queryByLabelText('Monto manual del fiado')).not.toBeInTheDocument();
+  });
+
+  it('blocks empty and over-limit totals with actionable validation', async () => {
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
+    await screen.findByText(/Carlos Mendoza/i);
+    const submit = screen.getByRole('button', { name: /confirmar fiado/i });
+    expect(submit).toBeDisabled();
+    expect(screen.getByText(/agrega productos para calcular el total automáticamente/i)).toBeInTheDocument();
+
+    const input = openManualAmount();
+    fireEvent.change(input, { target: { value: '999' } });
+    expect(submit).toBeDisabled();
+    expect(screen.getByText(/excede el disponible por S\/ 849\.00/i)).toBeInTheDocument();
   });
 });

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LiquidModal } from '../ui/LiquidModal';
-import type { Customer, CreditTransaction, Product } from '../../types/database';
+import type { Customer, CreditTransaction } from '../../types/database';
 import { db } from '../../lib/dexie';
-import { searchProducts, createProduct } from '../../features/products/productService';
+import { ProductPicker, suggestedTotal, type DraftItem } from './ProductPicker';
 import { useAuthStore, useActiveStoreId } from '../../store/authStore';
 import { generateWhatsAppReceipt } from '../../features/transactions/whatsappHelper';
 import { OperatorSelector } from '../ui/OperatorSelector';
@@ -24,12 +24,14 @@ export interface QuickCreditModalProps {
 }
 
 /**
- * Current word being typed in the detalle field: text after the last
- * comma/semicolon/newline, trimmed. Used as the catalog lookup key.
+ * Builds the backward-compatible notes text from structured rows plus the
+ * free note, e.g. "2× Leche Gloria, 1× Arroz costeño — paga el viernes".
+ * Reports and WhatsApp receipts keep reading tx.notes unchanged.
  */
-const getCurrentWord = (text: string): string => {
-  const segments = text.split(/[,;\n]/);
-  return segments[segments.length - 1].trim();
+export const buildDerivedNotes = (items: DraftItem[], freeNote: string): string => {
+  const itemsText = items.map((i) => `${i.qty}× ${i.name}`).join(', ');
+  const trimmed = freeNote.trim();
+  return itemsText + (trimmed ? ` — ${trimmed}` : '');
 };
 
 export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
@@ -45,6 +47,8 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [operatorName, setOperatorName] = useState<string>(currentOperatorName || 'Martin');
   const [amountInput, setAmountInput] = useState<string>('');
+  const [amountLinked, setAmountLinked] = useState<boolean>(true);
+  const [items, setItems] = useState<DraftItem[]>([]);
   const [notes, setNotes] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -53,20 +57,13 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     customer: Customer;
   } | null>(null);
 
-  // Product autocomplete state (detalle field)
-  const [suggestions, setSuggestions] = useState<Product[]>([]);
-  const [showSugPopover, setShowSugPopover] = useState(false);
-  const [creatingProduct, setCreatingProduct] = useState(false);
-  const [newPriceInput, setNewPriceInput] = useState('');
-  const notesWrapRef = useRef<HTMLDivElement>(null);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
-  const searchSeq = useRef(0);
-
   useEffect(() => {
     if (isOpen) {
       setErrorMessage(null);
       setCompletedTx(null);
       setAmountInput('');
+      setAmountLinked(true);
+      setItems([]);
       setNotes('');
       setOperatorName(currentOperatorName || 'Martin');
 
@@ -109,83 +106,49 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     : 0;
 
   // Kiosk speed: quick-add chips sum onto the current amount.
+  // Any operator touch on the amount takes ownership (breaks the link).
   const QUICK_AMOUNTS = [10, 20, 50];
   const addQuickAmount = (delta: number) => {
     const current = !isNaN(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0;
     setAmountInput(String(Math.round((current + delta) * 100) / 100));
+    setAmountLinked(false);
   };
 
   const resolveStoreId = (): string =>
     activeCustomer?.store_id || activeStoreId;
 
-  // Pointer-down outside closes the suggestion popover (mirrors GlassSelect).
+  const suggested = suggestedTotal(items);
+
+  // Linked total: the amount follows the lines sum by default (zero typing
+  // in the common case). The first manual edit breaks the link — the
+  // operator takes ownership (discounts/rounding) — and Usar re-links.
+  // Same plain-number formatting Usar uses; suggestedTotal already
+  // cents-rounds so no new rounding behavior is introduced here.
   useEffect(() => {
-    if (!showSugPopover) return;
-    const handlePointerDown = (e: PointerEvent) => {
-      if (notesWrapRef.current && !notesWrapRef.current.contains(e.target as Node)) {
-        setShowSugPopover(false);
-        setCreatingProduct(false);
-      }
-    };
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [showSugPopover]);
+    if (!amountLinked) return;
+    setAmountInput(suggested > 0 ? String(suggested) : '');
+  }, [items, amountLinked, suggested]);
 
-  // Local Dexie lookup is sub-ms, so no debounce: every keystroke queries
-  // directly. A sequence guard drops stale async results.
-  const handleNotesChange = (value: string) => {
-    setNotes(value);
-    setCreatingProduct(false);
-    setNewPriceInput('');
-    const word = getCurrentWord(value);
-    if (word.length < 2) {
-      setSuggestions([]);
-      setShowSugPopover(false);
-      return;
-    }
-    const seq = ++searchSeq.current;
-    searchProducts(resolveStoreId(), word)
-      .then((matches) => {
-        if (searchSeq.current !== seq) return;
-        setSuggestions(matches);
-        setShowSugPopover(true);
-      })
-      .catch(() => {
-        if (searchSeq.current !== seq) return;
-        setSuggestions([]);
-        setShowSugPopover(false);
-      });
+  const handleAmountChange = (value: string) => {
+    setAmountInput(value);
+    setAmountLinked(false);
   };
 
-  // Replace the current word with the chosen product name, keep focus.
-  const insertProductName = (name: string) => {
-    setNotes((prev) => {
-      const idx = Math.max(prev.lastIndexOf(','), prev.lastIndexOf(';'), prev.lastIndexOf('\n'));
-      const prefix = idx >= 0 ? prev.slice(0, idx + 1) : '';
-      return prefix ? `${prefix} ${name}` : name;
-    });
-    setSuggestions([]);
-    setShowSugPopover(false);
-    setCreatingProduct(false);
-    setNewPriceInput('');
-    notesRef.current?.focus();
+  const handleManualToggle = () => {
+    if (amountLinked) {
+      setAmountInput(suggested > 0 ? String(suggested) : '');
+      setAmountLinked(false);
+    } else {
+      setAmountInput(String(suggested));
+      setAmountLinked(true);
+    }
   };
 
-  const handleCreateProduct = async () => {
-    const word = getCurrentWord(notes);
-    const price = parseFloat(newPriceInput);
-    if (isNaN(price) || price < 0) {
-      setErrorMessage('Ingrese un precio válido mayor o igual a cero.');
-      return;
-    }
-    try {
-      await createProduct({ storeId: resolveStoreId(), name: word, price });
-      setErrorMessage(null);
-      insertProductName(word);
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Error al crear el producto.');
-    }
-  };
+  // Informational only (never blocking): how far the manual amount drifts
+  // from the lines total. CTA guard and over-limit logic stay untouched.
+  const diffAmount = Math.abs(parsedAmount - suggested);
+  const showDiffLine =
+    !amountLinked && suggested > 0 && !isNaN(parsedAmount) && diffAmount >= 0.005;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,6 +179,8 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
       const now = new Date().toISOString();
       const storeId = activeCustomer.store_id || activeStoreId;
 
+      const derivedNotes = buildDerivedNotes(items, notes);
+
       const transaction: CreditTransaction = {
         id: txId,
         store_id: storeId,
@@ -226,7 +191,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
         created_at: now,
         synced: false,
         type: 'credit_purchase',
-        notes: notes.trim() || undefined,
+        notes: derivedNotes || undefined,
       };
 
       const updatedBalance = activeCustomer.balance + amount;
@@ -261,6 +226,33 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
         retryCount: 0,
         status: 'pending',
       });
+
+      // 3. Persist structured detail rows + queue each one for sync.
+      // Rows without a productId (should not happen: the picker always
+      // resolves one) still survive as derived notes text above.
+      for (const [idx, item] of items.entries()) {
+        if (!item.productId) continue;
+        const itemId =
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `item-${Date.now()}-${idx}`;
+        const txItem = {
+          id: itemId,
+          transaction_id: txId,
+          product_id: item.productId,
+          quantity: item.qty,
+          unit_price: item.unitPrice,
+        };
+        await db.transactionItems.put({ ...txItem, synced: false });
+        await db.syncQueue.add({
+          entity: 'transaction_items',
+          operation: 'INSERT',
+          payload: txItem,
+          createdAt: Date.now(),
+          retryCount: 0,
+          status: 'pending',
+        });
+      }
 
       setCompletedTx({
         transaction,
@@ -390,190 +382,143 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
               )}
             </div>
 
-            {/* ── Operator / Atendido por (compact row: no vertical push) ── */}
+            {/* ── Operator / Atendido por ── */}
             <OperatorSelector
               selectedName={operatorName}
               onSelect={(name) => setOperatorName(name)}
-              layout="row"
             />
 
             {/* ── Amount ── */}
             <div>
-              <label className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
-                <Wallet className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>Monto Total (S/)</span>
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-sm font-bold text-slate-400 pointer-events-none">
-                  S/
-                </span>
-                <input
-                  type="number"
-                  step="0.10"
-                  inputMode="decimal"
-                  value={amountInput}
-                  onChange={(e) => setAmountInput(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full pl-9 pr-4 py-3 text-lg font-bold text-slate-900 bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all"
-                  required
-                />
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                  <Wallet className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Total del fiado</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleManualToggle}
+                  aria-pressed={!amountLinked}
+                  className={`ml-auto px-2.5 py-1 text-[11px] font-black rounded-full border transition cursor-pointer normal-case tracking-normal ${
+                    amountLinked
+                      ? 'text-slate-600 bg-white/45 border-white/70 hover:bg-white/70'
+                      : 'text-amber-900 bg-amber-400/25 border-amber-500/40 hover:bg-amber-400/40'
+                  }`}
+                >
+                  {amountLinked ? 'Ajustar manualmente' : 'Usar total automático'}
+                </button>
               </div>
 
-              {/* ── Quick-add chips (kiosk speed) ── */}
-              <div className="flex items-center gap-1.5 mt-1.5" role="group" aria-label="Montos rápidos">
-                {QUICK_AMOUNTS.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => addQuickAmount(q)}
-                    className="px-2.5 py-1 text-[11px] font-black text-amber-800 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 rounded-full border border-amber-400/30 transition cursor-pointer"
-                  >
-                    +{q}
-                  </button>
-                ))}
-              </div>
+              {amountLinked ? (
+                <div
+                  className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/[0.50] backdrop-blur-md border border-white/80 border-t-white/90 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.85),0_1px_2px_rgba(0,0,0,0.04)]"
+                  aria-live="polite"
+                >
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total automático</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Suma de los precios de los productos</p>
+                  </div>
+                  <span className="text-xl font-black text-amber-700">
+                    S/ {suggested.toFixed(2)}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-sm font-bold text-slate-400 pointer-events-none">
+                      S/
+                    </span>
+                    <input
+                      type="number"
+                      step="0.10"
+                      inputMode="decimal"
+                      value={amountInput}
+                      onChange={(e) => handleAmountChange(e.target.value)}
+                      placeholder="0.00"
+                      aria-label="Monto manual del fiado"
+                      className="w-full pl-9 pr-4 py-3 text-lg font-bold text-slate-900 bg-amber-50/70 backdrop-blur-md border border-amber-300/70 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5" role="group" aria-label="Montos rápidos de ajuste">
+                    {QUICK_AMOUNTS.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => addQuickAmount(q)}
+                        className="px-2.5 py-1 text-[11px] font-black text-amber-800 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 rounded-full border border-amber-400/30 transition cursor-pointer"
+                      >
+                        +{q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {amountLinked && suggested === 0 && (
+                <p className="text-[11px] font-semibold text-slate-500 mt-1.5">
+                  Agrega productos para calcular el total automáticamente.
+                </p>
+              )}
 
               {/* ── Live balance preview ── */}
-              {showBalancePreview &&
-                (isOverLimit ? (
-                  <div
-                    aria-live="polite"
-                    className="flex items-center gap-1.5 mt-1.5 text-[11px] font-bold text-rose-700"
-                  >
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>
-                      Excede el disponible por S/ {previewOverBy.toFixed(2)}
-                    </span>
-                  </div>
-                ) : (
-                  <div
-                    aria-live="polite"
-                    className="flex items-center gap-2 mt-1.5 text-[11px] font-semibold text-slate-600"
-                  >
-                    <span>
-                      Nuevo saldo:{' '}
-                      <span className="font-bold text-slate-900">
-                        S/ {previewNewBalance.toFixed(2)}
+              {showBalancePreview && (
+                <>
+                  {isOverLimit ? (
+                    <div
+                      aria-live="polite"
+                      className="flex items-center gap-1.5 mt-1.5 text-[11px] font-bold text-rose-700"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        Excede el disponible por S/ {previewOverBy.toFixed(2)}
                       </span>
-                    </span>
-                    <span aria-hidden="true" className="text-slate-300">
-                      ·
-                    </span>
-                    <span>
-                      Restante:{' '}
-                      <span className="font-bold text-emerald-700">
-                        S/ {previewRemaining.toFixed(2)}
+                    </div>
+                  ) : (
+                    <div
+                      aria-live="polite"
+                      className="flex items-center gap-2 mt-1.5 text-[11px] font-semibold text-slate-600"
+                    >
+                      <span>
+                        Nuevo saldo:{' '}
+                        <span className="font-bold text-slate-900">
+                          S/ {previewNewBalance.toFixed(2)}
+                        </span>
                       </span>
-                    </span>
-                  </div>
-                ))}
+                      <span aria-hidden="true" className="text-slate-300">
+                        ·
+                      </span>
+                      <span>
+                        Restante:{' '}
+                        <span className="font-bold text-emerald-700">
+                          S/ {previewRemaining.toFixed(2)}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                  {showDiffLine && (
+                    <div className="flex items-center gap-1.5 mt-1.5 text-[11px] font-semibold text-slate-500">
+                      <span>Difiere S/ {diffAmount.toFixed(2)} del detalle</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
-            {/* ── Products / Notes ── */}
-            <div ref={notesWrapRef} className="relative">
+            {/* ── Products / Notes (structured detalle) ── */}
+            <div>
               <label className="flex items-center gap-1.5 text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
                 <FileText className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>Detalle del Fiado</span>
               </label>
-              <textarea
-                ref={notesRef}
-                value={notes}
-                onChange={(e) => handleNotesChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape' && showSugPopover) {
-                    e.stopPropagation();
-                    setShowSugPopover(false);
-                    setCreatingProduct(false);
-                  }
-                }}
-                aria-expanded={showSugPopover}
-                aria-autocomplete="list"
-                aria-controls="product-suggestions"
-                rows={2}
-                placeholder="Ej. 1 Arroz costeño, 1 Aceite Primor, 2 Leche Gloria..."
-                className="w-full p-3 text-sm bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all resize-none"
+              <ProductPicker
+                storeId={resolveStoreId()}
+                items={items}
+                onChange={setItems}
+                note={notes}
+                onNoteChange={setNotes}
+                onError={setErrorMessage}
               />
-
-              {/* ── Product suggestion popover (GlassSelect Liquid Glass tokens) ── */}
-              {showSugPopover && (
-                <div className="absolute z-50 mt-1.5 w-full rounded-2xl overflow-hidden bg-white/[0.82] backdrop-blur-[24px] border border-t-2 border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_12px_32px_rgba(15,23,42,0.18)]">
-                  {/* Top-half specular sheen (non-interactive) */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-0 top-0 h-1/2 z-10 bg-gradient-to-b from-white/50 via-white/10 to-transparent pointer-events-none rounded-t-2xl"
-                  />
-                  {!creatingProduct ? (
-                    <ul
-                      role="listbox"
-                      id="product-suggestions"
-                      aria-label="Sugerencias de productos"
-                      className="relative max-h-48 overflow-y-auto p-1.5 space-y-0.5"
-                    >
-                      {suggestions.map((p) => (
-                        <li
-                          key={p.id}
-                          role="option"
-                          aria-selected="false"
-                          onClick={() => insertProductName(p.name)}
-                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-colors text-slate-700 hover:bg-white/[0.60] hover:text-slate-950"
-                        >
-                          <span className="truncate">{p.name}</span>
-                          <span className="shrink-0 text-xs font-bold text-amber-700">
-                            S/ {p.price.toFixed(2)}
-                          </span>
-                        </li>
-                      ))}
-                      {suggestions.length === 0 && (
-                        <li
-                          role="option"
-                          aria-selected="false"
-                          onClick={() => setCreatingProduct(true)}
-                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-colors text-slate-700 hover:bg-white/[0.60] hover:text-slate-950"
-                        >
-                          <span className="truncate">Crear &quot;{getCurrentWord(notes)}&quot;</span>
-                        </li>
-                      )}
-                    </ul>
-                  ) : (
-                    <div className="relative p-2 space-y-1.5">
-                      <p className="px-1 text-xs font-bold text-slate-700">
-                        Crear &quot;{getCurrentWord(notes)}&quot;
-                      </p>
-                      <div className="flex items-center gap-1.5">
-                        <div className="relative flex-1">
-                          <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs font-bold text-slate-400 pointer-events-none">
-                            S/
-                          </span>
-                          <input
-                            type="number"
-                            step="0.10"
-                            inputMode="decimal"
-                            autoFocus
-                            aria-label="Precio del nuevo producto"
-                            value={newPriceInput}
-                            onChange={(e) => setNewPriceInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleCreateProduct();
-                              }
-                            }}
-                            placeholder="0.00"
-                            className="w-full pl-8 pr-2 py-2 text-sm font-bold text-slate-900 bg-white/[0.50] backdrop-blur-md border border-white/80 rounded-xl focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleCreateProduct}
-                          className="px-3 py-2 text-xs font-black text-slate-950 bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 rounded-xl border border-t-white/80 border-b-amber-600/40 shadow-[0_4px_14px_rgba(245,158,11,0.4),inset_0_1.5px_2px_rgba(255,255,255,0.95)] active:scale-95 transition cursor-pointer"
-                        >
-                          Guardar
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* ── Submit Buttons ── */}
