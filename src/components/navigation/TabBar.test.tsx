@@ -150,7 +150,7 @@ describe('TabBar Navigation Component (Strict TDD)', () => {
       expect(screen.getByRole('menu', { name: /acciones rápidas/i })).toBeInTheDocument();
 
       // Find and click the glass backdrop
-      const backdrop = container.querySelector('.bg-slate-950\\/35');
+      const backdrop = container.querySelector('.fixed.inset-0.z-40.bg-transparent');
       expect(backdrop).toBeInTheDocument();
       fireEvent.click(backdrop!);
 
@@ -220,20 +220,18 @@ describe('TabBar Navigation Component (Strict TDD)', () => {
     });
   });
 
-  describe('Speed Dial scrim keeps the dock backdrop-filter live (W3)', () => {
-    it('dims the page without a blur mask sitting between the content and the glass dock', () => {
+  describe('Speed Dial outside-click layer keeps the dock backdrop-filter live (W3)', () => {
+    it('does not dim or blur the page behind the quick actions menu', () => {
       const { container } = renderWithRouter('/');
       fireEvent.click(screen.getByRole('button', { name: /registrar nuevo fiado/i }));
 
-      const scrim = container.querySelector('.bg-slate-950\\/35');
+      const scrim = container.querySelector('.fixed.inset-0.z-40.bg-transparent');
       expect(scrim).toBeInTheDocument();
 
-      // GEMINI.md §4 forbids any blur mask between the scrolling content and the glass
-      // dock: it blinds the dock's backdrop-filter from sampling the real content below.
+      // A transparent outside-click layer preserves the live page and the dock's glass.
+      expect(scrim?.className).toContain('bg-transparent');
       expect(scrim?.className).not.toContain('backdrop-blur');
-
-      // The dock's sampling band must stay undimmed so the glass keeps refracting.
-      expect(scrim?.className).toContain('mask-image');
+      expect(scrim?.className).not.toContain('mask-image');
     });
   });
 

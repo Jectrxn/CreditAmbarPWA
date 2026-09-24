@@ -14,16 +14,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className = '' }) => {
     >
       {/* Master Organic Amber Liquid Glass Fluid Background */}
       <div
-        className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none bg-amber-50/20"
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none bg-amber-100/30"
         aria-hidden="true"
       >
         {/* Liquid Amber Fluid Waves Image */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-90 transition-opacity duration-700"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-100 transition-opacity duration-700"
           style={{ backgroundImage: 'url("/bg-liquid-amber.png")' }}
         />
-        {/* Soft Ambient Light Balancing Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-amber-100/20" />
+        {/* Warm ambient overlay — color, not white wash, so glass has something to refract */}
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-50/10 via-transparent to-amber-200/30" />
       </div>
 
       {/* Floating TopBar Container (Aligned with main content column) */}

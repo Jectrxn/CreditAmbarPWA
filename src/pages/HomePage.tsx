@@ -470,10 +470,10 @@ export const HomePage: React.FC = () => {
       </div>
 
       {/* Hero Card: TOTAL POR COBRAR (Luminous Liquid Glass) */}
-      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-white/[0.80] via-white/[0.65] to-amber-50/[0.75] backdrop-blur-[24px] backdrop-saturate-[190%] p-4 text-slate-900 border border-t-white border-x-white/50 border-b-white/20 shadow-[0_16px_36px_-8px_rgba(245,158,11,0.14),0_4px_16px_rgba(15,23,42,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] space-y-2.5">
+      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-amber-50/[0.55] via-white/[0.35] to-amber-100/[0.45] backdrop-blur-[24px] backdrop-saturate-[190%] p-4 text-slate-900 border border-t-white border-x-white/50 border-b-white/20 shadow-[0_16px_36px_-8px_rgba(245,158,11,0.14),0_4px_16px_rgba(15,23,42,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] space-y-2.5">
         {/* Specular Ambient Glow */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-400/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-400/35 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-400/25 rounded-full blur-2xl pointer-events-none" />
         <span
           aria-hidden="true"
           className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/60 via-white/15 to-transparent rounded-t-[inherit]"
@@ -492,7 +492,7 @@ export const HomePage: React.FC = () => {
         <div className="relative z-10">
           <div className="flex items-baseline gap-1.5">
             <span className="text-xl sm:text-2xl font-black text-amber-600">S/</span>
-            <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-950 drop-shadow-2xs">
+            <span className="text-3xl sm:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-amber-700 via-orange-600 to-amber-600 drop-shadow-2xs">
               {stats.totalReceivable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
@@ -503,7 +503,7 @@ export const HomePage: React.FC = () => {
 
         {/* Mini stats row (Liquid Glass Wells) */}
         <div className="relative z-10 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/60">
-          <div className="p-2 sm:p-2.5 bg-white/[0.60] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 rounded-2xl flex items-center justify-between shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.03)] min-w-0">
+          <div className="p-2 sm:p-2.5 bg-white/[0.40] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 rounded-2xl flex items-center justify-between shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.03)] min-w-0">
             <div className="min-w-0 pr-1">
               <span className="block text-[9px] uppercase font-black text-slate-500 tracking-wider truncate">Clientes</span>
               <span className="text-xs font-black text-slate-900 truncate block">
@@ -513,7 +513,7 @@ export const HomePage: React.FC = () => {
             <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
           </div>
 
-          <div className="p-2 sm:p-2.5 bg-white/[0.60] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 rounded-2xl flex items-center justify-between shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.03)] min-w-0">
+          <div className="p-2 sm:p-2.5 bg-white/[0.40] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 rounded-2xl flex items-center justify-between shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.03)] min-w-0">
             <div className="min-w-0 pr-1">
               <span className="block text-[9px] uppercase font-black text-slate-500 tracking-wider truncate">Cobrado Total</span>
               <span className="text-xs font-black text-emerald-700 truncate block">
@@ -529,7 +529,7 @@ export const HomePage: React.FC = () => {
       <div className="grid grid-cols-2 gap-2">
         <Link
           to="/history"
-          className="relative overflow-hidden p-3 rounded-2xl bg-white/[0.60] hover:bg-white/[0.80] backdrop-blur-[20px] backdrop-saturate-[180%] border border-t-white border-x-white/40 border-b-white/15 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.05),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center gap-2.5 active:scale-[0.98] transition-all group cursor-pointer"
+          className="relative overflow-hidden p-3 rounded-2xl bg-white/[0.40] hover:bg-white/[0.80] backdrop-blur-[20px] backdrop-saturate-[180%] border border-t-white border-x-white/40 border-b-white/15 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.05),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center gap-2.5 active:scale-[0.98] transition-all group cursor-pointer"
         >
           <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/40 via-white/5 to-transparent rounded-t-[inherit]" />
           <div className="relative z-10 w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-400/30 backdrop-blur-md flex items-center justify-center text-amber-700 shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
@@ -550,7 +550,7 @@ export const HomePage: React.FC = () => {
 
         <Link
           to="/history"
-          className="relative overflow-hidden p-3 rounded-2xl bg-white/[0.60] hover:bg-white/[0.80] backdrop-blur-[20px] backdrop-saturate-[180%] border border-t-white border-x-white/40 border-b-white/15 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.05),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center gap-2.5 active:scale-[0.98] transition-all group cursor-pointer"
+          className="relative overflow-hidden p-3 rounded-2xl bg-white/[0.40] hover:bg-white/[0.80] backdrop-blur-[20px] backdrop-saturate-[180%] border border-t-white border-x-white/40 border-b-white/15 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.05),inset_0_1.5px_2px_rgba(255,255,255,0.95)] flex items-center gap-2.5 active:scale-[0.98] transition-all group cursor-pointer"
         >
           <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/40 via-white/5 to-transparent rounded-t-[inherit]" />
           <div className="relative z-10 w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-400/30 backdrop-blur-md flex items-center justify-center text-emerald-700 shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
@@ -571,7 +571,7 @@ export const HomePage: React.FC = () => {
       </div>
 
       {/* Mayores Deudas Pendientes */}
-      <div className="relative overflow-hidden p-3.5 sm:p-4 rounded-3xl bg-white/[0.60] backdrop-blur-[20px] backdrop-saturate-[180%] border border-t-white border-x-white/40 border-b-white/15 shadow-[0_10px_25px_-5px_rgba(15,23,42,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] space-y-2">
+      <div className="relative overflow-hidden p-3.5 sm:p-4 rounded-3xl bg-white/[0.40] backdrop-blur-[20px] backdrop-saturate-[180%] border border-t-white border-x-white/40 border-b-transparent shadow-[0_10px_25px_-5px_rgba(15,23,42,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.95)] space-y-2">
         <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1/2 pointer-events-none bg-gradient-to-b from-white/30 via-white/5 to-transparent rounded-t-[inherit]" />
 
         <div className="relative z-10 flex items-center justify-between">
@@ -622,7 +622,7 @@ export const HomePage: React.FC = () => {
               return (
                 <div
                   key={debtor.id}
-                  className="p-2.5 rounded-2xl bg-white/[0.55] hover:bg-white/[0.80] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_2px_8px_rgba(15,23,42,0.03)] flex items-center justify-between gap-2 transition-all duration-200"
+                  className="p-2.5 rounded-2xl bg-white/[0.40] hover:bg-white/[0.65] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_2px_8px_rgba(15,23,42,0.03)] flex items-center justify-between gap-2 transition-all duration-200"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-amber-300 border border-white/80 text-slate-950 font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs">
