@@ -83,6 +83,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title={createdCustomer ? '¡Cliente Registrado!' : 'Nuevo Cliente'}
+      variant="bottom-sheet"
       maxWidth="md"
       data-testid="new-customer-modal"
     >
@@ -128,7 +129,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5 rounded-[1.75rem] border border-t-white/95 border-x-white/45 border-b-amber-200/35 bg-gradient-to-b from-amber-50/35 via-white/[0.28] to-white/[0.10] p-4 backdrop-blur-[22px] backdrop-saturate-[175%] shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_10px_28px_-10px_rgba(120,83,12,0.22)] sm:p-5">
             {errorMessage && (
               <div className="flex items-center gap-2 p-3 text-xs text-rose-700 bg-rose-50/90 backdrop-blur-md border border-rose-200 rounded-2xl">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -148,7 +149,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej. Diego | Los Angeles, Sr. Otoya"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white/[0.65] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.85] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                  className="w-full pl-10 pr-4 py-3 text-sm font-bold bg-white/[0.72] backdrop-blur-md border border-t-white/95 border-x-white/40 border-b-white/20 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_3px_10px_rgba(15,23,42,0.04)] focus:outline-none focus:bg-white/[0.90] focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400"
                   required
                   autoFocus
                 />
@@ -167,14 +168,14 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Ej. 927268714"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white/[0.65] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.85] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                  className="w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white/[0.52] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.80] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
                 />
               </div>
             </div>
 
             {/* Credit Limit */}
-            <div>
-              <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1.5">
+            <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-100/55 via-amber-50/35 to-white/[0.18] p-3 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.95),0_6px_18px_-8px_rgba(180,83,9,0.28)]">
+              <label className="block text-[11px] font-black text-amber-900 uppercase tracking-[0.14em] mb-1.5">
                 Límite de Fiado Máximo (S/)
               </label>
               <div className="relative">
@@ -186,28 +187,28 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   value={creditLimit}
                   onChange={(e) => setCreditLimit(e.target.value)}
                   placeholder="100.00"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs font-bold bg-white/[0.65] backdrop-blur-md border border-t-white/95 border-x-white/35 border-b-white/15 rounded-2xl text-slate-900 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_6px_rgba(15,23,42,0.02)] focus:outline-none focus:bg-white/[0.85] focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400"
+                  className="w-full pl-10 pr-4 py-3 text-base font-black bg-white/[0.78] backdrop-blur-md border border-t-white/95 border-x-amber-100/70 border-b-amber-300/50 rounded-2xl text-slate-950 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_4px_12px_rgba(180,83,9,0.10)] focus:outline-none focus:bg-white/[0.95] focus:ring-2 focus:ring-amber-400/60 focus:border-amber-400"
                 />
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 pl-1">
+              <p className="text-[10px] font-semibold text-amber-800/75 mt-1.5 pl-1">
                 Límite por defecto sugerido para clientes nuevos: S/ 100.00.
               </p>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/20">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-white/30">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-full transition cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-white/25 hover:text-slate-800 rounded-full transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="relative overflow-hidden px-6 py-2.5 text-xs font-black text-slate-950 bg-gradient-to-tr from-amber-400/95 via-amber-300/95 to-amber-200/90 backdrop-blur-[14px] border border-t-white/95 border-x-white/40 border-b-amber-600/40 rounded-full shadow-[0_8px_20px_rgba(245,158,11,0.35),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:from-amber-300 hover:to-amber-100 active:scale-95 transition cursor-pointer"
+                className="relative overflow-hidden px-6 py-3 text-sm font-black text-slate-950 bg-gradient-to-tr from-amber-400/95 via-amber-300/95 to-amber-200/90 backdrop-blur-[14px] border border-t-white/95 border-x-white/45 border-b-amber-600/45 rounded-full shadow-[0_10px_24px_rgba(245,158,11,0.42),inset_0_1.5px_2px_rgba(255,255,255,0.95)] hover:from-amber-300 hover:to-amber-100 active:scale-[0.98] transition cursor-pointer sm:min-w-[9.5rem]"
               >
                 <span
                   aria-hidden="true"
