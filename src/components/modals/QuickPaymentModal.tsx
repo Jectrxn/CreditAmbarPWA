@@ -188,7 +188,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
 
       onSuccess?.(transaction);
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Error al registrar el cobro.');
+      setErrorMessage(err?.message || 'Error al procesar el abono.');
     } finally {
       setIsSubmitting(false);
     }
@@ -198,42 +198,42 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
     <LiquidModal
       isOpen={isOpen}
       onClose={onClose}
-      title={completedTx ? '¡Cobro Registrado!' : 'Registrar Abono / Pago'}
+      title={completedTx ? '¡Abono Registrado!' : 'Registrar Abono / Pago'}
       variant="bottom-sheet"
       maxWidth="md"
     >
-      <div className="py-2 space-y-4">
+      <div className="py-1 space-y-4">
         {completedTx ? (
           <div className="text-center space-y-4 py-2">
-            <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-7 h-7" />
+            <div className="w-14 h-14 bg-gradient-to-tr from-emerald-400 via-emerald-300 to-teal-200 text-emerald-950 rounded-2xl flex items-center justify-center mx-auto border border-white/90 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_4px_12px_rgba(16,185,129,0.25)]">
+              <CheckCircle2 className="w-8 h-8 stroke-[2.5]" />
             </div>
 
             <div>
               <h3 className="text-base font-bold text-slate-900">Abono registrado con éxito</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Se cobraron <span className="font-bold text-emerald-700">S/ {completedTx.transaction.total_amount.toFixed(2)}</span> de la cuenta de {completedTx.customer.name}.
+                Se abonaron <span className="font-bold text-emerald-700">S/ {completedTx.transaction.total_amount.toFixed(2)}</span> a la cuenta de {completedTx.customer.name}.
               </p>
             </div>
 
-            <div className="p-4 bg-white/[0.10] backdrop-blur-md rounded-2xl border border-t-white/80 border-x-white/25 border-b-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] text-xs space-y-1.5 text-left max-w-sm mx-auto">
+            <div className="p-4 bg-white/[0.60] backdrop-blur-[20px] backdrop-saturate-[180%] rounded-2xl border border-t-white/95 border-x-white/35 border-b-white/15 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_4px_16px_rgba(15,23,42,0.06)] text-xs space-y-2 text-left max-w-sm mx-auto">
               <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Saldo pendiente restante:</span>
+                <span className="text-slate-500 font-medium">Deuda Restante:</span>
                 <span className="font-bold text-slate-900">S/ {completedTx.customer.balance.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Método de Cobro:</span>
-                <span className="font-bold text-slate-800 uppercase text-[11px]">
-                  {completedTx.transaction.payment_method === 'cash' ? 'Efectivo' : 'QR / Yape / Plin'}
+                <span className="text-slate-500 font-medium">Método de Pago:</span>
+                <span className="font-bold text-slate-900 uppercase">
+                  {completedTx.transaction.payment_method === 'cash' ? 'Efectivo' : 'Yape / Plin / QR'}
                 </span>
               </div>
-              <div className="flex justify-between border-t border-white/20 pt-1.5 text-[11px]">
-                <span className="text-slate-500 font-medium">Cobrado por:</span>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-medium">Atendido por:</span>
                 <span className="font-bold text-slate-900">{completedTx.transaction.cashier_pin_hash}</span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
               <a
                 href={generateWhatsAppReceipt(
                   completedTx.transaction,
@@ -242,7 +242,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-black text-white bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-full border border-t-white/80 border-b-emerald-700/50 shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] transition active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-5 py-3 text-xs font-black text-white bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-2xl border border-t-white/80 border-b-emerald-700/50 shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] transition active:scale-95 cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>Enviar WhatsApp</span>
@@ -251,7 +251,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-slate-700 bg-white/[0.12] hover:bg-white/[0.22] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-full transition active:scale-95 cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]"
+                className="w-full sm:w-auto px-5 py-3 text-xs font-bold text-slate-700 bg-white/[0.60] hover:bg-white/[0.80] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl transition active:scale-95 cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]"
               >
                 Cerrar
               </button>
@@ -287,23 +287,37 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                 <div
                   id="quick-payment-balance-context"
                   aria-live="polite"
-                  className="mt-2 grid grid-cols-2 gap-2 rounded-2xl border border-t-white/80 border-x-white/25 border-b-white/15 bg-white/[0.10] p-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] backdrop-blur-md"
+                  className={`mt-2 rounded-2xl border p-3 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.95)] backdrop-blur-md transition-all ${
+                    activeCustomer.balance > 0
+                      ? 'border-t-white/95 border-x-amber-200/50 border-b-amber-200/30 bg-gradient-to-br from-amber-50/50 via-white/[0.40] to-white/[0.15]'
+                      : 'border-t-white/95 border-x-emerald-200/50 border-b-emerald-200/30 bg-gradient-to-br from-emerald-50/50 via-white/[0.40] to-white/[0.15]'
+                  }`}
                 >
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Deuda actual
-                    </p>
-                    <p className="mt-0.5 text-sm font-black text-slate-900">
-                      S/ {activeCustomer.balance.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="border-l border-white/20 pl-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Saldo después del abono
-                    </p>
-                    <p className="mt-0.5 text-sm font-black text-emerald-700">
-                      S/ {remainingBalance.toFixed(2)}
-                    </p>
+                  {activeCustomer.balance === 0 && (
+                    <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-emerald-200/40 text-[11px] font-black text-emerald-800">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>¡Cliente al día! Sin deudas pendientes</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Deuda actual
+                      </p>
+                      <p className={`mt-0.5 text-sm font-black ${
+                        activeCustomer.balance > 0 ? 'text-rose-600' : 'text-slate-800'
+                      }`}>
+                        S/ {activeCustomer.balance.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="border-l border-white/40 pl-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Saldo después del abono
+                      </p>
+                      <p className="mt-0.5 text-sm font-black text-emerald-700">
+                        S/ {remainingBalance.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -318,7 +332,7 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
 
             {/* Payment Method */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Método de Cobro:
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -326,10 +340,10 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                   type="button"
                   aria-pressed={paymentMethod === 'cash'}
                   onClick={() => setPaymentMethod('cash')}
-                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition backdrop-blur-md ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition backdrop-blur-md cursor-pointer ${
                     paymentMethod === 'cash'
-                      ? 'bg-emerald-500/20 border-t-white/90 border-x-white/30 border-b-emerald-600/40 text-emerald-950 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]'
-                      : 'bg-white/[0.10] border-t-white/70 border-x-white/25 border-b-white/15 text-slate-700 hover:bg-white/[0.18]'
+                      ? 'bg-emerald-500/20 border-t-white/95 border-x-emerald-300/40 border-b-emerald-600/40 text-emerald-950 font-black shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.9),0_2px_8px_rgba(16,185,129,0.12)]'
+                      : 'bg-white/[0.50] border-t-white/80 border-x-white/25 border-b-white/15 text-slate-700 hover:bg-white/[0.70] shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]'
                   }`}
                 >
                   <DollarSign className="w-4 h-4 text-emerald-600" />
@@ -340,13 +354,13 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                   type="button"
                   aria-pressed={paymentMethod === 'qr'}
                   onClick={() => setPaymentMethod('qr')}
-                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition backdrop-blur-md ${
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition backdrop-blur-md cursor-pointer ${
                     paymentMethod === 'qr'
-                      ? 'bg-blue-500/20 border-t-white/90 border-x-white/30 border-b-blue-600/40 text-blue-950 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]'
-                      : 'bg-white/[0.10] border-t-white/70 border-x-white/25 border-b-white/15 text-slate-700 hover:bg-white/[0.18]'
+                      ? 'bg-sky-500/20 border-t-white/95 border-x-sky-300/40 border-b-sky-600/40 text-sky-950 font-black shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.9),0_2px_8px_rgba(14,165,233,0.12)]'
+                      : 'bg-white/[0.50] border-t-white/80 border-x-white/25 border-b-white/15 text-slate-700 hover:bg-white/[0.70] shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]'
                   }`}
                 >
-                  <QrCode className="w-4 h-4 text-blue-600" />
+                  <QrCode className="w-4 h-4 text-sky-600" />
                   <span>Yape / Plin / QR</span>
                 </button>
               </div>
@@ -354,33 +368,58 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
 
             {/* Amount */}
             <div>
-              <div className="mb-1 flex items-center justify-between gap-2">
+              <div className="mb-1.5 flex items-center justify-between gap-2">
                 <label htmlFor="quick-payment-amount" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Monto a Cobrar (S/):
                 </label>
-                <div className="flex items-center gap-3">
-                  {amountInput && (
-                    <button
-                      type="button"
-                      onClick={() => setAmountInput('')}
-                      className="text-[11px] font-bold text-slate-600 hover:underline"
-                    >
-                      Limpiar
-                    </button>
-                  )}
-                  {activeCustomer && activeCustomer.balance > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setAmountInput(activeCustomer.balance.toFixed(2))}
-                      className="text-[11px] font-bold text-emerald-700 hover:underline"
-                    >
-                      Pagar todo
-                    </button>
-                  )}
-                </div>
+                {amountInput && (
+                  <button
+                    type="button"
+                    onClick={() => setAmountInput('')}
+                    className="text-[11px] font-bold text-slate-600 hover:text-slate-900 transition hover:underline cursor-pointer"
+                  >
+                    Limpiar
+                  </button>
+                )}
               </div>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-500">
+
+              {/* Quick Amount Preset Chips (active only when debt > 0) */}
+              {activeCustomer && activeCustomer.balance > 0 && (
+                <div className="flex items-center gap-1.5 mb-2">
+                  {[10, 20, 50].map((preset) => {
+                    const isSelected = parsedAmount === preset;
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setAmountInput(preset.toString())}
+                        className={`flex-1 py-1.5 px-2 text-xs font-black rounded-xl border transition-all active:scale-95 cursor-pointer ${
+                          isSelected
+                            ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_2px_8px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.8)]'
+                            : 'bg-white/[0.65] text-slate-700 border-white/80 hover:bg-white/[0.85] shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]'
+                        }`}
+                      >
+                        S/ {preset}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setAmountInput(activeCustomer.balance.toFixed(2))}
+                    className={`flex-1 py-1.5 px-2 text-xs font-black rounded-xl border transition-all active:scale-95 cursor-pointer ${
+                      parsedAmount === activeCustomer.balance
+                        ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_2px_8px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.8)]'
+                        : 'bg-emerald-50/80 text-emerald-800 border-emerald-200/70 hover:bg-emerald-100/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]'
+                    }`}
+                  >
+                    Pagar todo
+                  </button>
+                </div>
+              )}
+
+              {/* High-contrast Amount Input */}
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 z-10 pointer-events-none text-xs font-black text-emerald-900 select-none">
                   S/
                 </span>
                 <input
@@ -392,22 +431,38 @@ export const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                   onChange={(e) => setAmountInput(sanitizeAmountInput(e.target.value))}
                   placeholder="0.00"
                   aria-describedby="quick-payment-balance-context"
-                  className="w-full pl-8 pr-3 py-2.5 text-xs font-bold text-slate-900 bg-white/[0.15] backdrop-blur-md border border-t-white/80 border-x-white/25 border-b-white/15 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] focus:bg-white/[0.25] focus:ring-2 focus:ring-emerald-500/40 focus:outline-none"
+                  className="w-full pl-9 pr-4 py-2.5 text-base font-black text-slate-950 bg-white/[0.85] backdrop-blur-md border border-t-white/95 border-x-emerald-100/70 border-b-emerald-300/50 rounded-2xl shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_8px_rgba(16,185,129,0.06)] focus:bg-white focus:ring-2 focus:ring-emerald-400/60 focus:border-emerald-400 focus:outline-none"
                   required
                 />
               </div>
             </div>
 
             {/* Submit */}
-            <div className="space-y-2 pt-2 pb-[env(safe-area-inset-bottom,0px)]">
+            <div className="space-y-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
               <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid}
-                className="relative overflow-hidden w-full py-3.5 text-sm font-black text-white bg-gradient-to-b from-emerald-500/95 via-emerald-600/90 to-emerald-700/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-emerald-800/50 rounded-2xl shadow-[0_8px_20px_-2px_rgba(16,185,129,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(6,95,70,0.25)] hover:from-emerald-500 hover:to-emerald-600 active:scale-[0.97] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className={`relative overflow-hidden w-full py-3.5 text-sm font-black transition-all ${
+                  isFormValid
+                    ? 'text-white bg-gradient-to-b from-emerald-500/95 via-emerald-600/90 to-emerald-700/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-emerald-800/50 rounded-2xl shadow-[0_8px_20px_-2px_rgba(16,185,129,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(6,95,70,0.25)] hover:from-emerald-500 hover:to-emerald-600 active:scale-[0.98] cursor-pointer'
+                    : 'text-slate-400 bg-slate-100/70 backdrop-blur-md border border-t-white/80 border-x-white/30 border-b-slate-200/50 rounded-2xl shadow-none cursor-not-allowed opacity-80'
+                }`}
               >
-                <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-2xl bg-gradient-to-b from-white/50 via-white/10 to-transparent" />
-                <span className="relative z-10">
-                  {isSubmitting ? 'Cobrando...' : blockingReason}
+                {isFormValid && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-2xl bg-gradient-to-b from-white/50 via-white/10 to-transparent"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Cobrando...</span>
+                    </>
+                  ) : (
+                    blockingReason
+                  )}
                 </span>
               </button>
             </div>
