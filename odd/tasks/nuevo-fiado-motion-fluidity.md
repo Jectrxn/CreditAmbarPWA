@@ -37,6 +37,7 @@ Currently, product search suggestions pop abruptly without transitions, newly ad
   - Submit CTA uses active radiant amber gradient when ready, and neutral slate glass when blocked or disabled.
 - Verified TypeScript compilation: `npx tsc --noEmit` clean.
 - Verified unit and integration tests: `QuickCreditModal.test.tsx` (13/13) and `CustomersPage.test.tsx` (14/14) passing. Total 27/27 passing.
+- Committed in `fa1eae7`.
 - Conducted mobile browser visual verification at 390px:
   - `quick_credit_auto_redesign.png`: verified animated products and automatic total panel.
   - `quick_credit_manual_redesign.png`: verified manual mode transition, +10 quick chip, and difference feedback.
