@@ -31,6 +31,7 @@ The amount input is washed out (`bg-white/[0.15]`), lacks quick preset chips for
 - Calibrated primary button semantic styling: vivid emerald gradient with specular highlight when valid, and neutral muted slate-glass when blocked or disabled.
 - Ran tests: `QuickPaymentModal.test.tsx` (7/7) and `CustomersPage.test.tsx` (14/14) passing. Total 21/21 passing.
 - Verified TypeScript compilation: `npx tsc --noEmit` clean.
+- Committed in `2d2dfa7`.
 - Performed Playwright browser inspection at 390px:
   - `quick_payment_debtor_redesign.png`: verified debtor state with active chip S/ 50 and emerald CTA.
   - `quick_payment_zero_debt_redesign.png`: verified zero-debt state with celebratory badge and neutral disabled button.
