@@ -411,7 +411,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
 
               {amountLinked ? (
                 <div
-                  className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/[0.50] backdrop-blur-md border border-white/80 border-t-white/90 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.85),0_1px_2px_rgba(0,0,0,0.04)]"
+                  className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/[0.50] backdrop-blur-md border border-white/80 border-t-white/90 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.85),0_1px_2px_rgba(0,0,0,0.04)] animate-in fade-in duration-200 ease-out"
                   aria-live="polite"
                 >
                   <div>
@@ -423,9 +423,9 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                   </span>
                 </div>
               ) : (
-                <div className="space-y-1.5">
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-sm font-bold text-slate-400 pointer-events-none">
+                <div className="space-y-1.5 animate-in fade-in duration-200 ease-out">
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3.5 z-10 pointer-events-none text-xs font-black text-amber-900 select-none">
                       S/
                     </span>
                     <input
@@ -436,7 +436,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                       onChange={(e) => handleAmountChange(e.target.value)}
                       placeholder="0.00"
                       aria-label="Monto manual del fiado"
-                      className="w-full pl-9 pr-4 py-3 text-lg font-bold text-slate-900 bg-amber-50/70 backdrop-blur-md border border-amber-300/70 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all"
+                      className="w-full pl-9 pr-4 py-2.5 text-base font-black text-slate-950 bg-white/[0.85] backdrop-blur-md border border-t-white/95 border-x-amber-100/70 border-b-amber-300/50 rounded-2xl shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_2px_8px_rgba(180,83,9,0.06)] focus:bg-white focus:ring-2 focus:ring-amber-400/60 focus:border-amber-400 focus:outline-none transition-all"
                       required
                     />
                   </div>
@@ -522,15 +522,32 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
             </div>
 
             {/* ── Submit Buttons ── */}
-            <div className="space-y-2 pt-2 pb-[env(safe-area-inset-bottom,0px)]">
+            <div className="space-y-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
               <button
                 type="submit"
                 disabled={isSubmitting || !isFormValid}
-                className="relative overflow-hidden w-full py-3.5 text-sm font-black text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-2xl shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-[0.97] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className={`relative overflow-hidden w-full py-3.5 text-sm font-black transition-all ${
+                  isFormValid
+                    ? 'text-slate-950 bg-gradient-to-b from-amber-400/95 via-amber-500/90 to-amber-600/85 backdrop-blur-[14px] border-t-2 border-t-white/95 border-x border-x-white/40 border-b border-b-amber-700/50 rounded-2xl shadow-[0_8px_20px_-2px_rgba(245,158,11,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(180,83,9,0.25)] hover:from-amber-400 hover:to-amber-500 active:scale-[0.98] cursor-pointer'
+                    : 'text-slate-400 bg-slate-100/70 backdrop-blur-md border border-t-white/80 border-x-white/30 border-b-slate-200/50 rounded-2xl shadow-none cursor-not-allowed opacity-80'
+                }`}
               >
-                {/* Specular highlight */}
-                <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-2xl bg-gradient-to-b from-white/50 via-white/10 to-transparent" />
-                <span className="relative z-10">{isSubmitting ? 'Guardando...' : 'Confirmar Fiado'}</span>
+                {isFormValid && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 top-0 h-1/2 pointer-events-none rounded-t-2xl bg-gradient-to-b from-white/50 via-white/10 to-transparent"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    'Confirmar Fiado'
+                  )}
+                </span>
               </button>
             </div>
           </form>

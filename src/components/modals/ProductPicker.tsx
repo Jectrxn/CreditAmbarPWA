@@ -184,7 +184,7 @@ export const ProductPicker: React.FC<ProductPickerProps> = ({
 
       {/* ── Matches popover (GlassSelect Liquid Glass tokens) ── */}
       {showPopover && (
-        <div className="absolute z-50 mt-1.5 w-full rounded-2xl overflow-hidden bg-white/[0.82] backdrop-blur-[24px] border border-t-2 border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_12px_32px_rgba(15,23,42,0.18)]">
+        <div className="absolute z-50 mt-1.5 w-full rounded-2xl overflow-hidden bg-white/[0.88] backdrop-blur-[24px] border border-t-2 border-t-white/95 border-x-white/40 border-b-white/20 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.95),0_12px_32px_rgba(15,23,42,0.18)] animate-in fade-in-50 slide-in-from-top-2 duration-150 ease-out">
           {/* Top-half specular sheen (non-interactive) */}
           <span
             aria-hidden="true"
@@ -279,7 +279,7 @@ export const ProductPicker: React.FC<ProductPickerProps> = ({
           {items.map((item, idx) => (
             <li
               key={item.productId ?? `${item.name}-${idx}`}
-              className="flex items-center gap-2 p-2 bg-white/[0.40] backdrop-blur-[14px] rounded-2xl border border-white/70 border-t-white/90 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.04)]"
+              className="flex items-center gap-2 p-2 bg-white/[0.50] backdrop-blur-[16px] rounded-2xl border border-white/70 border-t-white/90 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.04)] animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out"
             >
               <div className="flex items-center gap-1 shrink-0">
                 <button
@@ -340,15 +340,17 @@ export const ProductPicker: React.FC<ProductPickerProps> = ({
             Agregar nota
           </button>
         ) : (
-          <textarea
-            value={note}
-            onChange={(e) => onNoteChange(e.target.value)}
-            aria-label="Nota del fiado"
-            rows={2}
-            placeholder="Nota adicional (opcional)..."
-            disabled={disabled}
-            className="w-full p-3 text-sm bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all resize-none disabled:opacity-50"
-          />
+          <div className="animate-in fade-in slide-in-from-top-1 duration-200 ease-out">
+            <textarea
+              value={note}
+              onChange={(e) => onNoteChange(e.target.value)}
+              aria-label="Nota del fiado"
+              rows={2}
+              placeholder="Nota adicional (opcional)..."
+              disabled={disabled}
+              className="w-full p-3 text-sm bg-white/[0.60] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.80] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all resize-none disabled:opacity-50"
+            />
+          </div>
         )}
       </div>
     </div>
