@@ -1,6 +1,9 @@
 import { db } from '../../lib/dexie';
-import type { Customer } from '../../types/database';
+import type { Customer, CreditTransaction } from '../../types/database';
+import type { DraftItem } from '../../components/modals/ProductPicker';
 import { validateCreditLimit } from '../transactions/transactionRules';
+import { roundToCents } from '../../utils/money';
+import { syncManager } from '../../lib/syncManager';
 
 export const DEFAULT_CREDIT_LIMIT = 100;
 
@@ -263,4 +266,167 @@ export async function recordCreditPayment(
     success: true,
     customer: updatedCustomer,
   };
+}
+
+export interface RegisterCreditSaleParams {
+  operationId: string; // idempotency key; also used as the transaction id
+  storeId: string; // active store; the customer must belong to it
+  customerId: string;
+  amount: number;
+  operatorName: string;
+  items: DraftItem[];
+  notes?: string; // already-derived notes string
+  now?: Date; // injectable for tests
+}
+
+export type RegisterCreditSaleResult =
+  | { ok: true; transaction: CreditTransaction; customer: Customer; replayed: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Registers a credit sale (fiado) as a single atomic, idempotent operation.
+ *
+ * Everything — the idempotency check, the customer re-read, the credit
+ * limit check, and every write (customer balance, transaction, items, sync
+ * queue entries) — happens inside one Dexie `rw` transaction, so a failure
+ * anywhere inside rolls back all of it: no partial state. The customer
+ * balance used is whatever is stored at submit time, not whatever the
+ * caller last observed when it opened the form, which closes the
+ * lost-update window a plain read-then-write would have.
+ *
+ * Replaying the same `operationId` (e.g. a double-submit that still reaches
+ * this function) performs no writes and returns the already-recorded
+ * transaction with `replayed: true`.
+ */
+export async function registerCreditSale(
+  params: RegisterCreditSaleParams
+): Promise<RegisterCreditSaleResult> {
+  try {
+    const result = await db.transaction(
+      'rw',
+      db.customers,
+      db.creditTransactions,
+      db.transactionItems,
+      db.syncQueue,
+      async (): Promise<RegisterCreditSaleResult> => {
+        const { operationId, storeId, customerId, operatorName, items, notes } = params;
+        const now = params.now ?? new Date();
+
+        // Idempotency: a replay of an operation that already landed returns
+        // the existing result untouched — no second write.
+        const existingTx = await db.creditTransactions.get(operationId);
+        if (existingTx) {
+          const currentCustomer = await db.customers.get(existingTx.customer_id);
+          if (!currentCustomer) {
+            return { ok: false, error: 'Cliente no encontrado.' };
+          }
+          return {
+            ok: true,
+            replayed: true,
+            transaction: existingTx,
+            customer: currentCustomer,
+          };
+        }
+
+        // Re-read the customer inside the transaction: the balance used is
+        // whatever is stored right now, not whatever the caller opened with.
+        const customer = await db.customers.get(customerId);
+        if (!customer) {
+          return { ok: false, error: 'Cliente no encontrado.' };
+        }
+        if (customer.store_id !== storeId) {
+          return { ok: false, error: 'El cliente pertenece a otra tienda.' };
+        }
+
+        const amount = roundToCents(params.amount);
+        if (amount <= 0) {
+          return { ok: false, error: 'Ingrese un monto válido mayor a cero.' };
+        }
+
+        const limitCheck = validateCreditLimit(customer, amount);
+        if (!limitCheck.allowed) {
+          return { ok: false, error: limitCheck.error || 'Excede el crédito disponible del cliente.' };
+        }
+
+        const nowIso = now.toISOString();
+        const transaction: CreditTransaction = {
+          id: operationId,
+          store_id: storeId,
+          customer_id: customer.id,
+          cashier_pin_hash: operatorName || 'mostrador',
+          total_amount: amount,
+          status: 'completed',
+          created_at: nowIso,
+          synced: false,
+          type: 'credit_purchase',
+          notes: notes || undefined,
+        };
+
+        const updatedCustomer: Customer = {
+          ...customer,
+          balance: limitCheck.newBalance,
+        };
+
+        // 1. Update customer balance
+        await db.customers.put({ ...updatedCustomer, synced: false });
+        await db.syncQueue.add({
+          entity: 'customers',
+          operation: 'UPDATE',
+          payload: updatedCustomer,
+          createdAt: Date.now(),
+          retryCount: 0,
+          status: 'pending',
+        });
+
+        // 2. Add the transaction
+        await db.creditTransactions.put(transaction);
+        await db.syncQueue.add({
+          entity: 'credit_transactions',
+          operation: 'INSERT',
+          payload: transaction,
+          createdAt: Date.now(),
+          retryCount: 0,
+          status: 'pending',
+        });
+
+        // 3. Persist structured detail rows + queue each one for sync.
+        // Rows without a productId (should not happen: the picker always
+        // resolves one) still survive as derived notes text above.
+        for (const [idx, item] of items.entries()) {
+          if (!item.productId) continue;
+          const itemId =
+            typeof crypto !== 'undefined' && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `item-${Date.now()}-${idx}`;
+          const txItem = {
+            id: itemId,
+            transaction_id: operationId,
+            product_id: item.productId,
+            quantity: item.qty,
+            unit_price: item.unitPrice,
+          };
+          await db.transactionItems.put({ ...txItem, synced: false });
+          await db.syncQueue.add({
+            entity: 'transaction_items',
+            operation: 'INSERT',
+            payload: txItem,
+            createdAt: Date.now(),
+            retryCount: 0,
+            status: 'pending',
+          });
+        }
+
+        return { ok: true, replayed: false, transaction, customer: updatedCustomer };
+      }
+    );
+
+    if (result.ok) {
+      // Best-effort: never block the caller on the network round trip.
+      syncManager.requestSync();
+    }
+
+    return result;
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Error al guardar el fiado.' };
+  }
 }
