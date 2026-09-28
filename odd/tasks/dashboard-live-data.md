@@ -29,6 +29,8 @@ The dashboard is the shopkeeper's source of truth; stale or fake-zero numbers le
 - [x] T2 Wire `HomePage` to the hook for customers + transactions by active store; drop manual `loadData` refresh (keep toast); test that a direct `db.customers` write updates the hero total without remount. Route: delegated.
 - [x] T3 Skeletons: while loading, hero total, hero mini stats, daily metrics values and pending-accounts count render a placeholder pill (`animate-pulse` + existing neutral glass tones) instead of `0.00`; tests for loading vs loaded. Route: delegated.
 - [x] T4 Full checks and Chrome visual check (loading state + live update via a DB write in the page).
+- [x] T5 Fix stale-store paint: derive loading from a deps token during render so the first render after a deps change never returns previous data with `isLoading=false`. Route: inline (hook + its test, small and understood).
+- [x] T6 Make the unmount test observable: after unmount, a table write must not re-run the querier. Route: inline.
 
 ## Acceptance criteria
 - Writing a customer with balance to `db.customers` for the active store updates "Total por Cobrar" without reload.
@@ -58,5 +60,9 @@ The dashboard is the shopkeeper's source of truth; stale or fake-zero numbers le
   - WARNING stale-store paint: reset runs in useEffect after paint, so on `activeStoreId` change one frame shows the previous store's data with `isLoading=false`.
   - SUGGESTION query error still renders `S/ 0.00` everywhere (pre-existing behavior; no error-state test).
 
+- T5+T6 `d602b2b` (route inline, one commit: both tasks share the hook test file). T5 RED: stale-frame test failed (first render after deps change returned previous store data); fix: deps token via `useMemo(() => ({}), deps)`, results tagged with their token, loading derived during render; GREEN. T6: new unmount test counts querier runs after unmount; mutation check (removed `unsubscribe()`) → failed `expected 3 to be 2`, restored → passes. Replaced the vacuous console.error-based test.
+- Checks: focused 23/23; tsc clean; `npm test` 43 files / 339 tests.
+- Chrome (MutationObserver over store switch via test-mode toggle): `587.50 → SKELETON → 0.00`, back `SKELETON → 587.50`; no stale frame.
+
 ## Next step
-Optional follow-up: fix stale-store paint (derive loading from a deps key), strengthen unmount test, dashboard error state. Then push/PRs (user decision).
+Later: dashboard error state (still renders S/ 0.00 on query error). Push/PRs are the user's decision.
