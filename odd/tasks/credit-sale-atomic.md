@@ -74,7 +74,7 @@ A wrong balance is the most expensive bug in a credit ledger; offline-first requ
   - S1 money + rules + requestSync: 0715cb7..1f55664 (+218/−9) — verified tsc + 315/315.
   - S2 registerCreditSale use case: 1f55664..cecdedf (+340/−2) — verified tsc + 321/321.
   - S3 modal wiring + follow-ups: cecdedf..HEAD (~+170/−82).
-- Push/PR creation awaits the user's go-ahead.
+- Opened (user go-ahead): #7 `feat/credit-sale-money` → `fix/liquid-glass-motion` (+218/−9); #8 `feat/credit-sale-usecase` → #7 (+340/−2); #9 `feat/credit-sale-atomic` → #8 (+170/−82). Merge order: #1, then #7 → #8 → #9.
 
 ## Next step
-Open stacked PRs (user decision). Follow-ups: migrate QuickPaymentModal to the same pattern; UX block (customer preselection, focus trap, operator chips, operator PIN decision, undo).
+Human review/merge. Follow-ups: QuickPaymentModal on the same pattern; Nuevo Fiado UX block. Follow-ups: migrate QuickPaymentModal to the same pattern; UX block (customer preselection, focus trap, operator chips, operator PIN decision, undo).
