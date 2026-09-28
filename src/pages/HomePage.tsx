@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import type { Customer, CreditTransaction } from '../types/database';
 import { db } from '../lib/dexie';
+import { useLiveDexieQuery } from '../hooks/useLiveDexieQuery';
 import {
   Search,
   Users,
@@ -31,13 +32,10 @@ export const HomePage: React.FC = () => {
   const { storeSession } = useAuthStore();
   const activeStoreId = useActiveStoreId();
   const setTabBarHidden = useUIStore((s) => s.setTabBarHidden);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isNumericMode, setIsNumericMode] = useState(false);
   const [filterMode, setFilterMode] = useState<'all' | 'debt' | 'clean'>('all');
-  const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Recent customer searches stored in localStorage
@@ -88,24 +86,31 @@ export const HomePage: React.FC = () => {
     };
   }, [isSearchFocused, searchQuery, setTabBarHidden]);
 
-  const loadData = async (storeId: string) => {
-    try {
-      const [storeCustomers, storeTransactions] = await Promise.all([
-        db.customers.where('store_id').equals(storeId).toArray(),
-        db.creditTransactions.where('store_id').equals(storeId).toArray(),
-      ]);
-      setCustomers(storeCustomers);
-      setTransactions(storeTransactions);
-    } catch (err) {
-      console.error('Error loading dashboard data:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const queryDashboardData = useCallback(
+    () =>
+      Promise.all([
+        db.customers.where('store_id').equals(activeStoreId).toArray(),
+        db.creditTransactions.where('store_id').equals(activeStoreId).toArray(),
+      ]).then(([storeCustomers, storeTransactions]) => ({
+        customers: storeCustomers,
+        transactions: storeTransactions,
+      })),
+    [activeStoreId]
+  );
+
+  const { data: dashboardData, isLoading, error: dashboardError } = useLiveDexieQuery(
+    queryDashboardData,
+    [activeStoreId]
+  );
+
+  const customers: Customer[] = dashboardData?.customers ?? [];
+  const transactions: CreditTransaction[] = dashboardData?.transactions ?? [];
 
   useEffect(() => {
-    loadData(activeStoreId);
-  }, [activeStoreId]);
+    if (dashboardError) {
+      console.error('Error loading dashboard data:', dashboardError);
+    }
+  }, [dashboardError]);
 
   // Aggregated calculations
   const stats = useMemo(() => computeDashboardStats(customers, transactions), [customers, transactions]);
@@ -170,7 +175,8 @@ export const HomePage: React.FC = () => {
   };
 
   const handleTransactionSuccess = () => {
-    loadData(activeStoreId);
+    // The live query subscription refreshes customers/transactions on its
+    // own; no manual reload is needed here.
     setToastMessage('¡Operación registrada con éxito!');
     setTimeout(() => setToastMessage(null), 3000);
   };

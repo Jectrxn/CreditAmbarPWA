@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from './HomePage';
 import { db } from '../lib/dexie';
@@ -397,6 +397,31 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
       } finally {
         useAuthStore.getState().disableTestMode();
       }
+    });
+  });
+
+  describe('Live data sync (T2)', () => {
+    it('updates the hero total when a customer balance is written directly to Dexie, without a remount', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText(/1,021\.00/i)).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await db.customers.put({
+          id: 'cust-live',
+          store_id: 'store-1',
+          name: 'Cliente Vivo',
+          credit_limit: 200,
+          balance: 100,
+          created_at: new Date().toISOString(),
+        });
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/1,121\.00/i)).toBeInTheDocument();
+      });
     });
   });
 });
