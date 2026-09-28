@@ -77,13 +77,13 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
       setNotes('');
       setOperatorName(currentOperatorName || 'Martin');
 
+      // Never silently pick a customer on the operator's behalf: fiado to
+      // the wrong person is the most expensive UX mistake here. Only a
+      // customer explicitly preselected by the caller (e.g. opened from a
+      // customer's own detail page) is auto-selected.
       db.customers.where('store_id').equals(activeStoreId).toArray().then((list) => {
         setAllCustomers(list);
-        if (preselectedCustomer) {
-          setSelectedCustomerId(preselectedCustomer.id);
-        } else if (list.length > 0) {
-          setSelectedCustomerId(list[0].id);
-        }
+        setSelectedCustomerId(preselectedCustomer ? preselectedCustomer.id : '');
       });
     }
   }, [isOpen, preselectedCustomer, currentOperatorName, activeStoreId]);
@@ -327,6 +327,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                 value={selectedCustomerId}
                 onChange={setSelectedCustomerId}
                 ariaLabel="Cliente"
+                placeholder="Selecciona un cliente"
               />
 
               {/* Dynamic Credit Info Chip */}

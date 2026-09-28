@@ -249,13 +249,46 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     });
     render(<QuickCreditModal isOpen={true} onClose={() => {}} />);
 
-    await screen.findByText(/Carlos Mendoza/i);
-    const picker = screen.getByRole('button', { name: /cliente: carlos mendoza/i });
+    // No preselection: open the picker explicitly and select Carlos Mendoza.
+    const picker = screen.getByRole('button', { name: 'Cliente' });
     fireEvent.click(picker);
 
-    await screen.findByRole('listbox');
-    expect(screen.getByRole('option', { name: /Carlos Mendoza/i })).toBeInTheDocument();
+    const option = await screen.findByRole('option', { name: /Carlos Mendoza/i });
+    expect(option).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /Other Store Person/i })).not.toBeInTheDocument();
+
+    fireEvent.click(option);
+    expect(await screen.findByRole('button', { name: /cliente: carlos mendoza/i })).toBeInTheDocument();
+  });
+
+  it('does not preselect a customer when opened without one (never fiado to the wrong person)', async () => {
+    await db.customers.put({
+      id: 'cust-test-2',
+      store_id: 'store-1',
+      name: 'Maria Lopez',
+      credit_limit: 300,
+      balance: 0,
+      created_at: new Date().toISOString(),
+    });
+
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} />);
+
+    // Placeholder visible, nobody auto-selected.
+    expect(await screen.findByText('Selecciona un cliente')).toBeInTheDocument();
+    expect(screen.queryByText(/Deuda:/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Disponible:/i)).not.toBeInTheDocument();
+
+    // CTA stays disabled even with a plausible manual amount typed.
+    const amountInput = openManualAmount();
+    fireEvent.change(amountInput, { target: { value: '25.50' } });
+    expect(screen.getByRole('button', { name: /confirmar fiado/i })).toBeDisabled();
+
+    // Selecting a customer enables the flow.
+    fireEvent.click(screen.getByRole('button', { name: 'Cliente' }));
+    fireEvent.click(await screen.findByRole('option', { name: /Carlos Mendoza/i }));
+
+    expect(await screen.findByText(/Deuda:/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirmar fiado/i })).not.toBeDisabled();
   });
 
   it('calculates and displays the product-line total automatically', async () => {
