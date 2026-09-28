@@ -66,5 +66,15 @@ A wrong balance is the most expensive bug in a credit ledger; offline-first requ
 - Checks: tsc clean; `npm test` 41 files / 323 tests.
 - T5 Chrome (test mode): Beto balance changed 150 → 100 in DB while the modal still showed 150; confirmed 1× Arroz (S/ 4.50) with a double click → stored balance 104.50 (not 154.50), exactly 1 new transaction, 1 item, queue `customers:UPDATE, credit_transactions:INSERT, transaction_items:INSERT`; success screen correct.
 
+- RDD: assess since branch point 0715cb7 medium, 753 lines, slice_budget_reached → consent granted → review-reliability approved; acknowledged, burned (lineage review-2b13a62781e1cb7c). Reviewed boundary: the docs commit before `df0263a`.
+- Post-review fix `df0263a` (route inline): replay with same operationId but different customer/store/amount now refused with no writes (RED → GREEN); in-flight guard moved before `setErrorMessage` so a dropped submit is a no-op. Checks: focused 35/35; tsc clean; `npm test` 324/324.
+
+## Delivery plan
+- Branch reached ~790 authored lines → cached chain strategy `stacked-to-main`; one slicing pass at existing commits:
+  - S1 money + rules + requestSync: 0715cb7..1f55664 (+218/−9) — verified tsc + 315/315.
+  - S2 registerCreditSale use case: 1f55664..cecdedf (+340/−2) — verified tsc + 321/321.
+  - S3 modal wiring + follow-ups: cecdedf..HEAD (~+170/−82).
+- Push/PR creation awaits the user's go-ahead.
+
 ## Next step
-Review, then PR to `fix/liquid-glass-motion`. Follow-ups: migrate QuickPaymentModal to the same pattern; UX block (customer preselection, focus trap, operator chips, operator PIN decision, undo).
+Open stacked PRs (user decision). Follow-ups: migrate QuickPaymentModal to the same pattern; UX block (customer preselection, focus trap, operator chips, operator PIN decision, undo).
