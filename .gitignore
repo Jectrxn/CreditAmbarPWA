@@ -27,3 +27,8 @@ dist-ssr
 .codegraph/
 .playwright-mcp/
 output/
+
+# Local tool artifacts (screenshots, notes from other assistants)
+/*.png
+/GEMINI.md
+/SESSION_SUMMARY.md
