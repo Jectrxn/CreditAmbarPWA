@@ -229,7 +229,7 @@ export const HomePage: React.FC = () => {
           onClick={() => setIsNumericMode((prev) => !prev)}
           title={isNumericMode ? 'Cambiar a teclado normal' : 'Cambiar a teclado numérico (teléfono/código)'}
           aria-label={isNumericMode ? 'Teclado alfanumérico' : 'Teclado numérico'}
-          className={`absolute right-9 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-full text-[10px] font-black tracking-tight transition-all duration-200 cursor-pointer z-10 flex items-center gap-0.5 ${
+          className={`absolute right-9 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-full text-[10px] font-black tracking-tight transition-all duration-200 cursor-pointer z-10 flex items-center gap-0.5 before:absolute before:-inset-y-3 before:inset-x-0 before:content-[''] ${
             isNumericMode
               ? 'bg-gradient-to-tr from-amber-400 via-amber-300 to-amber-200 text-amber-950 border border-t-white/95 border-b-amber-500/40 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.95),0_2px_8px_rgba(245,158,11,0.35)] scale-105'
               : 'bg-white/40 hover:bg-white/70 text-slate-500 hover:text-amber-800 border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]'
@@ -333,7 +333,7 @@ export const HomePage: React.FC = () => {
                   </>
                 )}
               </div>
-              <span className="bg-amber-400/20 text-amber-950 px-2 py-0.5 rounded-full font-black border border-amber-400/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] backdrop-blur-xs text-[9px]">
+              <span className="bg-amber-400/20 text-amber-950 px-2 py-0.5 rounded-full font-black border border-amber-400/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] backdrop-blur-xs text-[10px]">
                 {(searchQuery.trim() ? filteredCustomers : suggestedCustomers).length}{' '}
                 {(searchQuery.trim() ? filteredCustomers : suggestedCustomers).length === 1 ? 'cliente' : 'clientes'}
               </span>
@@ -460,7 +460,7 @@ export const HomePage: React.FC = () => {
         <div className="relative z-10 grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/60">
           <div className="p-2 sm:p-2.5 bg-white/[0.40] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 rounded-2xl flex items-center justify-between shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.03)] min-w-0">
             <div className="min-w-0 pr-1">
-              <span className="block text-[9px] uppercase font-black text-slate-500 tracking-wider truncate">Clientes</span>
+              <span className="block text-[10px] uppercase font-black text-slate-500 tracking-wider truncate">Clientes</span>
               <span className="text-xs font-black text-slate-900 truncate block">
                 {stats.totalCustomers} {stats.totalCustomers === 1 ? 'registrado' : 'registrados'}
               </span>
@@ -470,7 +470,7 @@ export const HomePage: React.FC = () => {
 
           <div className="p-2 sm:p-2.5 bg-white/[0.40] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 rounded-2xl flex items-center justify-between shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.9),0_2px_6px_rgba(15,23,42,0.03)] min-w-0">
             <div className="min-w-0 pr-1">
-              <span className="block text-[9px] uppercase font-black text-slate-500 tracking-wider truncate">Cobrado Total</span>
+              <span className="block text-[10px] uppercase font-black text-slate-500 tracking-wider truncate">Cobrado Total</span>
               <span className="text-xs font-black text-emerald-700 truncate block">
                 S/ {formatAmount(stats.totalCobradoHistorico)}
               </span>
@@ -491,13 +491,13 @@ export const HomePage: React.FC = () => {
             <TrendingUp className="w-4 h-4" />
           </div>
           <div className="relative z-10 min-w-0">
-            <span className="block text-[9px] font-black text-slate-500 uppercase tracking-wider truncate">
+            <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider truncate">
               Fiado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
               S/ {formatAmount(stats.fiadoHoy)}
             </span>
-            <span className="block text-[9px] text-slate-500 font-semibold truncate">
+            <span className="block text-[10px] text-slate-500 font-semibold truncate">
               {stats.fiadoHoyCount} {stats.fiadoHoyCount === 1 ? 'venta hoy' : 'ventas hoy'}
             </span>
           </div>
@@ -512,13 +512,13 @@ export const HomePage: React.FC = () => {
             <CreditCard className="w-4 h-4" />
           </div>
           <div className="relative z-10 min-w-0">
-            <span className="block text-[9px] font-black text-slate-500 uppercase tracking-wider truncate">
+            <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider truncate">
               Cobrado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
               S/ {formatAmount(stats.cobradoHoy)}
             </span>
-            <span className="block text-[9px] text-slate-500 font-semibold truncate">
+            <span className="block text-[10px] text-slate-500 font-semibold truncate">
               {stats.cobradoHoyCount} {stats.cobradoHoyCount === 1 ? 'abono hoy' : 'abonos hoy'}
             </span>
           </div>
@@ -584,30 +584,32 @@ export const HomePage: React.FC = () => {
                       {index + 1}
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-bold text-slate-900 truncate">{debtor.name}</p>
-                        {debtor.isAged && (
-                          <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-800 border border-rose-400/30 uppercase">
-                            Antigua
-                          </span>
-                        )}
-                      </div>
-                      {/* Debt progress bar with semantic health color */}
-                      {ratio !== null && (
-                        <div
-                          data-testid="debt-progress-bar"
-                          className="w-20 h-1 bg-slate-200/80 rounded-full mt-0.5 overflow-hidden"
-                        >
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              ratio >= 80
-                                ? 'bg-rose-500'
-                                : ratio >= 50
-                                ? 'bg-amber-500'
-                                : 'bg-amber-400'
-                            }`}
-                            style={{ width: `${ratio}%` }}
-                          />
+                      <p className="text-xs font-bold text-slate-900 truncate">{debtor.name}</p>
+                      {/* Second line: debt progress bar (semantic health color) and/or aged badge, kept off the name line so long names do not truncate. */}
+                      {(ratio !== null || debtor.isAged) && (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {ratio !== null && (
+                            <div
+                              data-testid="debt-progress-bar"
+                              className="w-20 h-1 bg-slate-200/80 rounded-full overflow-hidden"
+                            >
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  ratio >= 80
+                                    ? 'bg-rose-500'
+                                    : ratio >= 50
+                                    ? 'bg-amber-500'
+                                    : 'bg-amber-400'
+                                }`}
+                                style={{ width: `${ratio}%` }}
+                              />
+                            </div>
+                          )}
+                          {debtor.isAged && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-800 border border-rose-400/30 uppercase">
+                              Antigua
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -618,7 +620,7 @@ export const HomePage: React.FC = () => {
                       <span className="block text-xs font-black text-rose-600 drop-shadow-2xs">
                         S/ {formatAmount(debtor.balance)}
                       </span>
-                      <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+                      <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         Pendiente
                       </span>
                     </div>
@@ -637,7 +639,7 @@ export const HomePage: React.FC = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`WhatsApp a ${debtor.name}`}
-                          className="p-1.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-700 border border-emerald-400/30 transition shadow-2xs cursor-pointer flex items-center justify-center"
+                          className="relative p-1.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-700 border border-emerald-400/30 transition shadow-2xs cursor-pointer flex items-center justify-center before:absolute before:-inset-y-3 before:-inset-x-0.5 before:content-['']"
                           title="Enviar recordatorio por WhatsApp"
                         >
                           <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
@@ -647,7 +649,7 @@ export const HomePage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleOpenPaymentModal(debtor)}
-                        className="relative overflow-hidden px-3 py-1 text-[11px] font-black text-emerald-950 bg-gradient-to-b from-emerald-400/90 to-emerald-500/80 hover:from-emerald-400 hover:to-emerald-500 active:scale-95 border-t border-t-white/90 border-x-white/30 border-b-emerald-600/40 rounded-full transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_2px_8px_rgba(16,185,129,0.2)] cursor-pointer"
+                        className="relative px-3 py-1 text-[11px] font-black text-emerald-950 bg-gradient-to-b from-emerald-400/90 to-emerald-500/80 hover:from-emerald-400 hover:to-emerald-500 active:scale-95 border-t border-t-white/90 border-x-white/30 border-b-emerald-600/40 rounded-full transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_2px_8px_rgba(16,185,129,0.2)] cursor-pointer before:absolute before:-inset-y-3 before:-inset-x-0.5 before:content-['']"
                       >
                         Abonar
                       </button>

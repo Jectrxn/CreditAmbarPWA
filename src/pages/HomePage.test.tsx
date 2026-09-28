@@ -258,6 +258,71 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
       const row = screen.getByText('Diego | Los Pinos').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(row).getByTestId('debt-progress-bar')).toBeInTheDocument();
     });
+
+    it('still renders the "Antigua" badge on the second line when there is no progress bar (credit_limit 0)', async () => {
+      const agedNoLimitDebtor: Customer = {
+        id: 'cust-aged-nolimit',
+        store_id: 'store-1',
+        name: 'Antigua Sin Limite',
+        credit_limit: 0,
+        balance: 20,
+        created_at: new Date().toISOString(),
+      };
+      const agedNoLimitTx: CreditTransaction = {
+        id: 'tx-aged-nolimit',
+        store_id: 'store-1',
+        customer_id: 'cust-aged-nolimit',
+        cashier_pin_hash: 'admin',
+        total_amount: 20,
+        status: 'completed',
+        created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+        synced: false,
+        type: 'credit_purchase',
+      };
+      await db.customers.bulkPut([agedNoLimitDebtor]);
+      await db.creditTransactions.bulkPut([agedNoLimitTx]);
+
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Antigua Sin Limite')).toBeInTheDocument();
+      });
+
+      const row = screen.getByText('Antigua Sin Limite').closest('[data-testid="top-debtor-row"]') as HTMLElement;
+      expect(within(row).getByText('Antigua')).toBeInTheDocument();
+      expect(within(row).queryByTestId('debt-progress-bar')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Legibility without visual redesign (T6)', () => {
+    it('renders no 8px or 9px text sizes on the home page', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Pinos')).toBeInTheDocument();
+      });
+
+      const container = screen.getByTestId('page-home');
+      expect(container.innerHTML).not.toMatch(/text-\[8px\]/);
+      expect(container.innerHTML).not.toMatch(/text-\[9px\]/);
+    });
+
+    it('expands the invisible hit-area of WhatsApp, Abonar and the numeric toggle without changing their visible size', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Pinos')).toBeInTheDocument();
+      });
+
+      const whatsappLink = screen.getByRole('link', { name: /whatsapp a diego/i });
+      expect(whatsappLink.className).toContain("before:content-['']");
+
+      const abonarButtons = screen.getAllByRole('button', { name: /abonar/i });
+      expect(abonarButtons[0].className).toContain("before:content-['']");
+
+      const numericToggle = screen.getByRole('button', { name: /teclado numérico/i });
+      expect(numericToggle.className).toContain("before:content-['']");
+    });
   });
 
   describe('Store partitioning (T3)', () => {
