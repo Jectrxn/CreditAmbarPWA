@@ -36,6 +36,12 @@ export const OperatorSelector: React.FC<OperatorSelectorProps> = ({
     setCurrentOperatorName(name);
   };
 
+  // More than 3 chips at the sm:grid-cols-4 responsive width squeeze each
+  // name enough for its `truncate` ellipsis to kick in. Past that count,
+  // pin the grid to 2 columns (2 rows for 4 operators) and drop truncation
+  // so every name renders in full.
+  const isCompact = operators.length > 3;
+
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
@@ -89,7 +95,7 @@ export const OperatorSelector: React.FC<OperatorSelectorProps> = ({
         </div>
       ) : (
       /* 4-Pill Liquid Glass Grid */
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+      <div className={isCompact ? 'grid grid-cols-2 gap-1.5' : 'grid grid-cols-2 sm:grid-cols-4 gap-1.5'}>
         {operators.map((name) => {
           const isSelected = selectedName.trim().toLowerCase() === name.trim().toLowerCase();
           const initial = name.charAt(0).toUpperCase();
@@ -125,7 +131,11 @@ export const OperatorSelector: React.FC<OperatorSelectorProps> = ({
               </span>
 
               {/* Cashier Name */}
-              <span className="relative z-10 text-xs font-black truncate tracking-tight">
+              <span
+                className={`relative z-10 text-xs font-black tracking-tight ${
+                  isCompact ? '' : 'truncate'
+                }`}
+              >
                 {name}
               </span>
             </button>
