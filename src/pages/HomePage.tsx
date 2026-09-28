@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import type { Customer, CreditTransaction } from '../types/database';
 import { db } from '../lib/dexie';
+import { useLiveDexieQuery } from '../hooks/useLiveDexieQuery';
 import {
   Search,
   Users,
@@ -27,17 +28,23 @@ import { generateWhatsAppPaymentReminder } from '../features/transactions/whatsa
 import { computeDashboardStats } from '../features/dashboard/dashboardStats';
 import { formatAmount } from '../utils/currency';
 
+/** Loading placeholder pill shown instead of a numeric value while the dashboard's live query is still resolving. */
+const DashboardSkeleton: React.FC<{ width: string; height?: string }> = ({ width, height = 'h-3' }) => (
+  <span
+    aria-hidden="true"
+    data-testid="dashboard-skeleton"
+    className={`inline-block align-middle rounded-full bg-slate-300/40 animate-pulse ${height} ${width}`}
+  />
+);
+
 export const HomePage: React.FC = () => {
   const { storeSession } = useAuthStore();
   const activeStoreId = useActiveStoreId();
   const setTabBarHidden = useUIStore((s) => s.setTabBarHidden);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isNumericMode, setIsNumericMode] = useState(false);
   const [filterMode, setFilterMode] = useState<'all' | 'debt' | 'clean'>('all');
-  const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Recent customer searches stored in localStorage
@@ -88,24 +95,31 @@ export const HomePage: React.FC = () => {
     };
   }, [isSearchFocused, searchQuery, setTabBarHidden]);
 
-  const loadData = async (storeId: string) => {
-    try {
-      const [storeCustomers, storeTransactions] = await Promise.all([
-        db.customers.where('store_id').equals(storeId).toArray(),
-        db.creditTransactions.where('store_id').equals(storeId).toArray(),
-      ]);
-      setCustomers(storeCustomers);
-      setTransactions(storeTransactions);
-    } catch (err) {
-      console.error('Error loading dashboard data:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const queryDashboardData = useCallback(
+    () =>
+      Promise.all([
+        db.customers.where('store_id').equals(activeStoreId).toArray(),
+        db.creditTransactions.where('store_id').equals(activeStoreId).toArray(),
+      ]).then(([storeCustomers, storeTransactions]) => ({
+        customers: storeCustomers,
+        transactions: storeTransactions,
+      })),
+    [activeStoreId]
+  );
+
+  const { data: dashboardData, isLoading, error: dashboardError } = useLiveDexieQuery(
+    queryDashboardData,
+    [activeStoreId]
+  );
+
+  const customers: Customer[] = dashboardData?.customers ?? [];
+  const transactions: CreditTransaction[] = dashboardData?.transactions ?? [];
 
   useEffect(() => {
-    loadData(activeStoreId);
-  }, [activeStoreId]);
+    if (dashboardError) {
+      console.error('Error loading dashboard data:', dashboardError);
+    }
+  }, [dashboardError]);
 
   // Aggregated calculations
   const stats = useMemo(() => computeDashboardStats(customers, transactions), [customers, transactions]);
@@ -170,7 +184,8 @@ export const HomePage: React.FC = () => {
   };
 
   const handleTransactionSuccess = () => {
-    loadData(activeStoreId);
+    // The live query subscription refreshes customers/transactions on its
+    // own; no manual reload is needed here.
     setToastMessage('¡Operación registrada con éxito!');
     setTimeout(() => setToastMessage(null), 3000);
   };
@@ -183,7 +198,7 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div data-testid="page-home" className="w-full space-y-2.5">
+    <div data-testid="page-home" className="w-full space-y-2.5" aria-busy={isLoading}>
       {/* Transaction Toast Notification */}
       {toastMessage && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-emerald-600/95 text-white font-black text-xs shadow-xl backdrop-blur-md flex items-center gap-2 border border-white/40 animate-in fade-in slide-in-from-top-3 duration-300">
@@ -440,7 +455,13 @@ export const HomePage: React.FC = () => {
             <span>Total por Cobrar</span>
           </div>
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-900 border border-amber-400/30 shadow-2xs backdrop-blur-md">
-            • {stats.pendingAccountsCount} {stats.pendingAccountsCount === 1 ? 'cuenta pendiente' : 'cuentas pendientes'}
+            {isLoading ? (
+              <DashboardSkeleton width="w-24" />
+            ) : (
+              <>
+                • {stats.pendingAccountsCount} {stats.pendingAccountsCount === 1 ? 'cuenta pendiente' : 'cuentas pendientes'}
+              </>
+            )}
           </span>
         </div>
 
@@ -448,11 +469,14 @@ export const HomePage: React.FC = () => {
           <div className="flex items-baseline gap-1.5">
             <span className="text-xl sm:text-2xl font-black text-amber-600">S/</span>
             <span className="text-3xl sm:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-amber-700 via-orange-600 to-amber-600 drop-shadow-2xs">
-              {formatAmount(stats.totalReceivable)}
+              {isLoading ? <DashboardSkeleton width="w-28" height="h-7" /> : formatAmount(stats.totalReceivable)}
             </span>
           </div>
           <p className="text-[11px] font-medium text-slate-600 mt-0.5">
-            Total fiado histórico: <span className="text-slate-900 font-bold">S/ {formatAmount(stats.totalFiadoHistorico)}</span>
+            Total fiado histórico:{' '}
+            <span className="text-slate-900 font-bold">
+              {isLoading ? <DashboardSkeleton width="w-14" /> : <>S/ {formatAmount(stats.totalFiadoHistorico)}</>}
+            </span>
           </p>
         </div>
 
@@ -462,7 +486,13 @@ export const HomePage: React.FC = () => {
             <div className="min-w-0 pr-1">
               <span className="block text-[10px] uppercase font-black text-slate-500 tracking-wider truncate">Clientes</span>
               <span className="text-xs font-black text-slate-900 truncate block">
-                {stats.totalCustomers} {stats.totalCustomers === 1 ? 'registrado' : 'registrados'}
+                {isLoading ? (
+                  <DashboardSkeleton width="w-16" />
+                ) : (
+                  <>
+                    {stats.totalCustomers} {stats.totalCustomers === 1 ? 'registrado' : 'registrados'}
+                  </>
+                )}
               </span>
             </div>
             <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
@@ -472,7 +502,7 @@ export const HomePage: React.FC = () => {
             <div className="min-w-0 pr-1">
               <span className="block text-[10px] uppercase font-black text-slate-500 tracking-wider truncate">Cobrado Total</span>
               <span className="text-xs font-black text-emerald-700 truncate block">
-                S/ {formatAmount(stats.totalCobradoHistorico)}
+                {isLoading ? <DashboardSkeleton width="w-16" /> : <>S/ {formatAmount(stats.totalCobradoHistorico)}</>}
               </span>
             </div>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -495,10 +525,16 @@ export const HomePage: React.FC = () => {
               Fiado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
-              S/ {formatAmount(stats.fiadoHoy)}
+              {isLoading ? <DashboardSkeleton width="w-16" height="h-4" /> : <>S/ {formatAmount(stats.fiadoHoy)}</>}
             </span>
             <span className="block text-[10px] text-slate-500 font-semibold truncate">
-              {stats.fiadoHoyCount} {stats.fiadoHoyCount === 1 ? 'venta hoy' : 'ventas hoy'}
+              {isLoading ? (
+                <DashboardSkeleton width="w-14" />
+              ) : (
+                <>
+                  {stats.fiadoHoyCount} {stats.fiadoHoyCount === 1 ? 'venta hoy' : 'ventas hoy'}
+                </>
+              )}
             </span>
           </div>
         </Link>
@@ -516,10 +552,16 @@ export const HomePage: React.FC = () => {
               Cobrado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
-              S/ {formatAmount(stats.cobradoHoy)}
+              {isLoading ? <DashboardSkeleton width="w-16" height="h-4" /> : <>S/ {formatAmount(stats.cobradoHoy)}</>}
             </span>
             <span className="block text-[10px] text-slate-500 font-semibold truncate">
-              {stats.cobradoHoyCount} {stats.cobradoHoyCount === 1 ? 'abono hoy' : 'abonos hoy'}
+              {isLoading ? (
+                <DashboardSkeleton width="w-14" />
+              ) : (
+                <>
+                  {stats.cobradoHoyCount} {stats.cobradoHoyCount === 1 ? 'abono hoy' : 'abonos hoy'}
+                </>
+              )}
             </span>
           </div>
         </Link>

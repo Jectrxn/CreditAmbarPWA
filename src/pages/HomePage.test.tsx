@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from './HomePage';
 import { db } from '../lib/dexie';
@@ -397,6 +397,60 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
       } finally {
         useAuthStore.getState().disableTestMode();
       }
+    });
+  });
+
+  describe('Live data sync (T2)', () => {
+    it('updates the hero total when a customer balance is written directly to Dexie, without a remount', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText(/1,021\.00/i)).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        await db.customers.put({
+          id: 'cust-live',
+          store_id: 'store-1',
+          name: 'Cliente Vivo',
+          credit_limit: 200,
+          balance: 100,
+          created_at: new Date().toISOString(),
+        });
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/1,121\.00/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Loading skeletons (T3)', () => {
+    it('shows skeleton placeholders instead of fake zero amounts while the dashboard is loading', async () => {
+      renderHomePage();
+
+      // Assert the loading state synchronously, before the live query's
+      // first `next` value has a chance to resolve.
+      expect(screen.queryByText(/0\.00/)).not.toBeInTheDocument();
+      expect(screen.getAllByTestId('dashboard-skeleton').length).toBeGreaterThan(0);
+      expect(screen.getByTestId('page-home')).toHaveAttribute('aria-busy', 'true');
+
+      // Let the query resolve so the test does not leave a pending update.
+      await waitFor(() => {
+        expect(screen.getByText(/1,021\.00/i)).toBeInTheDocument();
+      });
+    });
+
+    it('removes skeletons and renders the real values once loaded', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText(/1,021\.00/i)).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('dashboard-skeleton')).not.toBeInTheDocument();
+      expect(screen.getByTestId('page-home')).toHaveAttribute('aria-busy', 'false');
+      expect(screen.getByText(/3 registrados/i)).toBeInTheDocument();
     });
   });
 });
