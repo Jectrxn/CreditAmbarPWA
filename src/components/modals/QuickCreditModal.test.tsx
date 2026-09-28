@@ -327,6 +327,37 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     expect(screen.queryByLabelText('Monto manual del fiado')).not.toBeInTheDocument();
   });
 
+  it('two rapid clicks on Confirmar Fiado create exactly one credit transaction and increment the balance once', async () => {
+    const onSuccess = vi.fn();
+    render(
+      <QuickCreditModal
+        isOpen={true}
+        onClose={() => {}}
+        customer={mockCustomer}
+        onSuccess={onSuccess}
+      />
+    );
+    await screen.findByText(/Carlos Mendoza/i);
+
+    const amountInput = openManualAmount();
+    fireEvent.change(amountInput, { target: { value: '25.50' } });
+
+    const submitBtn = screen.getByRole('button', { name: /confirmar fiado/i });
+    // Two rapid clicks fired synchronously, no await in between.
+    fireEvent.click(submitBtn);
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    const txs = await db.creditTransactions.where('customer_id').equals(mockCustomer.id).toArray();
+    expect(txs).toHaveLength(1);
+
+    const updatedCustomer = await db.customers.get(mockCustomer.id);
+    expect(updatedCustomer?.balance).toBe(75.5); // 50 + 25.50, incremented once
+  });
+
   it('blocks empty and over-limit totals with actionable validation', async () => {
     render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
     await screen.findByText(/Carlos Mendoza/i);
