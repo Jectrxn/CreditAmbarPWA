@@ -30,6 +30,7 @@ The dashboard is the shopkeeper's source of truth; stale or fake-zero numbers le
 - [x] T3 Skeletons: while loading, hero total, hero mini stats, daily metrics values and pending-accounts count render a placeholder pill (`animate-pulse` + existing neutral glass tones) instead of `0.00`; tests for loading vs loaded. Route: delegated.
 - [x] T4 Full checks and Chrome visual check (loading state + live update via a DB write in the page).
 - [x] T5 Fix stale-store paint: derive loading from a deps token during render so the first render after a deps change never returns previous data with `isLoading=false`. Route: inline (hook + its test, small and understood).
+- [x] T7 Dashboard error state: on query error, amounts render "—" instead of `S/ 0.00` (no fake zero), a compact rose alert (reusing existing rose badge tokens) shows "No se pudieron cargar los datos" with a "Reintentar" button; hook exposes `retry()` that resubscribes. Route: delegated (writer trigger: hook + HomePage + tests).
 - [x] T6 Make the unmount test observable: after unmount, a table write must not re-run the querier. Route: inline.
 
 ## Acceptance criteria
@@ -64,5 +65,8 @@ The dashboard is the shopkeeper's source of truth; stale or fake-zero numbers le
 - Checks: focused 23/23; tsc clean; `npm test` 43 files / 339 tests.
 - Chrome (MutationObserver over store switch via test-mode toggle): `587.50 → SKELETON → 0.00`, back `SKELETON → 587.50`; no stale frame.
 
+- T7 `28a40fb` (hook retry: RED `retry is not a function`; GREEN 7/7) + `0136b80` (HomePage error state: RED alert never appeared; GREEN 18/18). `renderMetric` helper; rose alert + Reintentar; debtors section shows error text instead of "¡Cuentas al día!". Only new classes: alert, button, and an icon+text wrapper reusing an existing pattern (accepted). tsc clean; `npm test` 43 files / 341 tests. Parent spot check: focused 25/25.
+- T7 Chrome: forced `db.customers.where` to throw + table write → alert shown, 9 em dashes, no `S/ 0.00`, no "¡Cuentas al día!" (screenshot). Restored + clicked Reintentar → alert gone, total 587.50, 5 debtor rows. Caveat: a record delete during restore may also have triggered the re-read; `retry()` itself is proven by the unit test.
+
 ## Next step
-Later: dashboard error state (still renders S/ 0.00 on query error). Push/PRs are the user's decision.
+Push/PRs (user decision).
