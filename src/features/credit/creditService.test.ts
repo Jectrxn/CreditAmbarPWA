@@ -281,6 +281,8 @@ describe('creditService - Account Creation & Limit Enforcement', () => {
       });
 
       expect(result.ok).toBe(false);
+      if (result.ok) throw new Error('expected failure');
+      expect(result.error).toMatch(/El monto \(S\/ 150\.00\) supera el crédito disponible del cliente/);
       const storedCustomer = await db.customers.get(customer.id);
       expect(storedCustomer?.balance).toBe(0);
       expect(await db.creditTransactions.count()).toBe(0);

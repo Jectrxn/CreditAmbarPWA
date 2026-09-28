@@ -345,7 +345,12 @@ export async function registerCreditSale(
 
         const limitCheck = validateCreditLimit(customer, amount);
         if (!limitCheck.allowed) {
-          return { ok: false, error: limitCheck.error || 'Excede el crédito disponible del cliente.' };
+          // Same wording as the modal's own guard: this message reaches the Spanish UI.
+          const available = Math.max(0, roundToCents(customer.credit_limit - customer.balance));
+          return {
+            ok: false,
+            error: `El monto (S/ ${amount.toFixed(2)}) supera el crédito disponible del cliente (S/ ${available.toFixed(2)}).`,
+          };
         }
 
         const nowIso = now.toISOString();
