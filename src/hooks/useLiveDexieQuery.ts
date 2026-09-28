@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type DependencyList } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type DependencyList } from 'react';
 import { liveQuery } from 'dexie';
 
 export interface UseLiveDexieQueryResult<T> {
   data: T | undefined;
   isLoading: boolean;
   error: unknown;
+  retry: () => void;
 }
 
 interface QueryState<T> {
@@ -23,14 +24,23 @@ export function useLiveDexieQuery<T>(
   querier: () => Promise<T> | T,
   deps: DependencyList
 ): UseLiveDexieQueryResult<T> {
-  // A fresh token identifies the current `deps`. Results are tagged with the
-  // token they were produced for, so the very first render after a deps change
-  // (before the effect runs) already reports loading instead of painting the
-  // previous deps' data.
+  // `attempt` is bumped by `retry()` so a manual retry produces a fresh token
+  // (and therefore a fresh subscription + loading state) the same way a deps
+  // change does, without requiring the caller to change `deps` itself.
+  const [attempt, setAttempt] = useState(0);
+
+  // A fresh token identifies the current `deps` (and retry attempt). Results
+  // are tagged with the token they were produced for, so the very first
+  // render after a deps change (before the effect runs) already reports
+  // loading instead of painting the previous deps' data.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const token = useMemo(() => ({}), deps);
+  const token = useMemo(() => ({}), [...deps, attempt]);
 
   const [state, setState] = useState<QueryState<T> | null>(null);
+
+  const retry = useCallback(() => {
+    setAttempt((a) => a + 1);
+  }, []);
 
   // Keep the latest querier without making it a dependency of the effect
   // below: resubscription is driven only by `deps`, per the hook contract.
@@ -62,8 +72,8 @@ export function useLiveDexieQuery<T>(
   }, [token]);
 
   if (!state || state.token !== token) {
-    return { data: undefined, isLoading: true, error: undefined };
+    return { data: undefined, isLoading: true, error: undefined, retry };
   }
 
-  return { data: state.data, isLoading: !state.settled, error: state.error };
+  return { data: state.data, isLoading: !state.settled, error: state.error, retry };
 }

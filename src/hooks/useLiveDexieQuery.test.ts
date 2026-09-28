@@ -121,6 +121,36 @@ describe('useLiveDexieQuery (Strict TDD)', () => {
     expect(staleFrames).toEqual([]);
   });
 
+  it('retry() resubscribes and reports loading until the new result settles', async () => {
+    await db.customers.put(mockCustomer);
+
+    let callCount = 0;
+    const querier = vi.fn(() => {
+      callCount += 1;
+      if (callCount === 1) {
+        throw new Error('boom');
+      }
+      return db.customers.where('store_id').equals('store-1').toArray();
+    });
+
+    const { result } = renderHook(() => useLiveDexieQuery(querier, ['store-1']));
+
+    await waitFor(() => expect(result.current.error).toBeInstanceOf(Error));
+    expect(result.current.isLoading).toBe(false);
+
+    act(() => {
+      result.current.retry();
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.error).toBeUndefined();
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).toBeUndefined();
+    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data?.[0].name).toBe('Ana');
+  });
+
   it('stops re-running the querier after unmount', async () => {
     const querier = vi.fn(() => db.customers.where('store_id').equals('store-1').toArray());
 
