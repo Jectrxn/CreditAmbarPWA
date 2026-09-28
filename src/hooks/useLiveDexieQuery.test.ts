@@ -90,21 +90,141 @@ describe('useLiveDexieQuery (Strict TDD)', () => {
     expect(result.current.data).toBeUndefined();
   });
 
-  it('unsubscribes on unmount and does not update state afterwards', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('never returns the previous deps data as loaded on the first render after deps change', async () => {
+    await db.customers.bulkPut([
+      mockCustomer,
+      { ...mockCustomer, id: 'cust-2', store_id: 'store-2', name: 'Otra tienda' },
+    ]);
 
-    const { result, unmount } = renderHook(() =>
-      useLiveDexieQuery(() => db.customers.where('store_id').equals('store-1').toArray(), ['store-1'])
+    const renders: { storeId: string; isLoading: boolean; storeIds: string[] | undefined }[] = [];
+
+    const { rerender } = renderHook(
+      ({ storeId }: { storeId: string }) => {
+        const r = useLiveDexieQuery(
+          () => db.customers.where('store_id').equals(storeId).toArray(),
+          [storeId]
+        );
+        renders.push({ storeId, isLoading: r.isLoading, storeIds: r.data?.map((c) => c.store_id) });
+        return r;
+      },
+      { initialProps: { storeId: 'store-1' } }
+    );
+
+    await waitFor(() => expect(renders.at(-1)?.isLoading).toBe(false));
+
+    rerender({ storeId: 'store-2' });
+    await waitFor(() => expect(renders.at(-1)?.storeIds).toEqual(['store-2']));
+
+    const staleFrames = renders.filter(
+      (r) => r.storeId === 'store-2' && (r.storeIds?.includes('store-1') || (!r.isLoading && !r.storeIds))
+    );
+    expect(staleFrames).toEqual([]);
+  });
+
+  it('retry() resubscribes and reports loading until the new result settles', async () => {
+    await db.customers.put(mockCustomer);
+
+    let callCount = 0;
+    const querier = vi.fn(() => {
+      callCount += 1;
+      if (callCount === 1) {
+        throw new Error('boom');
+      }
+      return db.customers.where('store_id').equals('store-1').toArray();
+    });
+
+    const { result } = renderHook(() => useLiveDexieQuery(querier, ['store-1']));
+
+    await waitFor(() => expect(result.current.error).toBeInstanceOf(Error));
+    expect(result.current.isLoading).toBe(false);
+
+    act(() => {
+      result.current.retry();
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.error).toBeUndefined();
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).toBeUndefined();
+    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data?.[0].name).toBe('Ana');
+  });
+
+  it('does not resubscribe when re-rendered with equal deps and a new querier function', async () => {
+    const calls = { count: 0 };
+    const { result, rerender } = renderHook(
+      ({ storeId }: { storeId: string }) =>
+        useLiveDexieQuery(() => {
+          calls.count += 1;
+          return db.customers.where('store_id').equals(storeId).toArray();
+        }, [storeId]),
+      { initialProps: { storeId: 'store-1' } }
     );
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const callsAfterLoad = calls.count;
 
-    unmount();
-
-    await db.customers.put(mockCustomer);
+    // Same deps value but a new props object and a new querier closure.
+    rerender({ storeId: 'store-1' });
+    rerender({ storeId: 'store-1' });
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    expect(errorSpy).not.toHaveBeenCalled();
-    errorSpy.mockRestore();
+    expect(result.current.isLoading).toBe(false);
+    expect(calls.count).toBe(callsAfterLoad);
+  });
+
+  it('recovers via retry() from an error that arrives after data has loaded', async () => {
+    await db.customers.put(mockCustomer);
+    const control = { fail: false };
+
+    const { result } = renderHook(() =>
+      useLiveDexieQuery(async () => {
+        if (control.fail) throw new Error('late failure');
+        return db.customers.where('store_id').equals('store-1').toArray();
+      }, ['store-1'])
+    );
+
+    await waitFor(() => expect(result.current.data).toHaveLength(1));
+
+    // A later write re-runs the querier, which now rejects.
+    control.fail = true;
+    await act(async () => {
+      await db.customers.put({ ...mockCustomer, id: 'cust-2', name: 'Beto' });
+    });
+    await waitFor(() => expect(result.current.error).toBeInstanceOf(Error));
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.data).toBeUndefined();
+
+    control.fail = false;
+    act(() => result.current.retry());
+    expect(result.current.isLoading).toBe(true);
+
+    await waitFor(() => expect(result.current.data).toHaveLength(2));
+    expect(result.current.error).toBeUndefined();
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('stops re-running the querier after unmount', async () => {
+    const querier = vi.fn(() => db.customers.where('store_id').equals('store-1').toArray());
+
+    const { result, unmount } = renderHook(() => useLiveDexieQuery(querier, ['store-1']));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // Sanity check: while mounted, a write re-runs the querier.
+    const callsBeforeWrite = querier.mock.calls.length;
+    await act(async () => {
+      await db.customers.put(mockCustomer);
+    });
+    await waitFor(() => expect(querier.mock.calls.length).toBeGreaterThan(callsBeforeWrite));
+
+    unmount();
+    const callsAtUnmount = querier.mock.calls.length;
+
+    await db.customers.put({ ...mockCustomer, id: 'cust-after-unmount' });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(querier.mock.calls.length).toBe(callsAtUnmount);
   });
 });
