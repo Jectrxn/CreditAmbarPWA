@@ -24,6 +24,8 @@ import { QuickPaymentModal } from '../components/modals/QuickPaymentModal';
 import { useAuthStore, useActiveStoreId } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import { generateWhatsAppPaymentReminder } from '../features/transactions/whatsappHelper';
+import { computeDashboardStats } from '../features/dashboard/dashboardStats';
+import { formatAmount } from '../utils/currency';
 
 export const HomePage: React.FC = () => {
   const { storeSession } = useAuthStore();
@@ -106,54 +108,7 @@ export const HomePage: React.FC = () => {
   }, [activeStoreId]);
 
   // Aggregated calculations
-  const stats = useMemo(() => {
-    const totalReceivable = customers.reduce((acc, c) => acc + (c.balance || 0), 0);
-    const pendingAccountsCount = customers.filter((c) => (c.balance || 0) > 0).length;
-
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    const todayTxs = transactions.filter(
-      (t) => new Date(t.created_at) >= startOfToday && t.status !== 'cancelled'
-    );
-
-    const fiadoHoy = todayTxs
-      .filter((t) => t.type === 'credit_purchase')
-      .reduce((acc, t) => acc + t.total_amount, 0);
-    const fiadoHoyCount = todayTxs.filter((t) => t.type === 'credit_purchase').length;
-
-    const cobradoHoy = todayTxs
-      .filter((t) => t.type === 'payment')
-      .reduce((acc, t) => acc + t.total_amount, 0);
-    const cobradoHoyCount = todayTxs.filter((t) => t.type === 'payment').length;
-
-    const totalFiadoHistorico = transactions
-      .filter((t) => t.type === 'credit_purchase' && t.status !== 'cancelled')
-      .reduce((acc, t) => acc + t.total_amount, 0);
-
-    const totalCobradoHistorico = transactions
-      .filter((t) => t.type === 'payment' && t.status !== 'cancelled')
-      .reduce((acc, t) => acc + t.total_amount, 0);
-
-    // Top debtors (sorted by highest balance)
-    const topDebtors = [...customers]
-      .filter((c) => (c.balance || 0) > 0)
-      .sort((a, b) => b.balance - a.balance)
-      .slice(0, 5);
-
-    return {
-      totalReceivable,
-      pendingAccountsCount,
-      fiadoHoy,
-      fiadoHoyCount,
-      cobradoHoy,
-      cobradoHoyCount,
-      totalFiadoHistorico,
-      totalCobradoHistorico,
-      totalCustomers: customers.length,
-      topDebtors,
-    };
-  }, [customers, transactions]);
+  const stats = useMemo(() => computeDashboardStats(customers, transactions), [customers, transactions]);
 
   // Filtered customers according to search query and active filter chip
   const filteredCustomers = useMemo(() => {
@@ -415,7 +370,7 @@ export const HomePage: React.FC = () => {
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {c.balance > 0 ? (
                             <span className="text-[10px] font-black text-rose-700 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-400/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
-                              Deuda: S/ {c.balance.toFixed(2)}
+                              Deuda: S/ {formatAmount(c.balance)}
                             </span>
                           ) : (
                             <span className="text-[10px] font-black text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-400/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
@@ -493,11 +448,11 @@ export const HomePage: React.FC = () => {
           <div className="flex items-baseline gap-1.5">
             <span className="text-xl sm:text-2xl font-black text-amber-600">S/</span>
             <span className="text-3xl sm:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-amber-700 via-orange-600 to-amber-600 drop-shadow-2xs">
-              {stats.totalReceivable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatAmount(stats.totalReceivable)}
             </span>
           </div>
           <p className="text-[11px] font-medium text-slate-600 mt-0.5">
-            Total fiado histórico: <span className="text-slate-900 font-bold">S/ {stats.totalFiadoHistorico.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            Total fiado histórico: <span className="text-slate-900 font-bold">S/ {formatAmount(stats.totalFiadoHistorico)}</span>
           </p>
         </div>
 
@@ -517,7 +472,7 @@ export const HomePage: React.FC = () => {
             <div className="min-w-0 pr-1">
               <span className="block text-[9px] uppercase font-black text-slate-500 tracking-wider truncate">Cobrado Total</span>
               <span className="text-xs font-black text-emerald-700 truncate block">
-                S/ {stats.totalCobradoHistorico.toFixed(2)}
+                S/ {formatAmount(stats.totalCobradoHistorico)}
               </span>
             </div>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -540,7 +495,7 @@ export const HomePage: React.FC = () => {
               Fiado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
-              S/ {stats.fiadoHoy.toFixed(2)}
+              S/ {formatAmount(stats.fiadoHoy)}
             </span>
             <span className="block text-[9px] text-slate-500 font-semibold truncate">
               {stats.fiadoHoyCount} {stats.fiadoHoyCount === 1 ? 'venta hoy' : 'ventas hoy'}
@@ -561,7 +516,7 @@ export const HomePage: React.FC = () => {
               Cobrado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
-              S/ {stats.cobradoHoy.toFixed(2)}
+              S/ {formatAmount(stats.cobradoHoy)}
             </span>
             <span className="block text-[9px] text-slate-500 font-semibold truncate">
               {stats.cobradoHoyCount} {stats.cobradoHoyCount === 1 ? 'abono hoy' : 'abonos hoy'}
@@ -616,8 +571,7 @@ export const HomePage: React.FC = () => {
         ) : (
           <div className="relative z-10 space-y-1.5">
             {stats.topDebtors.map((debtor, index) => {
-              const maxCredit = debtor.credit_limit || 100;
-              const ratio = Math.min(100, Math.round((debtor.balance / maxCredit) * 100));
+              const ratio = debtor.creditUsageRatio;
 
               return (
                 <div
@@ -631,32 +585,37 @@ export const HomePage: React.FC = () => {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-xs font-bold text-slate-900 truncate">{debtor.name}</p>
-                        {debtor.balance > 100 && (
+                        {debtor.isAged && (
                           <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-800 border border-rose-400/30 uppercase">
                             Antigua
                           </span>
                         )}
                       </div>
                       {/* Debt progress bar with semantic health color */}
-                      <div className="w-20 h-1 bg-slate-200/80 rounded-full mt-0.5 overflow-hidden">
+                      {ratio !== null && (
                         <div
-                          className={`h-full rounded-full transition-all ${
-                            ratio >= 80
-                              ? 'bg-rose-500'
-                              : ratio >= 50
-                              ? 'bg-amber-500'
-                              : 'bg-amber-400'
-                          }`}
-                          style={{ width: `${ratio}%` }}
-                        />
-                      </div>
+                          data-testid="debt-progress-bar"
+                          className="w-20 h-1 bg-slate-200/80 rounded-full mt-0.5 overflow-hidden"
+                        >
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              ratio >= 80
+                                ? 'bg-rose-500'
+                                : ratio >= 50
+                                ? 'bg-amber-500'
+                                : 'bg-amber-400'
+                            }`}
+                            style={{ width: `${ratio}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="text-right">
                       <span className="block text-xs font-black text-rose-600 drop-shadow-2xs">
-                        S/ {debtor.balance.toFixed(2)}
+                        S/ {formatAmount(debtor.balance)}
                       </span>
                       <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider">
                         Pendiente
