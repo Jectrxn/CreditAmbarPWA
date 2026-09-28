@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { db } from '../../lib/dexie';
 import {
   createCreditAccount,
   recordCreditPurchase,
   recordCreditPayment,
   getCustomerCreditAccount,
+  registerCreditSale,
   DEFAULT_CREDIT_LIMIT,
 } from './creditService';
 
@@ -187,6 +188,177 @@ describe('creditService - Account Creation & Limit Enforcement', () => {
       const result = await recordCreditPayment(customer.id, 10, 'store-test');
       expect(result.success).toBe(false);
       expect(result.error).toMatch(/different store/i);
+    });
+  });
+
+  describe('registerCreditSale (atomic, idempotent use case)', () => {
+    const now = new Date('2026-01-01T00:00:00.000Z');
+    let customer: Awaited<ReturnType<typeof createCreditAccount>>;
+
+    beforeEach(async () => {
+      await db.creditTransactions.clear();
+      await db.transactionItems.clear();
+      customer = await createCreditAccount({
+        storeId: 'store-1',
+        name: 'Fiado Customer',
+        creditLimit: 100,
+      });
+      // createCreditAccount above queues its own INSERT; clear it so each
+      // test's syncQueue assertions only see entries from registerCreditSale.
+      await db.syncQueue.clear();
+    });
+
+    it('writes transaction, items, rounded balance and queue entries on the happy path', async () => {
+      const result = await registerCreditSale({
+        operationId: 'op-1',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 0.1 + 0.2, // classic float drift -> must round to 0.3
+        operatorName: 'Martin',
+        items: [{ productId: 'prod-1', name: 'Arroz', qty: 1, unitPrice: 0.3 }],
+        notes: '1× Arroz',
+        now,
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error('expected ok result');
+      expect(result.replayed).toBe(false);
+      expect(result.transaction.id).toBe('op-1');
+      expect(result.transaction.total_amount).toBe(0.3);
+      expect(result.transaction.type).toBe('credit_purchase');
+      expect(result.transaction.cashier_pin_hash).toBe('Martin');
+      expect(result.customer.balance).toBe(0.3);
+
+      const storedTx = await db.creditTransactions.get('op-1');
+      expect(storedTx?.total_amount).toBe(0.3);
+      expect(storedTx?.type).toBe('credit_purchase');
+      expect(storedTx?.status).toBe('completed');
+      expect(storedTx?.notes).toBe('1× Arroz');
+      expect(storedTx?.synced).toBe(false);
+
+      const storedCustomer = await db.customers.get(customer.id);
+      expect(storedCustomer?.balance).toBe(0.3);
+      expect(storedCustomer?.synced).toBe(false);
+
+      const items = await db.transactionItems.where('transaction_id').equals('op-1').toArray();
+      expect(items).toHaveLength(1);
+      expect(items[0]).toMatchObject({ product_id: 'prod-1', quantity: 1, unit_price: 0.3 });
+
+      expect(await db.syncQueue.where('entity').equals('customers').count()).toBe(1);
+      expect(await db.syncQueue.where('entity').equals('credit_transactions').count()).toBe(1);
+      expect(await db.syncQueue.where('entity').equals('transaction_items').count()).toBe(1);
+    });
+
+    it('uses the balance stored at submit time, not an older value the caller opened with', async () => {
+      // Caller "opened" the modal when balance was 0; it changed meanwhile
+      // (another screen, or a completed sync) to 40 before this call commits.
+      await db.customers.update(customer.id, { balance: 40 });
+
+      const result = await registerCreditSale({
+        operationId: 'op-stale',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 30,
+        operatorName: 'Martin',
+        items: [],
+        now,
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error('expected ok result');
+      expect(result.customer.balance).toBe(70); // 40 + 30, not 0 + 30
+    });
+
+    it('refuses an over-limit purchase and writes nothing', async () => {
+      const result = await registerCreditSale({
+        operationId: 'op-over',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 150,
+        operatorName: 'Martin',
+        items: [],
+        now,
+      });
+
+      expect(result.ok).toBe(false);
+      const storedCustomer = await db.customers.get(customer.id);
+      expect(storedCustomer?.balance).toBe(0);
+      expect(await db.creditTransactions.count()).toBe(0);
+      expect(await db.syncQueue.count()).toBe(0);
+    });
+
+    it('is idempotent: replaying the same operationId returns the existing transaction with no new writes', async () => {
+      const first = await registerCreditSale({
+        operationId: 'op-dup',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 20,
+        operatorName: 'Martin',
+        items: [],
+        now,
+      });
+      expect(first.ok).toBe(true);
+
+      const second = await registerCreditSale({
+        operationId: 'op-dup',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 20,
+        operatorName: 'Martin',
+        items: [],
+        now,
+      });
+
+      expect(second.ok).toBe(true);
+      if (!second.ok) throw new Error('expected ok result');
+      expect(second.replayed).toBe(true);
+
+      expect(await db.creditTransactions.count()).toBe(1);
+      const storedCustomer = await db.customers.get(customer.id);
+      expect(storedCustomer?.balance).toBe(20); // incremented once, not twice
+    });
+
+    it('rolls back all writes when an inner write throws', async () => {
+      const putSpy = vi
+        .spyOn(db.transactionItems, 'put')
+        .mockRejectedValueOnce(new Error('boom'));
+
+      const result = await registerCreditSale({
+        operationId: 'op-rollback',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 10,
+        operatorName: 'Martin',
+        items: [{ productId: 'prod-x', name: 'X', qty: 1, unitPrice: 10 }],
+        now,
+      });
+
+      expect(result.ok).toBe(false);
+
+      const storedCustomer = await db.customers.get(customer.id);
+      expect(storedCustomer?.balance).toBe(0);
+      expect(await db.creditTransactions.count()).toBe(0);
+      expect(await db.transactionItems.count()).toBe(0);
+      expect(await db.syncQueue.count()).toBe(0);
+
+      putSpy.mockRestore();
+    });
+
+    it('refuses a customer that belongs to a different store', async () => {
+      const result = await registerCreditSale({
+        operationId: 'op-cross-store',
+        storeId: 'store-other',
+        customerId: customer.id,
+        amount: 10,
+        operatorName: 'Martin',
+        items: [],
+        now,
+      });
+
+      expect(result.ok).toBe(false);
+      const storedCustomer = await db.customers.get(customer.id);
+      expect(storedCustomer?.balance).toBe(0);
+      expect(await db.creditTransactions.count()).toBe(0);
     });
   });
 });
