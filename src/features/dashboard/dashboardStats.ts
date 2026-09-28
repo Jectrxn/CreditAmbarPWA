@@ -29,8 +29,11 @@ function toDebtor(customer: Customer, transactions: CreditTransaction[], now: Da
     (t) => t.customer_id === customer.id && t.status !== 'cancelled'
   );
   const oldestUnpaidDate = calculateOldestUnpaidDate(customerTxs);
+  // Clamp to 0 instead of taking the absolute value: a purchase dated in the
+  // future (clock skew) is not a debt that has been aging, so it must not be
+  // reported as older (or "Antigua") than it actually is.
   const debtAgeDays = oldestUnpaidDate
-    ? Math.ceil(Math.abs(now.getTime() - oldestUnpaidDate.getTime()) / 86_400_000)
+    ? Math.max(0, Math.ceil((now.getTime() - oldestUnpaidDate.getTime()) / 86_400_000))
     : null;
   const isAged = debtAgeDays !== null && debtAgeDays >= AGED_DEBT_DAYS;
   const creditUsageRatio =

@@ -33,6 +33,8 @@ Money figures on the main screen drive the shopkeeper's collection decisions; wr
 - [x] T1 `formatAmount()` helper in `src/utils/currency.ts` with tests. Route: delegated (writer trigger: 2+ non-trivial files across T1–T3).
 - [x] T2 `computeDashboardStats(customers, transactions, now)` pure function with tests: totals, today metrics, top 5 debtors with `oldestUnpaidDate`, `isAged`, `creditUsageRatio` (null without limit). Route: delegated.
 - [x] T3 Wire `HomePage.tsx` to T1/T2: "Antigua" from `isAged`, hide bar when ratio is null, unified formatting; update `HomePage.test.tsx`. Route: delegated.
+- [x] T5 Harden tests from review advisories: timezone-independent today-metrics test, 29/30-day boundary tests, clamp future-dated purchases to age 0 (no `Math.abs`), row `data-testid` instead of class selector. Route: delegated (writer trigger: 3+ non-trivial files across T5–T6).
+- [x] T6 Legibility without visual redesign: 8–9px text → 10–11px, invisible hit-area expansion (≥44px) for WhatsApp/Abonar/123 buttons, move "Antigua" badge off the name line so names do not truncate. Route: delegated.
 - [x] T4 Full checks (`npx tsc --noEmit`, `npm test`) and visual check at mobile width in Chrome.
 
 ## Acceptance criteria
@@ -47,7 +49,11 @@ Money figures on the main screen drive the shopkeeper's collection decisions; wr
 - `npm test`
 
 ## Delivery
-- Strategy: ask-on-risk. Forecast ~300 authored lines (under 400 budget).
+- Strategy: ask-on-risk → user chose chain strategy `stacked-to-main` (branch reached ~790 authored src lines).
+- Slice PR1 (stats accuracy): 02df885, c3c4d29, 4ca9b4a + docs 2f35f20, 5952078, d25f33b. Reviewed/approved.
+- Slice PR2 (test hardening + legibility): bc4d1d1, 2e310ad, 72c322c + docs. Review pending (under budget at assess time).
+- Slice PR3: feature `dashboard-live-data` on branch `feat/dashboard-live-data` stacked on this branch.
+- Note: this branch is based on `fix/liquid-glass-motion` (not yet in main); PR1 must target that branch or wait for it to merge.
 - Branch: `feat/dashboard-stats-accuracy` (from `fix/liquid-glass-motion` @ 0715cb7).
 
 ## Progress and evidence
@@ -69,5 +75,11 @@ Money figures on the main screen drive the shopkeeper's collection decisions; wr
 - T4 (done): with user OK, seeded 6 customers / 8 txs into test-mode store `store-test` (ids `seed-dash-*`, no syncQueue entries; `ambar-store-1` untouched) and enabled test mode. Verified in Chrome at 500px: Antigua on Carmen (60d), Eduardo (40d oldest unpaid after partial payment), Ana (45d, S/20); no Antigua on Beto (5d, S/150); no bar on Doris (limit 0); bars 93% rose / 75% amber / 90% rose / 20% amber; 6th debtor excluded; totals S/587.50, fiado histórico S/692.50, cobrado S/105.00, fiado hoy S/12.50, cobrado hoy S/50.00 — all match hand-computed values.
 - Visual observation (pre-existing layout, next block): debtor names truncate hard ("Carm…", "Eduar…") when the Antigua badge is present.
 
+- T5 `bc4d1d1` — RED: clamp test `expected 45 to be +0`; GREEN 16/16. Boundary tests (29d, 30d, 29d+1min) pass on existing behavior (coverage only). TZ matrix Tokyo/Lima/Kiritimati/Honolulu 16/16. Parent spot check: `TZ=Asia/Tokyo` focused run 29/29.
+- T6 `2e310ad` — RED 2 failed / 11 passed; GREEN 13/13; `npm test` 42 files / 329 tests; tsc clean. Diff: text 8/9px → 10px (9×), invisible `before:` hit areas (WhatsApp ≈32×52, Abonar ≈80×50, 123 ≈48×44), `overflow-hidden` removed from Abonar (text-only child), badge moved to second line.
+- T6 visual regression (Chrome, 500px, measured via DOM): with the Antigua badge on the second line the progress bar shrinks from 80px to 27px (Carmen, Eduardo), so a 93% bar reads nearly empty. Names no longer truncate. T6 reopened.
+
+- T6 fix `72c322c` (user chose "badge under the amount"; route inline: 1 file + its test, already understood) — RED 2 failed / 12 passed; GREEN 14/14; tsc clean; `npm test` 42 files / 330 tests. Chrome DOM measurement: all bars 80px, no name truncation, no row overflow; aged rows 55px vs 53px (badge border), previously 62px with inline-block.
+
 ## Next step
-Fix advisory test findings; then legibility block (text sizes, touch targets, name truncation).
+Native review of T5–T6 (base 2f35f20, last reviewed boundary).

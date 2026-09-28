@@ -227,11 +227,32 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
         expect(screen.getByText('Rosa Antigua')).toBeInTheDocument();
       });
 
-      const agedRow = screen.getByText('Rosa Antigua').closest('div.p-2\\.5') as HTMLElement;
+      const agedRow = screen.getByText('Rosa Antigua').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(agedRow).getByText('Antigua')).toBeInTheDocument();
 
-      const recentRow = screen.getByText('Nueva Reciente').closest('div.p-2\\.5') as HTMLElement;
+      const recentRow = screen.getByText('Nueva Reciente').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(recentRow).queryByText('Antigua')).not.toBeInTheDocument();
+    });
+
+    it('replaces the "Pendiente" label under the amount with the "Antigua" badge for aged debts', async () => {
+      await db.customers.bulkPut([agedDebtor, recentDebtor]);
+      await db.creditTransactions.bulkPut([agedTx, recentTx]);
+
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Rosa Antigua')).toBeInTheDocument();
+      });
+
+      const agedRow = screen.getByText('Rosa Antigua').closest('[data-testid="top-debtor-row"]') as HTMLElement;
+      const agedAmount = within(agedRow).getByTestId('top-debtor-amount');
+      expect(within(agedAmount).getByText('Antigua')).toBeInTheDocument();
+      expect(within(agedAmount).queryByText('Pendiente')).not.toBeInTheDocument();
+
+      const recentRow = screen.getByText('Nueva Reciente').closest('[data-testid="top-debtor-row"]') as HTMLElement;
+      const recentAmount = within(recentRow).getByTestId('top-debtor-amount');
+      expect(within(recentAmount).getByText('Pendiente')).toBeInTheDocument();
+      expect(within(recentAmount).queryByText('Antigua')).not.toBeInTheDocument();
     });
 
     it('hides the credit usage progress bar when the customer has no credit_limit', async () => {
@@ -244,7 +265,7 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
         expect(screen.getByText('Sin Limite')).toBeInTheDocument();
       });
 
-      const row = screen.getByText('Sin Limite').closest('div.p-2\\.5') as HTMLElement;
+      const row = screen.getByText('Sin Limite').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(row).queryByTestId('debt-progress-bar')).not.toBeInTheDocument();
     });
 
@@ -255,8 +276,73 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
         expect(screen.getByText('Diego | Los Pinos')).toBeInTheDocument();
       });
 
-      const row = screen.getByText('Diego | Los Pinos').closest('div.p-2\\.5') as HTMLElement;
+      const row = screen.getByText('Diego | Los Pinos').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(row).getByTestId('debt-progress-bar')).toBeInTheDocument();
+    });
+
+    it('still renders the "Antigua" badge under the amount when there is no progress bar (credit_limit 0)', async () => {
+      const agedNoLimitDebtor: Customer = {
+        id: 'cust-aged-nolimit',
+        store_id: 'store-1',
+        name: 'Antigua Sin Limite',
+        credit_limit: 0,
+        balance: 20,
+        created_at: new Date().toISOString(),
+      };
+      const agedNoLimitTx: CreditTransaction = {
+        id: 'tx-aged-nolimit',
+        store_id: 'store-1',
+        customer_id: 'cust-aged-nolimit',
+        cashier_pin_hash: 'admin',
+        total_amount: 20,
+        status: 'completed',
+        created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+        synced: false,
+        type: 'credit_purchase',
+      };
+      await db.customers.bulkPut([agedNoLimitDebtor]);
+      await db.creditTransactions.bulkPut([agedNoLimitTx]);
+
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Antigua Sin Limite')).toBeInTheDocument();
+      });
+
+      const row = screen.getByText('Antigua Sin Limite').closest('[data-testid="top-debtor-row"]') as HTMLElement;
+      expect(within(within(row).getByTestId('top-debtor-amount')).getByText('Antigua')).toBeInTheDocument();
+      expect(within(row).queryByTestId('debt-progress-bar')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Legibility without visual redesign (T6)', () => {
+    it('renders no 8px or 9px text sizes on the home page', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Pinos')).toBeInTheDocument();
+      });
+
+      const container = screen.getByTestId('page-home');
+      expect(container.innerHTML).not.toMatch(/text-\[8px\]/);
+      expect(container.innerHTML).not.toMatch(/text-\[9px\]/);
+    });
+
+    it('expands the invisible hit-area of WhatsApp, Abonar and the numeric toggle without changing their visible size', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Pinos')).toBeInTheDocument();
+      });
+
+      const whatsappLink = screen.getByRole('link', { name: /whatsapp a diego/i });
+      expect(whatsappLink.className).toContain("before:content-['']");
+
+      const abonarButtons = screen.getAllByRole('button', { name: /abonar/i });
+      expect(abonarButtons[0].className).toContain("before:content-['']");
+
+      const numericToggle = screen.getByRole('button', { name: /teclado numérico/i });
+      expect(numericToggle.className).toContain("before:content-['']");
     });
   });
 
