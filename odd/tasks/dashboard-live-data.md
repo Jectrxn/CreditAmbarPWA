@@ -52,5 +52,11 @@ The dashboard is the shopkeeper's source of truth; stale or fake-zero numbers le
 - Parent spot check: focused run 22/22.
 - T4 Chrome (test-mode data): wrote a customer (S/100) directly to `db.customers` → hero 587.50 → 687.50 without reload; deleted → 587.50. After load: 0 skeletons, `aria-busy="false"`. Loading state itself not captured visually (local load is near-instant); covered by tests.
 
+- RDD: assess since 2f35f20 medium, 656 lines, slice_budget_reached → consent granted → review-reliability approved; acknowledged, authority burned (lineage review-8b3a8ece48c63ecb). Reviewed boundary advances to HEAD (covers PR2 + PR3 slices).
+- Advisory (non-blocking) findings, follow-up work:
+  - WARNING unmount test is vacuous (only asserts no console.error; would pass without unsubscribe).
+  - WARNING stale-store paint: reset runs in useEffect after paint, so on `activeStoreId` change one frame shows the previous store's data with `isLoading=false`.
+  - SUGGESTION query error still renders `S/ 0.00` everywhere (pre-existing behavior; no error-state test).
+
 ## Next step
-Native review of the pending slice (PR2 + PR3 commits since boundary 2f35f20).
+Optional follow-up: fix stale-store paint (derive loading from a deps key), strengthen unmount test, dashboard error state. Then push/PRs (user decision).
