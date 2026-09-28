@@ -2,10 +2,31 @@ import { describe, it, expect } from 'vitest';
 import { computeDashboardStats, AGED_DEBT_DAYS } from './dashboardStats';
 import type { Customer, CreditTransaction } from '../../types/database';
 
-const NOW = new Date('2026-09-28T12:00:00.000Z');
+// Built with the local Date constructor (not a UTC ISO string) so this fixture
+// represents the same local wall-clock instant regardless of the process TZ.
+// A fixed UTC instant would shift across a local calendar-day boundary in
+// some timezones (e.g. UTC+14), breaking "today" / "yesterday" assumptions.
+const NOW = new Date(2026, 8, 28, 12, 0, 0);
+
+function agoMs(ms: number): string {
+  return new Date(NOW.getTime() - ms).toISOString();
+}
 
 function daysAgo(days: number): string {
-  return new Date(NOW.getTime() - days * 86_400_000).toISOString();
+  return agoMs(days * 86_400_000);
+}
+
+/** Builds an ISO timestamp `hours:minutes` on the local calendar day of NOW, offset by `dayOffset` days. */
+function localTime(dayOffset: number, hours: number, minutes = 0): string {
+  return new Date(
+    NOW.getFullYear(),
+    NOW.getMonth(),
+    NOW.getDate() + dayOffset,
+    hours,
+    minutes,
+    0,
+    0
+  ).toISOString();
 }
 
 function makeCustomer(overrides: Partial<Customer> & Pick<Customer, 'id'>): Customer {
@@ -59,6 +80,67 @@ describe('computeDashboardStats', () => {
       expect(AGED_DEBT_DAYS).toBe(30);
     });
 
+    it('treats exactly 29 days old as not aged (below AGED_DEBT_DAYS boundary)', () => {
+      const customer = makeCustomer({ id: 'c-boundary-29', balance: 30, credit_limit: 500 });
+      const tx = makeTx({
+        id: 't-boundary-29',
+        customer_id: 'c-boundary-29',
+        total_amount: 30,
+        created_at: daysAgo(29),
+      });
+
+      const stats = computeDashboardStats([customer], [tx], NOW);
+
+      expect(stats.topDebtors[0].debtAgeDays).toBe(29);
+      expect(stats.topDebtors[0].isAged).toBe(false);
+    });
+
+    it('treats exactly 30 days old as aged (AGED_DEBT_DAYS boundary)', () => {
+      const customer = makeCustomer({ id: 'c-boundary-30', balance: 30, credit_limit: 500 });
+      const tx = makeTx({
+        id: 't-boundary-30',
+        customer_id: 'c-boundary-30',
+        total_amount: 30,
+        created_at: daysAgo(30),
+      });
+
+      const stats = computeDashboardStats([customer], [tx], NOW);
+
+      expect(stats.topDebtors[0].debtAgeDays).toBe(30);
+      expect(stats.topDebtors[0].isAged).toBe(true);
+    });
+
+    it('documents that Math.ceil rounds 29 days + 1 minute up to 30, marking it aged (current rounding behavior, not changed by this test)', () => {
+      const customer = makeCustomer({ id: 'c-boundary-29-1min', balance: 30, credit_limit: 500 });
+      const tx = makeTx({
+        id: 't-boundary-29-1min',
+        customer_id: 'c-boundary-29-1min',
+        total_amount: 30,
+        created_at: agoMs(29 * 86_400_000 + 60_000),
+      });
+
+      const stats = computeDashboardStats([customer], [tx], NOW);
+
+      expect(stats.topDebtors[0].debtAgeDays).toBe(30);
+      expect(stats.topDebtors[0].isAged).toBe(true);
+    });
+
+    it('clamps a future-dated purchase (clock skew) to debtAgeDays 0 and isAged=false', () => {
+      const customer = makeCustomer({ id: 'c-future', balance: 30, credit_limit: 500 });
+      const tx = makeTx({
+        id: 't-future',
+        customer_id: 'c-future',
+        total_amount: 30,
+        // Purchase dated 45 days in the future relative to NOW (e.g. device clock skew).
+        created_at: agoMs(-45 * 86_400_000),
+      });
+
+      const stats = computeDashboardStats([customer], [tx], NOW);
+
+      expect(stats.topDebtors[0].debtAgeDays).toBe(0);
+      expect(stats.topDebtors[0].isAged).toBe(false);
+    });
+
     it('has null debtAgeDays and isAged=false when the customer has no unpaid purchases', () => {
       const customer = makeCustomer({ id: 'c3', balance: 30, credit_limit: 500 });
       // no transactions at all for this customer
@@ -107,14 +189,14 @@ describe('computeDashboardStats', () => {
         customer_id: 'c7',
         type: 'credit_purchase',
         total_amount: 40,
-        created_at: '2026-09-28T08:00:00.000Z',
+        created_at: localTime(0, 8),
       });
       const todayPayment = makeTx({
         id: 'tx-today-payment',
         customer_id: 'c7',
         type: 'payment',
         total_amount: 25,
-        created_at: '2026-09-28T09:00:00.000Z',
+        created_at: localTime(0, 9),
       });
       const todayCancelled = makeTx({
         id: 'tx-today-cancelled',
@@ -122,14 +204,14 @@ describe('computeDashboardStats', () => {
         type: 'credit_purchase',
         total_amount: 999,
         status: 'cancelled',
-        created_at: '2026-09-28T10:00:00.000Z',
+        created_at: localTime(0, 10),
       });
       const yesterdayPurchase = makeTx({
         id: 'tx-yesterday-purchase',
         customer_id: 'c7',
         type: 'credit_purchase',
         total_amount: 77,
-        created_at: '2026-09-27T23:00:00.000Z',
+        created_at: localTime(-1, 23),
       });
 
       const stats = computeDashboardStats(

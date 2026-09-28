@@ -227,10 +227,10 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
         expect(screen.getByText('Rosa Antigua')).toBeInTheDocument();
       });
 
-      const agedRow = screen.getByText('Rosa Antigua').closest('div.p-2\\.5') as HTMLElement;
+      const agedRow = screen.getByText('Rosa Antigua').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(agedRow).getByText('Antigua')).toBeInTheDocument();
 
-      const recentRow = screen.getByText('Nueva Reciente').closest('div.p-2\\.5') as HTMLElement;
+      const recentRow = screen.getByText('Nueva Reciente').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(recentRow).queryByText('Antigua')).not.toBeInTheDocument();
     });
 
@@ -244,7 +244,7 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
         expect(screen.getByText('Sin Limite')).toBeInTheDocument();
       });
 
-      const row = screen.getByText('Sin Limite').closest('div.p-2\\.5') as HTMLElement;
+      const row = screen.getByText('Sin Limite').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(row).queryByTestId('debt-progress-bar')).not.toBeInTheDocument();
     });
 
@@ -255,7 +255,7 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
         expect(screen.getByText('Diego | Los Pinos')).toBeInTheDocument();
       });
 
-      const row = screen.getByText('Diego | Los Pinos').closest('div.p-2\\.5') as HTMLElement;
+      const row = screen.getByText('Diego | Los Pinos').closest('[data-testid="top-debtor-row"]') as HTMLElement;
       expect(within(row).getByTestId('debt-progress-bar')).toBeInTheDocument();
     });
   });

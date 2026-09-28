@@ -576,6 +576,7 @@ export const HomePage: React.FC = () => {
               return (
                 <div
                   key={debtor.id}
+                  data-testid="top-debtor-row"
                   className="p-2.5 rounded-2xl bg-white/[0.40] hover:bg-white/[0.65] backdrop-blur-md border border-t-white border-x-white/50 border-b-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_2px_8px_rgba(15,23,42,0.03)] flex items-center justify-between gap-2 transition-all duration-200"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
