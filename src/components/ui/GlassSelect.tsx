@@ -12,6 +12,8 @@ export interface GlassSelectProps {
   onChange: (value: string) => void;
   ariaLabel: string;
   disabled?: boolean;
+  /** Shown in the closed button, in a muted tone, when `value` matches no option. */
+  placeholder?: string;
 }
 
 /**
@@ -34,6 +36,7 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({
   onChange,
   ariaLabel,
   disabled = false,
+  placeholder,
 }) => {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -139,7 +142,9 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({
         onKeyDown={handleButtonKeyDown}
         className="w-full p-3 text-sm font-semibold text-slate-900 bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all cursor-pointer flex items-center justify-between gap-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span className="truncate">{selected?.label ?? ''}</span>
+        <span className={selected ? 'truncate' : 'truncate text-slate-400'}>
+          {selected?.label ?? placeholder ?? ''}
+        </span>
         <ChevronDown
           aria-hidden="true"
           className={`w-4 h-4 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
