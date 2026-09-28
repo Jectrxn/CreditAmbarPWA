@@ -28,6 +28,15 @@ import { generateWhatsAppPaymentReminder } from '../features/transactions/whatsa
 import { computeDashboardStats } from '../features/dashboard/dashboardStats';
 import { formatAmount } from '../utils/currency';
 
+/** Loading placeholder pill shown instead of a numeric value while the dashboard's live query is still resolving. */
+const DashboardSkeleton: React.FC<{ width: string; height?: string }> = ({ width, height = 'h-3' }) => (
+  <span
+    aria-hidden="true"
+    data-testid="dashboard-skeleton"
+    className={`inline-block align-middle rounded-full bg-slate-300/40 animate-pulse ${height} ${width}`}
+  />
+);
+
 export const HomePage: React.FC = () => {
   const { storeSession } = useAuthStore();
   const activeStoreId = useActiveStoreId();
@@ -189,7 +198,7 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div data-testid="page-home" className="w-full space-y-2.5">
+    <div data-testid="page-home" className="w-full space-y-2.5" aria-busy={isLoading}>
       {/* Transaction Toast Notification */}
       {toastMessage && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-emerald-600/95 text-white font-black text-xs shadow-xl backdrop-blur-md flex items-center gap-2 border border-white/40 animate-in fade-in slide-in-from-top-3 duration-300">
@@ -446,7 +455,13 @@ export const HomePage: React.FC = () => {
             <span>Total por Cobrar</span>
           </div>
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-900 border border-amber-400/30 shadow-2xs backdrop-blur-md">
-            • {stats.pendingAccountsCount} {stats.pendingAccountsCount === 1 ? 'cuenta pendiente' : 'cuentas pendientes'}
+            {isLoading ? (
+              <DashboardSkeleton width="w-24" />
+            ) : (
+              <>
+                • {stats.pendingAccountsCount} {stats.pendingAccountsCount === 1 ? 'cuenta pendiente' : 'cuentas pendientes'}
+              </>
+            )}
           </span>
         </div>
 
@@ -454,11 +469,14 @@ export const HomePage: React.FC = () => {
           <div className="flex items-baseline gap-1.5">
             <span className="text-xl sm:text-2xl font-black text-amber-600">S/</span>
             <span className="text-3xl sm:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-amber-700 via-orange-600 to-amber-600 drop-shadow-2xs">
-              {formatAmount(stats.totalReceivable)}
+              {isLoading ? <DashboardSkeleton width="w-28" height="h-7" /> : formatAmount(stats.totalReceivable)}
             </span>
           </div>
           <p className="text-[11px] font-medium text-slate-600 mt-0.5">
-            Total fiado histórico: <span className="text-slate-900 font-bold">S/ {formatAmount(stats.totalFiadoHistorico)}</span>
+            Total fiado histórico:{' '}
+            <span className="text-slate-900 font-bold">
+              {isLoading ? <DashboardSkeleton width="w-14" /> : <>S/ {formatAmount(stats.totalFiadoHistorico)}</>}
+            </span>
           </p>
         </div>
 
@@ -468,7 +486,13 @@ export const HomePage: React.FC = () => {
             <div className="min-w-0 pr-1">
               <span className="block text-[10px] uppercase font-black text-slate-500 tracking-wider truncate">Clientes</span>
               <span className="text-xs font-black text-slate-900 truncate block">
-                {stats.totalCustomers} {stats.totalCustomers === 1 ? 'registrado' : 'registrados'}
+                {isLoading ? (
+                  <DashboardSkeleton width="w-16" />
+                ) : (
+                  <>
+                    {stats.totalCustomers} {stats.totalCustomers === 1 ? 'registrado' : 'registrados'}
+                  </>
+                )}
               </span>
             </div>
             <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
@@ -478,7 +502,7 @@ export const HomePage: React.FC = () => {
             <div className="min-w-0 pr-1">
               <span className="block text-[10px] uppercase font-black text-slate-500 tracking-wider truncate">Cobrado Total</span>
               <span className="text-xs font-black text-emerald-700 truncate block">
-                S/ {formatAmount(stats.totalCobradoHistorico)}
+                {isLoading ? <DashboardSkeleton width="w-16" /> : <>S/ {formatAmount(stats.totalCobradoHistorico)}</>}
               </span>
             </div>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -501,10 +525,16 @@ export const HomePage: React.FC = () => {
               Fiado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
-              S/ {formatAmount(stats.fiadoHoy)}
+              {isLoading ? <DashboardSkeleton width="w-16" height="h-4" /> : <>S/ {formatAmount(stats.fiadoHoy)}</>}
             </span>
             <span className="block text-[10px] text-slate-500 font-semibold truncate">
-              {stats.fiadoHoyCount} {stats.fiadoHoyCount === 1 ? 'venta hoy' : 'ventas hoy'}
+              {isLoading ? (
+                <DashboardSkeleton width="w-14" />
+              ) : (
+                <>
+                  {stats.fiadoHoyCount} {stats.fiadoHoyCount === 1 ? 'venta hoy' : 'ventas hoy'}
+                </>
+              )}
             </span>
           </div>
         </Link>
@@ -522,10 +552,16 @@ export const HomePage: React.FC = () => {
               Cobrado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
-              S/ {formatAmount(stats.cobradoHoy)}
+              {isLoading ? <DashboardSkeleton width="w-16" height="h-4" /> : <>S/ {formatAmount(stats.cobradoHoy)}</>}
             </span>
             <span className="block text-[10px] text-slate-500 font-semibold truncate">
-              {stats.cobradoHoyCount} {stats.cobradoHoyCount === 1 ? 'abono hoy' : 'abonos hoy'}
+              {isLoading ? (
+                <DashboardSkeleton width="w-14" />
+              ) : (
+                <>
+                  {stats.cobradoHoyCount} {stats.cobradoHoyCount === 1 ? 'abono hoy' : 'abonos hoy'}
+                </>
+              )}
             </span>
           </div>
         </Link>

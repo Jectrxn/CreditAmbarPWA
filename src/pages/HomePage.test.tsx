@@ -424,4 +424,33 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
       });
     });
   });
+
+  describe('Loading skeletons (T3)', () => {
+    it('shows skeleton placeholders instead of fake zero amounts while the dashboard is loading', async () => {
+      renderHomePage();
+
+      // Assert the loading state synchronously, before the live query's
+      // first `next` value has a chance to resolve.
+      expect(screen.queryByText(/0\.00/)).not.toBeInTheDocument();
+      expect(screen.getAllByTestId('dashboard-skeleton').length).toBeGreaterThan(0);
+      expect(screen.getByTestId('page-home')).toHaveAttribute('aria-busy', 'true');
+
+      // Let the query resolve so the test does not leave a pending update.
+      await waitFor(() => {
+        expect(screen.getByText(/1,021\.00/i)).toBeInTheDocument();
+      });
+    });
+
+    it('removes skeletons and renders the real values once loaded', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText(/1,021\.00/i)).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('dashboard-skeleton')).not.toBeInTheDocument();
+      expect(screen.getByTestId('page-home')).toHaveAttribute('aria-busy', 'false');
+      expect(screen.getByText(/3 registrados/i)).toBeInTheDocument();
+    });
+  });
 });
