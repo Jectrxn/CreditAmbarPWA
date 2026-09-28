@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from './HomePage';
 import { db } from '../lib/dexie';
@@ -150,6 +150,113 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
 
       expect(await screen.findByRole('dialog')).toBeInTheDocument();
       expect(screen.getByText(/registrar nuevo fiado/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Debt Age & Credit Usage (T3)', () => {
+    const agedDebtor: Customer = {
+      id: 'cust-aged',
+      store_id: 'store-1',
+      name: 'Rosa Antigua',
+      credit_limit: 500,
+      balance: 20,
+      created_at: new Date().toISOString(),
+    };
+
+    const agedTx: CreditTransaction = {
+      id: 'tx-aged',
+      store_id: 'store-1',
+      customer_id: 'cust-aged',
+      cashier_pin_hash: 'admin',
+      total_amount: 20,
+      status: 'completed',
+      created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+      synced: false,
+      type: 'credit_purchase',
+    };
+
+    const recentDebtor: Customer = {
+      id: 'cust-recent',
+      store_id: 'store-1',
+      name: 'Nueva Reciente',
+      credit_limit: 500,
+      balance: 150,
+      created_at: new Date().toISOString(),
+    };
+
+    const recentTx: CreditTransaction = {
+      id: 'tx-recent',
+      store_id: 'store-1',
+      customer_id: 'cust-recent',
+      cashier_pin_hash: 'admin',
+      total_amount: 150,
+      status: 'completed',
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      synced: false,
+      type: 'credit_purchase',
+    };
+
+    const noLimitDebtor: Customer = {
+      id: 'cust-nolimit',
+      store_id: 'store-1',
+      name: 'Sin Limite',
+      credit_limit: 0,
+      balance: 80,
+      created_at: new Date().toISOString(),
+    };
+
+    const noLimitTx: CreditTransaction = {
+      id: 'tx-nolimit',
+      store_id: 'store-1',
+      customer_id: 'cust-nolimit',
+      cashier_pin_hash: 'admin',
+      total_amount: 80,
+      status: 'completed',
+      created_at: new Date().toISOString(),
+      synced: false,
+      type: 'credit_purchase',
+    };
+
+    it('shows the "Antigua" badge only for debts 30+ days old, not merely high-balance ones', async () => {
+      await db.customers.bulkPut([agedDebtor, recentDebtor]);
+      await db.creditTransactions.bulkPut([agedTx, recentTx]);
+
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Rosa Antigua')).toBeInTheDocument();
+      });
+
+      const agedRow = screen.getByText('Rosa Antigua').closest('div.p-2\\.5') as HTMLElement;
+      expect(within(agedRow).getByText('Antigua')).toBeInTheDocument();
+
+      const recentRow = screen.getByText('Nueva Reciente').closest('div.p-2\\.5') as HTMLElement;
+      expect(within(recentRow).queryByText('Antigua')).not.toBeInTheDocument();
+    });
+
+    it('hides the credit usage progress bar when the customer has no credit_limit', async () => {
+      await db.customers.bulkPut([noLimitDebtor]);
+      await db.creditTransactions.bulkPut([noLimitTx]);
+
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Sin Limite')).toBeInTheDocument();
+      });
+
+      const row = screen.getByText('Sin Limite').closest('div.p-2\\.5') as HTMLElement;
+      expect(within(row).queryByTestId('debt-progress-bar')).not.toBeInTheDocument();
+    });
+
+    it('shows the credit usage progress bar when credit_limit is set', async () => {
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Diego | Los Pinos')).toBeInTheDocument();
+      });
+
+      const row = screen.getByText('Diego | Los Pinos').closest('div.p-2\\.5') as HTMLElement;
+      expect(within(row).getByTestId('debt-progress-bar')).toBeInTheDocument();
     });
   });
 
