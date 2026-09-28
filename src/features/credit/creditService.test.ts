@@ -281,10 +281,43 @@ describe('creditService - Account Creation & Limit Enforcement', () => {
       });
 
       expect(result.ok).toBe(false);
+      if (result.ok) throw new Error('expected failure');
+      expect(result.error).toMatch(/El monto \(S\/ 150\.00\) supera el crédito disponible del cliente/);
       const storedCustomer = await db.customers.get(customer.id);
       expect(storedCustomer?.balance).toBe(0);
       expect(await db.creditTransactions.count()).toBe(0);
       expect(await db.syncQueue.count()).toBe(0);
+    });
+
+    it('refuses to replay an operationId with a different sale and writes nothing', async () => {
+      const first = await registerCreditSale({
+        operationId: 'op-reused',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 20,
+        operatorName: 'Martin',
+        items: [],
+        now,
+      });
+      expect(first.ok).toBe(true);
+      const queueAfterFirst = await db.syncQueue.count();
+
+      const mismatched = await registerCreditSale({
+        operationId: 'op-reused',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 35,
+        operatorName: 'Martin',
+        items: [],
+        now,
+      });
+
+      expect(mismatched.ok).toBe(false);
+      if (mismatched.ok) throw new Error('expected failure');
+      expect(mismatched.error).toMatch(/ya fue registrada/i);
+      expect(await db.creditTransactions.count()).toBe(1);
+      expect((await db.customers.get(customer.id))?.balance).toBe(20);
+      expect(await db.syncQueue.count()).toBe(queueAfterFirst);
     });
 
     it('is idempotent: replaying the same operationId returns the existing transaction with no new writes', async () => {

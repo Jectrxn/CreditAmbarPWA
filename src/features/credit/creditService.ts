@@ -316,6 +316,18 @@ export async function registerCreditSale(
         // the existing result untouched — no second write.
         const existingTx = await db.creditTransactions.get(operationId);
         if (existingTx) {
+          // A replay must describe the same sale; otherwise the new sale would be
+          // silently dropped while the caller reports success.
+          const isSameSale =
+            existingTx.customer_id === customerId &&
+            existingTx.store_id === storeId &&
+            existingTx.total_amount === roundToCents(params.amount);
+          if (!isSameSale) {
+            return {
+              ok: false,
+              error: 'Esta operación ya fue registrada con otros datos. Cierre y vuelva a abrir el formulario.',
+            };
+          }
           const currentCustomer = await db.customers.get(existingTx.customer_id);
           if (!currentCustomer) {
             return { ok: false, error: 'Cliente no encontrado.' };
@@ -345,7 +357,12 @@ export async function registerCreditSale(
 
         const limitCheck = validateCreditLimit(customer, amount);
         if (!limitCheck.allowed) {
-          return { ok: false, error: limitCheck.error || 'Excede el crédito disponible del cliente.' };
+          // Same wording as the modal's own guard: this message reaches the Spanish UI.
+          const available = Math.max(0, roundToCents(customer.credit_limit - customer.balance));
+          return {
+            ok: false,
+            error: `El monto (S/ ${amount.toFixed(2)}) supera el crédito disponible del cliente (S/ ${available.toFixed(2)}).`,
+          };
         }
 
         const nowIso = now.toISOString();

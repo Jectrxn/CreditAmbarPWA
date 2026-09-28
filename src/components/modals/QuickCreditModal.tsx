@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LiquidModal } from '../ui/LiquidModal';
 import type { Customer, CreditTransaction } from '../../types/database';
 import { db } from '../../lib/dexie';
+import { registerCreditSale } from '../../features/credit/creditService';
 import { ProductPicker, suggestedTotal, type DraftItem } from './ProductPicker';
 import { useAuthStore, useActiveStoreId } from '../../store/authStore';
 import { generateWhatsAppReceipt } from '../../features/transactions/whatsappHelper';
@@ -57,8 +58,17 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     customer: Customer;
   } | null>(null);
 
+  // Idempotency key for the use case, generated once per modal open so a
+  // double-submit of the same open replays instead of creating a second
+  // transaction. submittingRef is a synchronous in-flight guard that does
+  // not depend on a React re-render landing before a second click.
+  const operationIdRef = useRef<string>('');
+  const submittingRef = useRef(false);
+
   useEffect(() => {
     if (isOpen) {
+      operationIdRef.current =
+        typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
       setErrorMessage(null);
       setCompletedTx(null);
       setAmountInput('');
@@ -152,6 +162,12 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Synchronous in-flight guard: a second click reaching this handler
+    // before the first submit's state update re-renders (disabling the
+    // button) is dropped here instead of racing into a second write.
+    // It runs first so a dropped submit is a true no-op (no state updates).
+    if (submittingRef.current) return;
     setErrorMessage(null);
 
     if (!activeCustomer) {
@@ -172,97 +188,41 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
       return;
     }
 
+    submittingRef.current = true;
     setIsSubmitting(true);
 
     try {
-      const txId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
-      const now = new Date().toISOString();
       const storeId = activeCustomer.store_id || activeStoreId;
-
       const derivedNotes = buildDerivedNotes(items, notes);
 
-      const transaction: CreditTransaction = {
-        id: txId,
-        store_id: storeId,
-        customer_id: activeCustomer.id,
-        cashier_pin_hash: operatorName || 'mostrador',
-        total_amount: amount,
-        status: 'completed',
-        created_at: now,
-        synced: false,
-        type: 'credit_purchase',
+      // The use case is the source of truth: it re-reads the customer,
+      // enforces the credit limit and rounds to cents atomically. This
+      // form's checks above are only the fast, optimistic CTA guard.
+      const result = await registerCreditSale({
+        operationId: operationIdRef.current,
+        storeId,
+        customerId: activeCustomer.id,
+        amount,
+        operatorName,
+        items,
         notes: derivedNotes || undefined,
-      };
-
-      const updatedBalance = activeCustomer.balance + amount;
-      const updatedCustomer: Customer = {
-        ...activeCustomer,
-        balance: updatedBalance,
-      };
-
-      // 1. Update customer in Dexie
-      await db.customers.put({
-        ...updatedCustomer,
-        synced: false,
       });
 
-      await db.syncQueue.add({
-        entity: 'customers',
-        operation: 'UPDATE',
-        payload: updatedCustomer,
-        createdAt: Date.now(),
-        retryCount: 0,
-        status: 'pending',
-      });
-
-      // 2. Add transaction to Dexie
-      await db.creditTransactions.put(transaction);
-
-      await db.syncQueue.add({
-        entity: 'credit_transactions',
-        operation: 'INSERT',
-        payload: transaction,
-        createdAt: Date.now(),
-        retryCount: 0,
-        status: 'pending',
-      });
-
-      // 3. Persist structured detail rows + queue each one for sync.
-      // Rows without a productId (should not happen: the picker always
-      // resolves one) still survive as derived notes text above.
-      for (const [idx, item] of items.entries()) {
-        if (!item.productId) continue;
-        const itemId =
-          typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : `item-${Date.now()}-${idx}`;
-        const txItem = {
-          id: itemId,
-          transaction_id: txId,
-          product_id: item.productId,
-          quantity: item.qty,
-          unit_price: item.unitPrice,
-        };
-        await db.transactionItems.put({ ...txItem, synced: false });
-        await db.syncQueue.add({
-          entity: 'transaction_items',
-          operation: 'INSERT',
-          payload: txItem,
-          createdAt: Date.now(),
-          retryCount: 0,
-          status: 'pending',
-        });
+      if (!result.ok) {
+        setErrorMessage(result.error);
+        return;
       }
 
       setCompletedTx({
-        transaction,
-        customer: updatedCustomer,
+        transaction: result.transaction,
+        customer: result.customer,
       });
 
-      onSuccess?.(transaction);
+      onSuccess?.(result.transaction);
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error al guardar el fiado.');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };

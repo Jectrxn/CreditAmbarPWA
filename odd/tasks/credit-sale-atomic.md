@@ -34,11 +34,11 @@ A wrong balance is the most expensive bug in a credit ledger; offline-first requ
 - Runner: `npx vitest run <file>` (fake-indexeddb)
 
 ## Tasks
-- [ ] T1 `roundToCents` helper + tests. Route: delegated (writer trigger: 4 non-trivial files).
-- [ ] T2 `validateCreditLimit`: `S/` message and cents-safe comparison (e.g. 0.1 + 0.2 vs 0.3 limit) + tests. Route: delegated.
-- [ ] T3 `registerCreditSale(params)` in `creditService`: single `db.transaction('rw', …)` over customers, creditTransactions, transactionItems, syncQueue; re-reads the customer inside the transaction; store guard; limit check; rounds amount and new balance; writes transaction + items + balance + queue entries; idempotent by `operationId` (returns the existing result, no second write); rolls back everything on any failure. Tests: happy path, stale-balance (balance changed after "open"), over-limit, idempotent replay, rollback when an inner write throws, cross-store refusal. Route: delegated.
-- [ ] T4 `QuickCreditModal` calls `registerCreditSale`; `operationId` generated per open; `useRef` in-flight guard; remove inline writes; keep UI and success screen identical. Tests: double click creates one transaction; existing 13 tests stay green. Route: delegated.
-- [ ] T5 Full checks + Chrome check (register a fiado in test mode, verify balance, transaction and items).
+- [x] T1 `roundToCents` helper + tests. Route: delegated (writer trigger: 4 non-trivial files).
+- [x] T2 `validateCreditLimit`: `S/` message and cents-safe comparison (e.g. 0.1 + 0.2 vs 0.3 limit) + tests. Route: delegated.
+- [x] T3 `registerCreditSale(params)` in `creditService`: single `db.transaction('rw', …)` over customers, creditTransactions, transactionItems, syncQueue; re-reads the customer inside the transaction; store guard; limit check; rounds amount and new balance; writes transaction + items + balance + queue entries; idempotent by `operationId` (returns the existing result, no second write); rolls back everything on any failure. Tests: happy path, stale-balance (balance changed after "open"), over-limit, idempotent replay, rollback when an inner write throws, cross-store refusal. Route: delegated.
+- [x] T4 `QuickCreditModal` calls `registerCreditSale`; `operationId` generated per open; `useRef` in-flight guard; remove inline writes; keep UI and success screen identical. Tests: double click creates one transaction; existing 13 tests stay green. Route: delegated.
+- [x] T5 Full checks + Chrome check (register a fiado in test mode, verify balance, transaction and items).
 
 ## Acceptance criteria
 - A failure in any inner write leaves no partial state (balance, transaction, items, queue all unchanged).
@@ -58,5 +58,23 @@ A wrong balance is the most expensive bug in a credit ledger; offline-first requ
 ## Progress and evidence
 - Baseline: QuickCreditModal + creditService + transactionRules tests 47/47 passing.
 
+- T1 `66b0599` roundToCents — RED import unresolved; GREEN 7/7.
+- T2 `e38e989` validateCreditLimit S/ + cents-safe — RED 2 failed/20; GREEN 22/22.
+- T3 `1f55664` SyncManager.requestSync (RED 4 failed; GREEN 15/15) + `cecdedf` registerCreditSale (RED 6 failed; GREEN 19/19): single db.transaction, re-read inside, store guard, idempotent by operationId, rollback on inner throw.
+- T4 `ba4759e` modal delegates to use case, per-open operationId, useRef guard; no className changes (grep empty). Writer's click-based double-submit test was not RED (disabled button already blocks synthetic clicks) — reported honestly.
+- Parent follow-up `45b83a7` (route inline): Spanish over-limit message from the use case (RED → GREEN) and a double *form submit* test that bypasses `disabled`; mutation check (guard removed) → `onSuccess` called 2 times → fails; restored → passes. Transaction count stays 1 even without the guard (idempotent operationId): defense in depth.
+- Checks: tsc clean; `npm test` 41 files / 323 tests.
+- T5 Chrome (test mode): Beto balance changed 150 → 100 in DB while the modal still showed 150; confirmed 1× Arroz (S/ 4.50) with a double click → stored balance 104.50 (not 154.50), exactly 1 new transaction, 1 item, queue `customers:UPDATE, credit_transactions:INSERT, transaction_items:INSERT`; success screen correct.
+
+- RDD: assess since branch point 0715cb7 medium, 753 lines, slice_budget_reached → consent granted → review-reliability approved; acknowledged, burned (lineage review-2b13a62781e1cb7c). Reviewed boundary: the docs commit before `df0263a`.
+- Post-review fix `df0263a` (route inline): replay with same operationId but different customer/store/amount now refused with no writes (RED → GREEN); in-flight guard moved before `setErrorMessage` so a dropped submit is a no-op. Checks: focused 35/35; tsc clean; `npm test` 324/324.
+
+## Delivery plan
+- Branch reached ~790 authored lines → cached chain strategy `stacked-to-main`; one slicing pass at existing commits:
+  - S1 money + rules + requestSync: 0715cb7..1f55664 (+218/−9) — verified tsc + 315/315.
+  - S2 registerCreditSale use case: 1f55664..cecdedf (+340/−2) — verified tsc + 321/321.
+  - S3 modal wiring + follow-ups: cecdedf..HEAD (~+170/−82).
+- Opened (user go-ahead): #7 `feat/credit-sale-money` → `fix/liquid-glass-motion` (+218/−9); #8 `feat/credit-sale-usecase` → #7 (+340/−2); #9 `feat/credit-sale-atomic` → #8 (+170/−82). Merge order: #1, then #7 → #8 → #9.
+
 ## Next step
-T1–T4 via delegated writer.
+Human review/merge. Follow-ups: QuickPaymentModal on the same pattern; Nuevo Fiado UX block. Follow-ups: migrate QuickPaymentModal to the same pattern; UX block (customer preselection, focus trap, operator chips, operator PIN decision, undo).
