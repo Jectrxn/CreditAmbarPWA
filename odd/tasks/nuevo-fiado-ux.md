@@ -29,11 +29,11 @@ Remove the riskiest UX gaps of the "Nuevo Fiado" modal without redesigning it: n
 - Runner: `npx vitest run <file>`
 
 ## Tasks
-- [ ] T1 `GlassSelect` `placeholder` prop: when `value` matches no option, show the placeholder in muted text; accessible name unchanged. Route: delegated (writer trigger: 4 non-trivial files).
-- [ ] T2 `QuickCreditModal`: when opened without a customer, no customer is selected (placeholder "Selecciona un cliente"), debt/available chips hidden, CTA disabled until chosen; preselected customer flow unchanged. Route: delegated.
-- [ ] T3 `LiquidModal`: on open focus `initialFocusRef` if given, else the first focusable element in the panel; Tab/Shift+Tab cycle inside the panel; on close restore focus to the previously focused element. `QuickCreditModal` passes the customer select (no customer) or the product search (customer given) as initial focus. Route: delegated.
-- [ ] T4 `OperatorSelector`: names never truncated — 2-column grid when there are more than 3 operators, existing chip styling kept. Route: delegated.
-- [ ] T5 Full checks and Chrome verification (FAB open → no customer selected, focus inside dialog, Tab trapped, focus restored, chips not truncated).
+- [x] T1 `GlassSelect` `placeholder` prop: when `value` matches no option, show the placeholder in muted text; accessible name unchanged. Route: delegated (writer trigger: 4 non-trivial files).
+- [x] T2 `QuickCreditModal`: when opened without a customer, no customer is selected (placeholder "Selecciona un cliente"), debt/available chips hidden, CTA disabled until chosen; preselected customer flow unchanged. Route: delegated.
+- [x] T3 `LiquidModal`: on open focus `initialFocusRef` if given, else the first focusable element in the panel; Tab/Shift+Tab cycle inside the panel; on close restore focus to the previously focused element. `QuickCreditModal` passes the customer select (no customer) or the product search (customer given) as initial focus. Route: delegated.
+- [x] T4 `OperatorSelector`: names never truncated — 2-column grid when there are more than 3 operators, existing chip styling kept. Route: delegated.
+- [x] T5 Full checks and Chrome verification (FAB open → no customer selected, focus inside dialog, Tab trapped, focus restored, chips not truncated).
 
 ## Acceptance criteria
 - Opening "Nuevo Fiado" from the FAB selects no customer and the CTA stays disabled until one is chosen.
@@ -51,5 +51,14 @@ Remove the riskiest UX gaps of the "Nuevo Fiado" modal without redesigning it: n
 ## Progress and evidence
 - Baseline: GlassSelect + LiquidModal + OperatorSelector + QuickCreditModal tests 39/39 passing.
 
+- T1 `0c88378` GlassSelect placeholder — RED 1 failed/5; GREEN 6/6.
+- T2 `4280e1b` no silent preselection — RED: "Deuda: S/ 50.00" chip present without customer prop; GREEN 16/16.
+- T3 `588aefa` LiquidModal focus move/trap/restore — RED 4 failed/17; GREEN 21/21; QuickCreditModal focus targets RED 2 failed → GREEN 18/18. GlassSelect/ProductPicker forwardRef.
+- T4 `9e341a3` OperatorSelector: >3 operators → `grid grid-cols-2`, no `truncate` — RED 1 failed/5; GREEN 6/6.
+- Parent fix `8d95dd5` (route inline): writer flagged that always-override focus would steal `NewCustomerModal`'s `autoFocus`; now content already focused inside the panel wins over the first-focusable fallback (RED → GREEN). Checks: tsc clean; `npm test` 41 files / 337 tests.
+- Class changes (all): GlassSelect placeholder `text-slate-400`; OperatorSelector grid/truncate conditional for >3 operators. Nothing else.
+- T5 Chrome (test mode): FAB → Nuevo Fiado shows "Selecciona un cliente", no Deuda chip, CTA disabled, focus on the customer select; 25× Tab keeps focus inside; operator names not truncated (scrollWidth check); New Customer modal keeps focus on its name input.
+- Known limitation: opening from the FAB menu, focus returns to BODY on close because the menu item that triggered it is unmounted; follow-up: TabBar should hand focus back to the FAB.
+
 ## Next step
-T1–T4 via delegated writer.
+Review, then stacked PR on #9. Pending product decisions: operator PIN per fiado; undo/void.
