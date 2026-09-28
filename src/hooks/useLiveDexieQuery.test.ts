@@ -90,21 +90,57 @@ describe('useLiveDexieQuery (Strict TDD)', () => {
     expect(result.current.data).toBeUndefined();
   });
 
-  it('unsubscribes on unmount and does not update state afterwards', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('never returns the previous deps data as loaded on the first render after deps change', async () => {
+    await db.customers.bulkPut([
+      mockCustomer,
+      { ...mockCustomer, id: 'cust-2', store_id: 'store-2', name: 'Otra tienda' },
+    ]);
 
-    const { result, unmount } = renderHook(() =>
-      useLiveDexieQuery(() => db.customers.where('store_id').equals('store-1').toArray(), ['store-1'])
+    const renders: { storeId: string; isLoading: boolean; storeIds: string[] | undefined }[] = [];
+
+    const { rerender } = renderHook(
+      ({ storeId }: { storeId: string }) => {
+        const r = useLiveDexieQuery(
+          () => db.customers.where('store_id').equals(storeId).toArray(),
+          [storeId]
+        );
+        renders.push({ storeId, isLoading: r.isLoading, storeIds: r.data?.map((c) => c.store_id) });
+        return r;
+      },
+      { initialProps: { storeId: 'store-1' } }
     );
+
+    await waitFor(() => expect(renders.at(-1)?.isLoading).toBe(false));
+
+    rerender({ storeId: 'store-2' });
+    await waitFor(() => expect(renders.at(-1)?.storeIds).toEqual(['store-2']));
+
+    const staleFrames = renders.filter(
+      (r) => r.storeId === 'store-2' && (r.storeIds?.includes('store-1') || (!r.isLoading && !r.storeIds))
+    );
+    expect(staleFrames).toEqual([]);
+  });
+
+  it('stops re-running the querier after unmount', async () => {
+    const querier = vi.fn(() => db.customers.where('store_id').equals('store-1').toArray());
+
+    const { result, unmount } = renderHook(() => useLiveDexieQuery(querier, ['store-1']));
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
+    // Sanity check: while mounted, a write re-runs the querier.
+    const callsBeforeWrite = querier.mock.calls.length;
+    await act(async () => {
+      await db.customers.put(mockCustomer);
+    });
+    await waitFor(() => expect(querier.mock.calls.length).toBeGreaterThan(callsBeforeWrite));
+
     unmount();
+    const callsAtUnmount = querier.mock.calls.length;
 
-    await db.customers.put(mockCustomer);
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await db.customers.put({ ...mockCustomer, id: 'cust-after-unmount' });
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(errorSpy).not.toHaveBeenCalled();
-    errorSpy.mockRestore();
+    expect(querier.mock.calls.length).toBe(callsAtUnmount);
   });
 });
