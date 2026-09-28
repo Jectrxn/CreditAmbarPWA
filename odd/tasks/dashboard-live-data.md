@@ -68,5 +68,16 @@ The dashboard is the shopkeeper's source of truth; stale or fake-zero numbers le
 - T7 `28a40fb` (hook retry: RED `retry is not a function`; GREEN 7/7) + `0136b80` (HomePage error state: RED alert never appeared; GREEN 18/18). `renderMetric` helper; rose alert + Reintentar; debtors section shows error text instead of "¡Cuentas al día!". Only new classes: alert, button, and an icon+text wrapper reusing an existing pattern (accepted). tsc clean; `npm test` 43 files / 341 tests. Parent spot check: focused 25/25.
 - T7 Chrome: forced `db.customers.where` to throw + table write → alert shown, 9 em dashes, no `S/ 0.00`, no "¡Cuentas al día!" (screenshot). Restored + clicked Reintentar → alert gone, total 587.50, 5 debtor rows. Caveat: a record delete during restore may also have triggered the re-read; `retry()` itself is proven by the unit test.
 
+- RDD tail since 4aa785e (258 lines): user asked for review → consent granted → review-reliability approved; acknowledged, burned (lineage review-eb642cc23aab1ea7). Advisory: useMemo token identity is a perf hint (could resubscribe if React drops the cache); retry test covers only first-call sync throw.
+
+## Delivery (final)
+- Strategy `stacked-to-main`; one slicing pass split the original 3 slices into 5, all ≤ 400 lines, cut at existing commits. New cut points verified: c3c4d29 tsc clean + 319/319, 4aa785e tsc clean + 338/338.
+- #2 `feat/dashboard-stats-core` → `fix/liquid-glass-motion` (+370/−0)
+- #3 `feat/dashboard-stats-home` → #2 (+209/−70)
+- #4 `feat/dashboard-stats-accuracy` → #3 (+219/−35)
+- #5 `feat/dashboard-live-query` → #4 (+363/−32)
+- #6 `feat/dashboard-live-data` → #5 (+207/−51)
+- Merge order: #1 (fix/liquid-glass-motion → main) first, then #2…#6 in order.
+
 ## Next step
-Push/PRs (user decision).
+Human review and merge in order. Optional follow-ups: useMemo token → useRef-based identity; retry test for post-load errors; turn off test mode in the browser.
