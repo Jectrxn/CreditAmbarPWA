@@ -162,12 +162,13 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
 
     // Synchronous in-flight guard: a second click reaching this handler
     // before the first submit's state update re-renders (disabling the
     // button) is dropped here instead of racing into a second write.
+    // It runs first so a dropped submit is a true no-op (no state updates).
     if (submittingRef.current) return;
+    setErrorMessage(null);
 
     if (!activeCustomer) {
       setErrorMessage('Seleccione un cliente para registrar el fiado.');

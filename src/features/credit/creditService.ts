@@ -316,6 +316,18 @@ export async function registerCreditSale(
         // the existing result untouched — no second write.
         const existingTx = await db.creditTransactions.get(operationId);
         if (existingTx) {
+          // A replay must describe the same sale; otherwise the new sale would be
+          // silently dropped while the caller reports success.
+          const isSameSale =
+            existingTx.customer_id === customerId &&
+            existingTx.store_id === storeId &&
+            existingTx.total_amount === roundToCents(params.amount);
+          if (!isSameSale) {
+            return {
+              ok: false,
+              error: 'Esta operación ya fue registrada con otros datos. Cierre y vuelva a abrir el formulario.',
+            };
+          }
           const currentCustomer = await db.customers.get(existingTx.customer_id);
           if (!currentCustomer) {
             return { ok: false, error: 'Cliente no encontrado.' };
