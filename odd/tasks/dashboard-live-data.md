@@ -31,6 +31,8 @@ The dashboard is the shopkeeper's source of truth; stale or fake-zero numbers le
 - [x] T4 Full checks and Chrome visual check (loading state + live update via a DB write in the page).
 - [x] T5 Fix stale-store paint: derive loading from a deps token during render so the first render after a deps change never returns previous data with `isLoading=false`. Route: inline (hook + its test, small and understood).
 - [x] T7 Dashboard error state: on query error, amounts render "—" instead of `S/ 0.00` (no fake zero), a compact rose alert (reusing existing rose badge tokens) shows "No se pudieron cargar los datos" with a "Reintentar" button; hook exposes `retry()` that resubscribes. Route: delegated (writer trigger: hook + HomePage + tests).
+- [x] T8 Replace `useMemo` token with a `useRef`-based identity (shallow `Object.is` compare of deps + attempt) so resubscription never depends on React's memo cache. Route: inline (hook + its test).
+- [x] T9 Retry test for an error that arrives after data loaded (table write → re-read rejects → retry recovers). Route: inline.
 - [x] T6 Make the unmount test observable: after unmount, a table write must not re-run the querier. Route: inline.
 
 ## Acceptance criteria
@@ -79,5 +81,7 @@ The dashboard is the shopkeeper's source of truth; stale or fake-zero numbers le
 - #6 `feat/dashboard-live-data` → #5 (+207/−51)
 - Merge order: #1 (fix/liquid-glass-motion → main) first, then #2…#6 in order.
 
+- T8+T9 `560da46` (route inline, one commit: same hook + test file). Tests added first; both passed on the prior code (regression guards, no RED: behavior already correct). Refactor: `useMemo` token → ref identity with `Object.is` deps compare. Mutation check: forcing a new token every render fails the equal-deps test; restored → 9/9. Focused 27/27; tsc clean; `npm test` 43 files / 343 tests.
+
 ## Next step
-Human review and merge in order. Optional follow-ups: useMemo token → useRef-based identity; retry test for post-load errors; turn off test mode in the browser.
+Human review and merge in order (#1, then #2…#6); turn off test mode in the browser.
