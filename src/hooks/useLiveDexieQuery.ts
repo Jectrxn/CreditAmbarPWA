@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type DependencyList } from 'react';
+import { useCallback, useEffect, useRef, useState, type DependencyList } from 'react';
 import { liveQuery } from 'dexie';
 
 export interface UseLiveDexieQueryResult<T> {
@@ -13,6 +13,10 @@ interface QueryState<T> {
   data: T | undefined;
   error: unknown;
   settled: boolean;
+}
+
+function areDepsEqual(a: DependencyList, b: DependencyList): boolean {
+  return a.length === b.length && a.every((value, index) => Object.is(value, b[index]));
 }
 
 /**
@@ -32,9 +36,15 @@ export function useLiveDexieQuery<T>(
   // A fresh token identifies the current `deps` (and retry attempt). Results
   // are tagged with the token they were produced for, so the very first
   // render after a deps change (before the effect runs) already reports
-  // loading instead of painting the previous deps' data.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const token = useMemo(() => ({}), [...deps, attempt]);
+  // loading instead of painting the previous deps' data. The token lives in a
+  // ref (not `useMemo`, which React may discard) so it only changes when deps
+  // or the attempt actually change.
+  const identityRef = useRef<{ deps: DependencyList; attempt: number; token: object } | null>(null);
+  const identity = identityRef.current;
+  if (!identity || identity.attempt !== attempt || !areDepsEqual(identity.deps, deps)) {
+    identityRef.current = { deps, attempt, token: {} };
+  }
+  const token = identityRef.current!.token;
 
   const [state, setState] = useState<QueryState<T> | null>(null);
 
