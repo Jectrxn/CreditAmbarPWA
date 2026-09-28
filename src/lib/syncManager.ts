@@ -106,6 +106,18 @@ export class SyncManager {
       .sortBy('createdAt');
   }
 
+  /**
+   * Best-effort sync trigger for callers that just committed a local write
+   * (e.g. registerCreditSale) and want the queue flushed promptly without
+   * blocking on the network round trip. A no-op unless auto-sync is active,
+   * the device is online, and no sync is already running.
+   */
+  public requestSync(): void {
+    if (this._autoSyncActive && this._isOnline && !this._isSyncing) {
+      void this.processQueue();
+    }
+  }
+
   public async processQueue(): Promise<SyncResult> {
     if (!this._isOnline || this._isSyncing) {
       return { syncedCount: 0, failedCount: 0 };

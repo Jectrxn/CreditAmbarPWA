@@ -149,6 +149,21 @@ describe('Transaction Rules & FCC Domain Logic', () => {
       expect(result.availableCredit).toBe(100);
       expect(result.newBalance).toBe(0);
       expect(result.error).toMatch(/insufficient credit limit|exceeds/i);
+      expect(result.error).toContain('S/');
+      expect(result.error).not.toContain('$');
+    });
+
+    it('is cents-safe: balance 0.1 + purchase 0.2 against limit 0.3 is allowed and rounds newBalance', () => {
+      const customer = {
+        credit_limit: 0.3,
+        balance: 0.1,
+      };
+
+      const result = validateCreditLimit(customer, 0.2);
+
+      expect(result.allowed).toBe(true);
+      expect(result.newBalance).toBe(0.3);
+      expect(result.availableCredit).toBe(0);
     });
 
     it('approves purchase that uses exactly 100% of remaining available credit', () => {

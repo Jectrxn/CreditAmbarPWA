@@ -284,6 +284,78 @@ describe('SyncManager - Offline Queue & Auto-Sync Engine', () => {
     });
   });
 
+  describe('requestSync - best-effort trigger', () => {
+    it('triggers processQueue when auto-sync is active and online', async () => {
+      // Start auto-sync while offline so its own online-triggered
+      // processQueue call never fires; flip online afterwards without
+      // dispatching the 'online' event, which also would auto-trigger it.
+      syncManager.setOnline(false);
+      syncManager.startAutoSync();
+      syncManager.setOnline(true);
+
+      const processSpy = vi.spyOn(syncManager, 'processQueue');
+      syncManager.requestSync();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(processSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing when auto-sync is not active', () => {
+      const processSpy = vi.spyOn(syncManager, 'processQueue');
+      syncManager.setOnline(true);
+      processSpy.mockClear();
+
+      syncManager.requestSync();
+
+      expect(processSpy).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when offline', () => {
+      const processSpy = vi.spyOn(syncManager, 'processQueue');
+      syncManager.startAutoSync();
+      syncManager.setOnline(false);
+      processSpy.mockClear();
+
+      syncManager.requestSync();
+
+      expect(processSpy).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when a sync is already in progress', async () => {
+      const mockInsert = vi.fn(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve({ data: [{ id: 'tx-1' }], error: null }), 20);
+          })
+      );
+      (mockSupabase.from as any) = vi.fn().mockReturnValue({ insert: mockInsert });
+
+      // Start auto-sync while offline and add directly to the Dexie queue
+      // (bypassing enqueue's own auto-trigger) so only the explicit
+      // processQueue call below puts the manager into a syncing state.
+      syncManager.setOnline(false);
+      syncManager.startAutoSync();
+      await db.syncQueue.add({
+        entity: 'credit_transactions',
+        operation: 'INSERT',
+        payload: { id: 'tx-1', total_amount: 100 },
+        createdAt: Date.now(),
+        retryCount: 0,
+        status: 'pending',
+      });
+      syncManager.setOnline(true);
+
+      const processSpy = vi.spyOn(syncManager, 'processQueue');
+      const inFlight = syncManager.processQueue();
+      processSpy.mockClear();
+
+      syncManager.requestSync();
+      expect(processSpy).not.toHaveBeenCalled();
+
+      await inFlight;
+    });
+  });
+
   describe('Network Listeners and Status Orchestration', () => {
     it('notifies status listeners on connection state changes and sync activity', async () => {
       const statusHistory: SyncStatus[] = [];
