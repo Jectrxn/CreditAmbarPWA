@@ -60,5 +60,8 @@ Remove the riskiest UX gaps of the "Nuevo Fiado" modal without redesigning it: n
 - T5 Chrome (test mode): FAB → Nuevo Fiado shows "Selecciona un cliente", no Deuda chip, CTA disabled, focus on the customer select; 25× Tab keeps focus inside; operator names not truncated (scrollWidth check); New Customer modal keeps focus on its name input.
 - Known limitation: opening from the FAB menu, focus returns to BODY on close because the menu item that triggered it is unmounted; follow-up: TabBar should hand focus back to the FAB.
 
+- RDD: assess vs `feat/credit-sale-atomic` medium, 449 lines → consent granted → review-reliability approved; acknowledged, burned (lineage review-f9314b001b5e4960).
+- Post-review fix `fc4852f` (route inline): Tab from a non-listed spot/outside is pulled back into the panel; hidden (`display:none`, `visibility:hidden`, `[hidden]`, `[inert]`, `aria-hidden`) elements skipped; backdrop close covered by test; parent found that stacked modals (each portaled to body, e.g. HistoryPage siblings) would steal focus from each other → only the topmost open modal runs the Tab trap (RED confirmed, then GREEN). Checks: tsc clean; `npm test` 41 files / 340 tests.
+
 ## Next step
-Review, then stacked PR on #9. Pending product decisions: operator PIN per fiado; undo/void.
+Stacked PR on #9 (user decision). Pending product decisions: operator PIN per fiado; undo/void.
