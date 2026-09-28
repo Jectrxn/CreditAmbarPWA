@@ -1,3 +1,5 @@
+import { roundToCents } from '../../utils/money';
+
 export interface CashierSessionSnapshot {
   id: string;
   cashierId: string;
@@ -134,29 +136,32 @@ export function validateCreditLimit(
   if (purchaseAmount <= 0 || isNaN(purchaseAmount)) {
     return {
       allowed: false,
-      availableCredit: Math.max(0, customer.credit_limit - customer.balance),
-      newBalance: customer.balance,
+      availableCredit: roundToCents(Math.max(0, customer.credit_limit - customer.balance)),
+      newBalance: roundToCents(customer.balance),
       error: 'Purchase amount must be greater than zero',
     };
   }
 
-  const availableCredit = Math.max(0, customer.credit_limit - customer.balance);
+  // Cents-safe: compare rounded amounts so float drift (e.g. 0.1 + 0.2)
+  // never rejects a purchase that exactly fits the available credit.
+  const availableCredit = roundToCents(Math.max(0, customer.credit_limit - customer.balance));
+  const roundedPurchase = roundToCents(purchaseAmount);
 
-  if (purchaseAmount > availableCredit) {
+  if (roundedPurchase > availableCredit) {
     return {
       allowed: false,
       availableCredit,
-      newBalance: customer.balance,
-      error: `Insufficient credit limit: purchase of $${purchaseAmount.toFixed(
+      newBalance: roundToCents(customer.balance),
+      error: `Insufficient credit limit: purchase of S/ ${roundedPurchase.toFixed(
         2
-      )} exceeds available credit limit of $${availableCredit.toFixed(2)}`,
+      )} exceeds available credit limit of S/ ${availableCredit.toFixed(2)}`,
     };
   }
 
   return {
     allowed: true,
-    availableCredit: availableCredit - purchaseAmount,
-    newBalance: customer.balance + purchaseAmount,
+    availableCredit: roundToCents(availableCredit - roundedPurchase),
+    newBalance: roundToCents(customer.balance + roundedPurchase),
   };
 }
 
