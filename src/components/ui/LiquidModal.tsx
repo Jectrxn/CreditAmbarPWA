@@ -96,7 +96,12 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const panel = panelRef.current;
-    const target = initialFocusRef?.current ?? (panel ? getFocusableElements(panel)[0] : undefined);
+    // Content that already took focus (e.g. an `autoFocus` input) wins over the
+    // first-focusable fallback; an explicit initialFocusRef always wins.
+    const alreadyInside = Boolean(panel && panel.contains(document.activeElement));
+    const target =
+      initialFocusRef?.current ??
+      (alreadyInside ? null : panel ? getFocusableElements(panel)[0] : undefined);
     target?.focus();
 
     return () => {

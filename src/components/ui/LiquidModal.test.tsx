@@ -248,6 +248,25 @@ describe('LiquidModal & GlassCard UI Components', () => {
       expect(screen.getByRole('button', { name: /cerrar/i })).toHaveFocus();
     });
 
+    it('keeps an autoFocus element inside the panel focused instead of overriding it', () => {
+      const AutoFocusHarness = () => {
+        const [open, setOpen] = useState(false);
+        return (
+          <>
+            <button onClick={() => setOpen(true)}>Abrir autofocus</button>
+            <LiquidModal isOpen={open} onClose={() => setOpen(false)} title="Nuevo Cliente">
+              <input aria-label="Nombre" autoFocus />
+              <button>Guardar</button>
+            </LiquidModal>
+          </>
+        );
+      };
+      render(<AutoFocusHarness />);
+      fireEvent.click(screen.getByRole('button', { name: 'Abrir autofocus' }));
+
+      expect(screen.getByLabelText('Nombre')).toHaveFocus();
+    });
+
     it('moves focus to initialFocusRef.current when provided', () => {
       render(<FocusHarness useInitialFocusRef />);
       fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));
