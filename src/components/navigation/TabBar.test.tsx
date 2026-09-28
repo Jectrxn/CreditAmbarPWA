@@ -150,7 +150,7 @@ describe('TabBar Navigation Component (Strict TDD)', () => {
       expect(screen.getByRole('menu', { name: /acciones rápidas/i })).toBeInTheDocument();
 
       // Find and click the glass backdrop
-      const backdrop = container.querySelector('.bg-slate-950\\/35');
+      const backdrop = container.querySelector('.fixed.inset-0.z-40.bg-transparent');
       expect(backdrop).toBeInTheDocument();
       fireEvent.click(backdrop!);
 
@@ -180,6 +180,58 @@ describe('TabBar Navigation Component (Strict TDD)', () => {
       fireEvent.click(fiadoBtn);
 
       expect(screen.queryByRole('menu', { name: /acciones rápidas/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Crowned orb transform isolation (W2)', () => {
+    const ENTER_ANIMATION_CLASSES = ['animate-in', 'zoom-in-50', 'slide-in-from-bottom-10'];
+
+    const arcAncestor = (el: Element | null): Element | null => {
+      let node = el?.parentElement ?? null;
+      while (node) {
+        if (node.classList.contains('-translate-y-3')) return node;
+        node = node.parentElement;
+      }
+      return null;
+    };
+
+    it('never lets one node carry both the crowned arc offset and the enter animation', () => {
+      renderWithRouter('/');
+      fireEvent.click(screen.getByRole('button', { name: /registrar nuevo fiado/i }));
+
+      const abonarBtn = screen.getByRole('menuitem', { name: /registrar abono/i });
+
+      const carriesArc = abonarBtn.classList.contains('-translate-y-3');
+      const carriesAnimation = ENTER_ANIMATION_CLASSES.some((c) => abonarBtn.classList.contains(c));
+
+      // A static transform utility and the enter animation both write `transform`.
+      // On a single node, `fill-mode-both` keeps the animation's end state and cancels
+      // the arc offset, so the crowned center orb flattens once it settles.
+      expect(
+        carriesArc && carriesAnimation,
+        'The crowned arc offset and the enter animation must not live on the same node'
+      ).toBe(false);
+
+      // The arc offset must survive on an ancestor, so the crowned shape is preserved.
+      expect(arcAncestor(abonarBtn)).not.toBeNull();
+
+      // The orb itself must still carry its enter animation.
+      expect(carriesAnimation, 'The orb must still carry its enter animation').toBe(true);
+    });
+  });
+
+  describe('Speed Dial outside-click layer keeps the dock backdrop-filter live (W3)', () => {
+    it('does not dim or blur the page behind the quick actions menu', () => {
+      const { container } = renderWithRouter('/');
+      fireEvent.click(screen.getByRole('button', { name: /registrar nuevo fiado/i }));
+
+      const scrim = container.querySelector('.fixed.inset-0.z-40.bg-transparent');
+      expect(scrim).toBeInTheDocument();
+
+      // A transparent outside-click layer preserves the live page and the dock's glass.
+      expect(scrim?.className).toContain('bg-transparent');
+      expect(scrim?.className).not.toContain('backdrop-blur');
+      expect(scrim?.className).not.toContain('mask-image');
     });
   });
 
