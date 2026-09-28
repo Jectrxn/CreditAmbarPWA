@@ -49,7 +49,11 @@ Money figures on the main screen drive the shopkeeper's collection decisions; wr
 - `npm test`
 
 ## Delivery
-- Strategy: ask-on-risk. Forecast ~300 authored lines (under 400 budget).
+- Strategy: ask-on-risk → user chose chain strategy `stacked-to-main` (branch reached ~790 authored src lines).
+- Slice PR1 (stats accuracy): 02df885, c3c4d29, 4ca9b4a + docs 2f35f20, 5952078, d25f33b. Reviewed/approved.
+- Slice PR2 (test hardening + legibility): bc4d1d1, 2e310ad, 72c322c + docs. Review pending (under budget at assess time).
+- Slice PR3: feature `dashboard-live-data` on branch `feat/dashboard-live-data` stacked on this branch.
+- Note: this branch is based on `fix/liquid-glass-motion` (not yet in main); PR1 must target that branch or wait for it to merge.
 - Branch: `feat/dashboard-stats-accuracy` (from `fix/liquid-glass-motion` @ 0715cb7).
 
 ## Progress and evidence
