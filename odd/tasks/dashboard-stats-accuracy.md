@@ -33,7 +33,7 @@ Money figures on the main screen drive the shopkeeper's collection decisions; wr
 - [x] T1 `formatAmount()` helper in `src/utils/currency.ts` with tests. Route: delegated (writer trigger: 2+ non-trivial files across T1–T3).
 - [x] T2 `computeDashboardStats(customers, transactions, now)` pure function with tests: totals, today metrics, top 5 debtors with `oldestUnpaidDate`, `isAged`, `creditUsageRatio` (null without limit). Route: delegated.
 - [x] T3 Wire `HomePage.tsx` to T1/T2: "Antigua" from `isAged`, hide bar when ratio is null, unified formatting; update `HomePage.test.tsx`. Route: delegated.
-- [ ] T4 Full checks (`npx tsc --noEmit`, `npm test`) and visual check at mobile width in Chrome.
+- [x] T4 Full checks (`npx tsc --noEmit`, `npm test`) and visual check at mobile width in Chrome.
 
 ## Acceptance criteria
 - A 5-day-old S/150 debt shows no "Antigua" badge; a 45-day-old S/20 debt does.
@@ -66,5 +66,8 @@ Money figures on the main screen drive the shopkeeper's collection decisions; wr
   - SUGGESTION use a row `data-testid` instead of `closest('div.p-2\\.5')` in HomePage tests.
 - T4 (partial): Chrome at ~500px mobile width — dashboard renders identical to pre-change screenshot (hero, daily metrics, empty debtors state). Debtor rows ("Antigua", progress bar) not visually verified: local DB has no debtors.
 
+- T4 (done): with user OK, seeded 6 customers / 8 txs into test-mode store `store-test` (ids `seed-dash-*`, no syncQueue entries; `ambar-store-1` untouched) and enabled test mode. Verified in Chrome at 500px: Antigua on Carmen (60d), Eduardo (40d oldest unpaid after partial payment), Ana (45d, S/20); no Antigua on Beto (5d, S/150); no bar on Doris (limit 0); bars 93% rose / 75% amber / 90% rose / 20% amber; 6th debtor excluded; totals S/587.50, fiado histórico S/692.50, cobrado S/105.00, fiado hoy S/12.50, cobrado hoy S/50.00 — all match hand-computed values.
+- Visual observation (pre-existing layout, next block): debtor names truncate hard ("Carm…", "Eduar…") when the Antigua badge is present.
+
 ## Next step
-Visual check of debtor rows with test data (needs user OK to seed local IndexedDB); then fix advisory test findings.
+Fix advisory test findings; then legibility block (text sizes, touch targets, name truncation).
