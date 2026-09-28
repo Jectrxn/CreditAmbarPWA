@@ -234,6 +234,27 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
       expect(within(recentRow).queryByText('Antigua')).not.toBeInTheDocument();
     });
 
+    it('replaces the "Pendiente" label under the amount with the "Antigua" badge for aged debts', async () => {
+      await db.customers.bulkPut([agedDebtor, recentDebtor]);
+      await db.creditTransactions.bulkPut([agedTx, recentTx]);
+
+      renderHomePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Rosa Antigua')).toBeInTheDocument();
+      });
+
+      const agedRow = screen.getByText('Rosa Antigua').closest('[data-testid="top-debtor-row"]') as HTMLElement;
+      const agedAmount = within(agedRow).getByTestId('top-debtor-amount');
+      expect(within(agedAmount).getByText('Antigua')).toBeInTheDocument();
+      expect(within(agedAmount).queryByText('Pendiente')).not.toBeInTheDocument();
+
+      const recentRow = screen.getByText('Nueva Reciente').closest('[data-testid="top-debtor-row"]') as HTMLElement;
+      const recentAmount = within(recentRow).getByTestId('top-debtor-amount');
+      expect(within(recentAmount).getByText('Pendiente')).toBeInTheDocument();
+      expect(within(recentAmount).queryByText('Antigua')).not.toBeInTheDocument();
+    });
+
     it('hides the credit usage progress bar when the customer has no credit_limit', async () => {
       await db.customers.bulkPut([noLimitDebtor]);
       await db.creditTransactions.bulkPut([noLimitTx]);
@@ -259,7 +280,7 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
       expect(within(row).getByTestId('debt-progress-bar')).toBeInTheDocument();
     });
 
-    it('still renders the "Antigua" badge on the second line when there is no progress bar (credit_limit 0)', async () => {
+    it('still renders the "Antigua" badge under the amount when there is no progress bar (credit_limit 0)', async () => {
       const agedNoLimitDebtor: Customer = {
         id: 'cust-aged-nolimit',
         store_id: 'store-1',
@@ -289,7 +310,7 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
       });
 
       const row = screen.getByText('Antigua Sin Limite').closest('[data-testid="top-debtor-row"]') as HTMLElement;
-      expect(within(row).getByText('Antigua')).toBeInTheDocument();
+      expect(within(within(row).getByTestId('top-debtor-amount')).getByText('Antigua')).toBeInTheDocument();
       expect(within(row).queryByTestId('debt-progress-bar')).not.toBeInTheDocument();
     });
   });

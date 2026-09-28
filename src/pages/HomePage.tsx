@@ -585,44 +585,42 @@ export const HomePage: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-900 truncate">{debtor.name}</p>
-                      {/* Second line: debt progress bar (semantic health color) and/or aged badge, kept off the name line so long names do not truncate. */}
-                      {(ratio !== null || debtor.isAged) && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {ratio !== null && (
-                            <div
-                              data-testid="debt-progress-bar"
-                              className="w-20 h-1 bg-slate-200/80 rounded-full overflow-hidden"
-                            >
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  ratio >= 80
-                                    ? 'bg-rose-500'
-                                    : ratio >= 50
-                                    ? 'bg-amber-500'
-                                    : 'bg-amber-400'
-                                }`}
-                                style={{ width: `${ratio}%` }}
-                              />
-                            </div>
-                          )}
-                          {debtor.isAged && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-800 border border-rose-400/30 uppercase">
-                              Antigua
-                            </span>
-                          )}
+                      {/* Debt progress bar with semantic health color */}
+                      {ratio !== null && (
+                        <div
+                          data-testid="debt-progress-bar"
+                          className="w-20 h-1 bg-slate-200/80 rounded-full mt-0.5 overflow-hidden"
+                        >
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              ratio >= 80
+                                ? 'bg-rose-500'
+                                : ratio >= 50
+                                ? 'bg-amber-500'
+                                : 'bg-amber-400'
+                            }`}
+                            style={{ width: `${ratio}%` }}
+                          />
                         </div>
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-right">
+                    <div data-testid="top-debtor-amount" className="text-right">
                       <span className="block text-xs font-black text-rose-600 drop-shadow-2xs">
                         S/ {formatAmount(debtor.balance)}
                       </span>
-                      <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        Pendiente
-                      </span>
+                      {/* Aged debts swap the "Pendiente" label for the badge, keeping the name line and bar width intact. */}
+                      {debtor.isAged ? (
+                        <span className="block w-fit ml-auto text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-800 border border-rose-400/30 uppercase">
+                          Antigua
+                        </span>
+                      ) : (
+                        <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                          Pendiente
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
