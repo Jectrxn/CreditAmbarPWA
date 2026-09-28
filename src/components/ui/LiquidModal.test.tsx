@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { LiquidModal } from './LiquidModal';
@@ -47,6 +48,32 @@ afterEach(() => {
   setInnerHeight(ORIGINAL_INNER_HEIGHT);
   vi.restoreAllMocks();
 });
+
+function FocusHarness({
+  useInitialFocusRef = false,
+}: {
+  useInitialFocusRef?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const fieldOneRef = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen(true)}>
+        Abrir
+      </button>
+      <LiquidModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        title="Panel"
+        initialFocusRef={useInitialFocusRef ? fieldOneRef : undefined}
+      >
+        <input aria-label="Campo uno" ref={fieldOneRef} />
+        <input aria-label="Campo dos" />
+        <button type="button">Acción</button>
+      </LiquidModal>
+    </div>
+  );
+}
 
 describe('LiquidModal & GlassCard UI Components', () => {
   describe('LiquidModal', () => {
@@ -210,6 +237,63 @@ describe('LiquidModal & GlassCard UI Components', () => {
       expect(screen.getByText('Cliente 0')).toBeInTheDocument();
       expect(screen.getByText('Cliente 49')).toBeInTheDocument();
       expect(tableContainer.scrollTop).toBe(120);
+    });
+  });
+
+  describe('LiquidModal focus management', () => {
+    it('moves focus to the first focusable element in the panel when no initialFocusRef is given', () => {
+      render(<FocusHarness />);
+      fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+
+      expect(screen.getByRole('button', { name: /cerrar/i })).toHaveFocus();
+    });
+
+    it('moves focus to initialFocusRef.current when provided', () => {
+      render(<FocusHarness useInitialFocusRef />);
+      fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+
+      expect(screen.getByLabelText('Campo uno')).toHaveFocus();
+    });
+
+    it('traps Tab focus inside the panel, wrapping at both ends', () => {
+      render(<FocusHarness />);
+      fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+
+      const closeBtn = screen.getByRole('button', { name: /cerrar/i });
+      const actionBtn = screen.getByRole('button', { name: 'Acción' });
+      expect(closeBtn).toHaveFocus();
+
+      // Shift+Tab from the first focusable wraps to the last.
+      fireEvent.keyDown(closeBtn, { key: 'Tab', shiftKey: true });
+      expect(actionBtn).toHaveFocus();
+
+      // Tab from the last focusable wraps to the first.
+      fireEvent.keyDown(actionBtn, { key: 'Tab' });
+      expect(closeBtn).toHaveFocus();
+    });
+
+    it('restores focus to the trigger element after closing', () => {
+      render(<FocusHarness />);
+      const trigger = screen.getByRole('button', { name: 'Abrir' });
+      // jsdom does not focus a button on click by itself the way real
+      // browsers do; focus it explicitly to model the real trigger state.
+      trigger.focus();
+      fireEvent.click(trigger);
+      expect(screen.getByRole('button', { name: /cerrar/i })).toHaveFocus();
+
+      fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
+      expect(trigger).toHaveFocus();
+    });
+
+    it('still calls onClose on Escape and backdrop click with focus management active', () => {
+      const handleClose = vi.fn();
+      render(
+        <LiquidModal isOpen={true} onClose={handleClose}>
+          <input aria-label="Solo" />
+        </LiquidModal>
+      );
+      fireEvent.keyDown(window, { key: 'Escape' });
+      expect(handleClose).toHaveBeenCalledTimes(1);
     });
   });
 

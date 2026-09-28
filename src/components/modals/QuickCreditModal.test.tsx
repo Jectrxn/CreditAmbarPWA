@@ -420,6 +420,18 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     expect((await db.customers.get(mockCustomer.id))?.balance).toBe(75.5);
   });
 
+  it('focuses the customer select when opened without a customer (T3)', async () => {
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} />);
+
+    expect(await screen.findByRole('button', { name: 'Cliente' })).toHaveFocus();
+  });
+
+  it('focuses the product search when opened with a customer already given (T3)', async () => {
+    render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
+
+    expect(await screen.findByLabelText(/buscar producto/i)).toHaveFocus();
+  });
+
   it('blocks empty and over-limit totals with actionable validation', async () => {
     render(<QuickCreditModal isOpen={true} onClose={() => {}} customer={mockCustomer} />);
     await screen.findByText(/Carlos Mendoza/i);

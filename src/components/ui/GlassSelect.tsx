@@ -30,18 +30,14 @@ export interface GlassSelectProps {
  *   highlight (exposed via aria-activedescendant), Enter selects, Escape
  *   closes, Tab closes, pointer-down outside closes.
  */
-export const GlassSelect: React.FC<GlassSelectProps> = ({
-  options,
-  value,
-  onChange,
-  ariaLabel,
-  disabled = false,
-  placeholder,
-}) => {
+export const GlassSelect = React.forwardRef<HTMLButtonElement, GlassSelectProps>(function GlassSelect(
+  { options, value, onChange, ariaLabel, disabled = false, placeholder },
+  forwardedRef
+) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const baseId = useId();
   const listboxId = `${baseId}-listbox`;
 
@@ -126,7 +122,14 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({
   return (
     <div ref={containerRef} className="relative">
       <button
-        ref={buttonRef}
+        ref={(el) => {
+          buttonRef.current = el;
+          if (typeof forwardedRef === 'function') {
+            forwardedRef(el);
+          } else if (forwardedRef) {
+            (forwardedRef as React.MutableRefObject<HTMLButtonElement | null>).current = el;
+          }
+        }}
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -194,4 +197,4 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({
       )}
     </div>
   );
-};
+});

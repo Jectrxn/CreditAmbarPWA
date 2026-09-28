@@ -15,6 +15,15 @@ export interface LiquidModalProps {
   closeOnBackdropClick?: boolean;
   className?: string;
   'data-testid'?: string;
+  /** Focused on open instead of the first focusable element in the panel. */
+  initialFocusRef?: React.RefObject<HTMLElement>;
+}
+
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
 }
 
 const maxWidthMap = {
@@ -38,16 +47,65 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
   closeOnBackdropClick = true,
   className,
   'data-testid': testId = 'liquid-modal',
+  initialFocusRef,
 }) => {
-  // Handle ESC key press
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  // The element that had focus right before this modal opened, so it can
+  // be restored on close. Captured during render (not an effect) so it
+  // runs before this commit's DOM mutations — e.g. content with its own
+  // autoFocus — can steal focus away from the real trigger element.
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(false);
+  if (isOpen && !wasOpenRef.current) {
+    previousActiveElementRef.current =
+      typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null;
+  }
+  wasOpenRef.current = isOpen;
+
+  // Handle ESC key press and the Tab focus trap.
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const panel = panelRef.current;
+        if (!panel) return;
+        const focusable = getFocusableElements(panel);
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const target = e.target as HTMLElement;
+        if (e.shiftKey) {
+          if (target === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else if (target === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     },
     [onClose]
   );
+
+  // Move focus into the panel on open, and restore it to whatever had
+  // focus before opening once the modal closes/unmounts.
+  useEffect(() => {
+    if (!isOpen) return;
+    const panel = panelRef.current;
+    const target = initialFocusRef?.current ?? (panel ? getFocusableElements(panel)[0] : undefined);
+    target?.focus();
+
+    return () => {
+      const toRestore = previousActiveElementRef.current;
+      if (toRestore && document.contains(toRestore)) {
+        toRestore.focus();
+      }
+    };
+  }, [isOpen, initialFocusRef]);
 
   const isBottomSheet = variant === 'bottom-sheet';
 
@@ -144,7 +202,12 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
     >
       <div
         data-testid={`${testId}-container`}
-        ref={isBottomSheet ? sheetRef : undefined}
+        ref={(el) => {
+          panelRef.current = el;
+          if (isBottomSheet) {
+            sheetRef.current = el;
+          }
+        }}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'liquid-modal-title' : undefined}
