@@ -107,7 +107,7 @@ export const HomePage: React.FC = () => {
     [activeStoreId]
   );
 
-  const { data: dashboardData, isLoading, error: dashboardError } = useLiveDexieQuery(
+  const { data: dashboardData, isLoading, error: dashboardError, retry } = useLiveDexieQuery(
     queryDashboardData,
     [activeStoreId]
   );
@@ -120,6 +120,17 @@ export const HomePage: React.FC = () => {
       console.error('Error loading dashboard data:', dashboardError);
     }
   }, [dashboardError]);
+
+  /**
+   * While loading, show the skeleton; once settled, show `—` instead of a
+   * (possibly stale or fake-zero) value when the live query errored, and the
+   * real value otherwise.
+   */
+  const renderMetric = (value: React.ReactNode, skeleton: React.ReactNode): React.ReactNode => {
+    if (isLoading) return skeleton;
+    if (dashboardError) return '—';
+    return value;
+  };
 
   // Aggregated calculations
   const stats = useMemo(() => computeDashboardStats(customers, transactions), [customers, transactions]);
@@ -439,6 +450,27 @@ export const HomePage: React.FC = () => {
         )}
       </div>
 
+      {/* Dashboard error alert: shown when the live query fails, with a retry action */}
+      {!isLoading && Boolean(dashboardError) && (
+        <div
+          role="alert"
+          data-testid="dashboard-error"
+          className="flex items-center justify-between gap-2 px-3 py-2 rounded-2xl bg-rose-500/10 border border-rose-400/30 text-rose-800 text-xs font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]"
+        >
+          <span className="flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>No se pudieron cargar los datos</span>
+          </span>
+          <button
+            type="button"
+            onClick={retry}
+            className="px-3 py-1 rounded-full bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 border border-rose-400/30 text-rose-800 text-[11px] font-black transition cursor-pointer"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {/* Hero Card: TOTAL POR COBRAR (Luminous Liquid Glass) */}
       <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-amber-50/[0.55] via-white/[0.35] to-amber-100/[0.45] backdrop-blur-[24px] backdrop-saturate-[190%] p-4 text-slate-900 border border-t-white border-x-white/50 border-b-white/20 shadow-[0_16px_36px_-8px_rgba(245,158,11,0.14),0_4px_16px_rgba(15,23,42,0.04),inset_0_1.5px_2px_rgba(255,255,255,0.95)] space-y-2.5">
         {/* Specular Ambient Glow */}
@@ -455,12 +487,11 @@ export const HomePage: React.FC = () => {
             <span>Total por Cobrar</span>
           </div>
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-900 border border-amber-400/30 shadow-2xs backdrop-blur-md">
-            {isLoading ? (
-              <DashboardSkeleton width="w-24" />
-            ) : (
+            {renderMetric(
               <>
                 • {stats.pendingAccountsCount} {stats.pendingAccountsCount === 1 ? 'cuenta pendiente' : 'cuentas pendientes'}
-              </>
+              </>,
+              <DashboardSkeleton width="w-24" />
             )}
           </span>
         </div>
@@ -469,13 +500,13 @@ export const HomePage: React.FC = () => {
           <div className="flex items-baseline gap-1.5">
             <span className="text-xl sm:text-2xl font-black text-amber-600">S/</span>
             <span className="text-3xl sm:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-amber-700 via-orange-600 to-amber-600 drop-shadow-2xs">
-              {isLoading ? <DashboardSkeleton width="w-28" height="h-7" /> : formatAmount(stats.totalReceivable)}
+              {renderMetric(formatAmount(stats.totalReceivable), <DashboardSkeleton width="w-28" height="h-7" />)}
             </span>
           </div>
           <p className="text-[11px] font-medium text-slate-600 mt-0.5">
             Total fiado histórico:{' '}
             <span className="text-slate-900 font-bold">
-              {isLoading ? <DashboardSkeleton width="w-14" /> : <>S/ {formatAmount(stats.totalFiadoHistorico)}</>}
+              {renderMetric(<>S/ {formatAmount(stats.totalFiadoHistorico)}</>, <DashboardSkeleton width="w-14" />)}
             </span>
           </p>
         </div>
@@ -486,12 +517,11 @@ export const HomePage: React.FC = () => {
             <div className="min-w-0 pr-1">
               <span className="block text-[10px] uppercase font-black text-slate-500 tracking-wider truncate">Clientes</span>
               <span className="text-xs font-black text-slate-900 truncate block">
-                {isLoading ? (
-                  <DashboardSkeleton width="w-16" />
-                ) : (
+                {renderMetric(
                   <>
                     {stats.totalCustomers} {stats.totalCustomers === 1 ? 'registrado' : 'registrados'}
-                  </>
+                  </>,
+                  <DashboardSkeleton width="w-16" />
                 )}
               </span>
             </div>
@@ -502,7 +532,7 @@ export const HomePage: React.FC = () => {
             <div className="min-w-0 pr-1">
               <span className="block text-[10px] uppercase font-black text-slate-500 tracking-wider truncate">Cobrado Total</span>
               <span className="text-xs font-black text-emerald-700 truncate block">
-                {isLoading ? <DashboardSkeleton width="w-16" /> : <>S/ {formatAmount(stats.totalCobradoHistorico)}</>}
+                {renderMetric(<>S/ {formatAmount(stats.totalCobradoHistorico)}</>, <DashboardSkeleton width="w-16" />)}
               </span>
             </div>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -525,15 +555,14 @@ export const HomePage: React.FC = () => {
               Fiado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
-              {isLoading ? <DashboardSkeleton width="w-16" height="h-4" /> : <>S/ {formatAmount(stats.fiadoHoy)}</>}
+              {renderMetric(<>S/ {formatAmount(stats.fiadoHoy)}</>, <DashboardSkeleton width="w-16" height="h-4" />)}
             </span>
             <span className="block text-[10px] text-slate-500 font-semibold truncate">
-              {isLoading ? (
-                <DashboardSkeleton width="w-14" />
-              ) : (
+              {renderMetric(
                 <>
                   {stats.fiadoHoyCount} {stats.fiadoHoyCount === 1 ? 'venta hoy' : 'ventas hoy'}
-                </>
+                </>,
+                <DashboardSkeleton width="w-14" />
               )}
             </span>
           </div>
@@ -552,15 +581,14 @@ export const HomePage: React.FC = () => {
               Cobrado Hoy
             </span>
             <span className="block text-sm sm:text-base font-black text-slate-900 truncate leading-tight">
-              {isLoading ? <DashboardSkeleton width="w-16" height="h-4" /> : <>S/ {formatAmount(stats.cobradoHoy)}</>}
+              {renderMetric(<>S/ {formatAmount(stats.cobradoHoy)}</>, <DashboardSkeleton width="w-16" height="h-4" />)}
             </span>
             <span className="block text-[10px] text-slate-500 font-semibold truncate">
-              {isLoading ? (
-                <DashboardSkeleton width="w-14" />
-              ) : (
+              {renderMetric(
                 <>
                   {stats.cobradoHoyCount} {stats.cobradoHoyCount === 1 ? 'abono hoy' : 'abonos hoy'}
-                </>
+                </>,
+                <DashboardSkeleton width="w-14" />
               )}
             </span>
           </div>
@@ -602,6 +630,10 @@ export const HomePage: React.FC = () => {
 
         {isLoading ? (
           <div className="relative z-10 py-3 text-center text-xs font-medium text-slate-500">Cargando deudas...</div>
+        ) : dashboardError ? (
+          <div className="relative z-10 py-3 text-center text-xs font-medium text-slate-500">
+            No se pudieron cargar los datos
+          </div>
         ) : stats.topDebtors.length === 0 ? (
           <div className="relative z-10 py-4 px-3 text-center space-y-1">
             <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-2xs">

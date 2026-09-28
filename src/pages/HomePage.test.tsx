@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from './HomePage';
@@ -450,6 +450,38 @@ describe('HomePage Dashboard Component (Strict TDD)', () => {
 
       expect(screen.queryByTestId('dashboard-skeleton')).not.toBeInTheDocument();
       expect(screen.getByTestId('page-home')).toHaveAttribute('aria-busy', 'false');
+      expect(screen.getByText(/3 registrados/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Dashboard error state (T7)', () => {
+    it('shows an honest error alert instead of fake zero amounts, and recovers on retry', async () => {
+      const whereSpy = vi.spyOn(db.customers, 'where').mockImplementation(() => {
+        throw new Error('boom');
+      });
+
+      try {
+        renderHomePage();
+
+        const alert = await screen.findByTestId('dashboard-error');
+        expect(within(alert).getByText('No se pudieron cargar los datos')).toBeInTheDocument();
+        expect(within(alert).getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+
+        expect(screen.queryByText(/0\.00/)).not.toBeInTheDocument();
+        expect(screen.queryByText('¡Cuentas al día!')).not.toBeInTheDocument();
+        expect(screen.getByText('No se pudieron cargar los datos', { selector: 'div' })).toBeInTheDocument();
+        expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+      } finally {
+        whereSpy.mockRestore();
+      }
+
+      fireEvent.click(screen.getByRole('button', { name: /reintentar/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/1,021\.00/i)).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId('dashboard-error')).not.toBeInTheDocument();
       expect(screen.getByText(/3 registrados/i)).toBeInTheDocument();
     });
   });
