@@ -58,7 +58,13 @@ Money figures on the main screen drive the shopkeeper's collection decisions; wr
 - Writer verification: `npx tsc --noEmit` clean; `npm test` 42 files / 322 tests passed.
 - Parent spot check: focused vitest run 26/26 passed; className diff inspected (reformat only).
 - Note: dashboard debt age excludes cancelled transactions; `CustomersPage` currently passes all transactions to `calculateOldestUnpaidDate` (follow-up candidate).
-- RDD: assess medium (576 lines, slice_budget_reached) → review due.
+- RDD: assess medium (576 lines, slice_budget_reached) → consent granted → lens review-reliability → approved; acknowledged, authority burned (lineage review-c674a298bd429a1f). Reviewed boundary advances to 2f35f20.
+- Advisory (non-blocking) review findings, follow-up work:
+  - WARNING `dashboardStats.test.ts` today-metrics test is timezone-dependent (local `setHours` vs UTC fixtures); passes only UTC-8..UTC+0.
+  - WARNING "exact threshold" test only asserts the constant; no 29/30-day boundary test (`Math.ceil` rounds 29d+1m to 30).
+  - SUGGESTION clamp future-dated purchases instead of `Math.abs`.
+  - SUGGESTION use a row `data-testid` instead of `closest('div.p-2\\.5')` in HomePage tests.
+- T4 (partial): Chrome at ~500px mobile width — dashboard renders identical to pre-change screenshot (hero, daily metrics, empty debtors state). Debtor rows ("Antigua", progress bar) not visually verified: local DB has no debtors.
 
 ## Next step
-Native review of T1–T3, then T4 visual check.
+Visual check of debtor rows with test data (needs user OK to seed local IndexedDB); then fix advisory test findings.
