@@ -57,5 +57,8 @@ A mistaken fiado (wrong customer or amount) can only be voided from History, whi
 - T3 Chrome (test mode): Eduardo 45.00 → fiado 1× Leche S/ 3.80 → 48.80 → "Anular fiado" → "¿Anular este fiado?" → "Sí, anular" clicked twice → balance 45.00, tx `cancelled` with reason, queue `credit_transactions:UPDATE, customers:UPDATE`; screen "Fiado anulado" with restored balance, WhatsApp and Anular hidden.
 - Visual nits noted (not changed): voided state reuses the amber check icon and repeats "Fiado anulado" in header and body.
 
+- RDD: assess since last reviewed boundary `7c175c0` (includes the LiquidModal hardening) medium, 679 lines → consent granted → review-reliability approved; acknowledged, burned (lineage review-c2ade79ea017a338).
+- Post-review fix `2ece4f5` (route inline): the void called `onSuccess` again, so Home showed "¡Operación registrada con éxito!" after voiding. New `onVoided` prop; Home shows "Fiado anulado", Customers/History refresh. RED (onVoided test) → GREEN. Added UI void-error-path test and service tests for unknown tx / missing customer / non-completed status (coverage; passed on existing code). Checks: tsc clean; `npm test` 41 files / 352 tests. Chrome: Home search → + Fiar → S/ 5 → toast "registrada"; Anular → toast "Fiado anulado", balance back to 20.00. No unit test for the Home wiring itself (verified in Chrome only).
+
 ## Next step
-Review, then PRs for the UX + undo branches (user decision).
+PRs for the UX + undo branches (user decision; UX branch ~547 lines and undo branch ~560 lines → slices).
