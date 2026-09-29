@@ -63,5 +63,7 @@ Remove the riskiest UX gaps of the "Nuevo Fiado" modal without redesigning it: n
 - RDD: assess vs `feat/credit-sale-atomic` medium, 449 lines → consent granted → review-reliability approved; acknowledged, burned (lineage review-f9314b001b5e4960).
 - Post-review fix `fc4852f` (route inline): Tab from a non-listed spot/outside is pulled back into the panel; hidden (`display:none`, `visibility:hidden`, `[hidden]`, `[inert]`, `aria-hidden`) elements skipped; backdrop close covered by test; parent found that stacked modals (each portaled to body, e.g. HistoryPage siblings) would steal focus from each other → only the topmost open modal runs the Tab trap (RED confirmed, then GREEN). Checks: tsc clean; `npm test` 41 files / 340 tests.
 
+- Product decision (user, 2026-09-29): no PIN per fiado for now — selecting the operator name is enough (trust the open cash session). The name keeps being stored in `cashier_pin_hash` (existing field naming, unchanged).
+
 ## Next step
-Stacked PR on #9 (user decision). Pending product decisions: operator PIN per fiado; undo/void.
+Stacked PR on #9 (user decision; branch ~547 lines → split in 2). Pending product decision: undo/void after confirming.
