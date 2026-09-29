@@ -248,6 +248,25 @@ describe('LiquidModal & GlassCard UI Components', () => {
       expect(screen.getByRole('button', { name: /cerrar/i })).toHaveFocus();
     });
 
+    it('keeps an autoFocus element inside the panel focused instead of overriding it', () => {
+      const AutoFocusHarness = () => {
+        const [open, setOpen] = useState(false);
+        return (
+          <>
+            <button onClick={() => setOpen(true)}>Abrir autofocus</button>
+            <LiquidModal isOpen={open} onClose={() => setOpen(false)} title="Nuevo Cliente">
+              <input aria-label="Nombre" autoFocus />
+              <button>Guardar</button>
+            </LiquidModal>
+          </>
+        );
+      };
+      render(<AutoFocusHarness />);
+      fireEvent.click(screen.getByRole('button', { name: 'Abrir autofocus' }));
+
+      expect(screen.getByLabelText('Nombre')).toHaveFocus();
+    });
+
     it('moves focus to initialFocusRef.current when provided', () => {
       render(<FocusHarness useInitialFocusRef />);
       fireEvent.click(screen.getByRole('button', { name: 'Abrir' }));
@@ -294,6 +313,67 @@ describe('LiquidModal & GlassCard UI Components', () => {
       );
       fireEvent.keyDown(window, { key: 'Escape' });
       expect(handleClose).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(screen.getByTestId('liquid-modal-backdrop'));
+      expect(handleClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('pulls focus back into the panel when Tab is pressed from a non-focusable spot or from outside', () => {
+      render(
+        <>
+          <button>Fuera</button>
+          <LiquidModal isOpen={true} onClose={() => {}}>
+            <div data-testid="plain-area" tabIndex={-1}>Texto</div>
+            <input aria-label="Primero" />
+            <button>Ultimo</button>
+          </LiquidModal>
+        </>
+      );
+      const panelFocusable = () => screen.getByRole('button', { name: /cerrar/i });
+
+      const plain = screen.getByTestId('plain-area');
+      plain.focus();
+      fireEvent.keyDown(plain, { key: 'Tab' });
+      expect(panelFocusable()).toHaveFocus();
+
+      const outside = screen.getByRole('button', { name: 'Fuera' });
+      outside.focus();
+      fireEvent.keyDown(outside, { key: 'Tab', shiftKey: true });
+      expect(screen.getByRole('button', { name: 'Ultimo' })).toHaveFocus();
+    });
+
+    it('only the topmost open modal handles Tab (no focus stealing between stacked modals)', () => {
+      render(
+        <>
+          <LiquidModal isOpen={true} onClose={() => {}} title="Detalle" data-testid="outer">
+            <button>Accion externa</button>
+          </LiquidModal>
+          <LiquidModal isOpen={true} onClose={() => {}} title="Abono" data-testid="inner">
+            <input aria-label="Monto" />
+            <button>Registrar</button>
+          </LiquidModal>
+        </>
+      );
+      const amount = screen.getByLabelText('Monto');
+      amount.focus();
+      fireEvent.keyDown(amount, { key: 'Tab' });
+      // Not the last element of the inner modal: the browser moves focus normally,
+      // and the outer modal must not pull it back into itself.
+      expect(screen.getByRole('button', { name: 'Accion externa' })).not.toHaveFocus();
+      expect(amount).toHaveFocus();
+    });
+
+    it('skips hidden elements when choosing the first focusable element', () => {
+      render(
+        <LiquidModal isOpen={true} onClose={() => {}} showCloseButton={false}>
+          <button style={{ display: 'none' }}>Oculto</button>
+          <div hidden>
+            <button>Tambien oculto</button>
+          </div>
+          <input aria-label="Visible" />
+        </LiquidModal>
+      );
+      expect(screen.getByLabelText('Visible')).toHaveFocus();
     });
   });
 

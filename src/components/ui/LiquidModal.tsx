@@ -22,8 +22,23 @@ export interface LiquidModalProps {
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+// Open modals in opening order; only the topmost one runs the Tab trap, so
+// stacked modals (each portaled to body) never pull focus from one another.
+const openModalStack: symbol[] = [];
+
+function isHidden(el: HTMLElement, container: HTMLElement): boolean {
+  if (el.closest('[hidden], [inert], [aria-hidden="true"]')) return true;
+  for (let node: HTMLElement | null = el; node && node !== container; node = node.parentElement) {
+    const style = window.getComputedStyle(node);
+    if (style.display === 'none' || style.visibility === 'hidden') return true;
+  }
+  return false;
+}
+
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (el) => !isHidden(el, container)
+  );
 }
 
 const maxWidthMap = {
@@ -55,6 +70,7 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
   // runs before this commit's DOM mutations — e.g. content with its own
   // autoFocus — can steal focus away from the real trigger element.
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const modalIdRef = useRef<symbol>(Symbol('liquid-modal'));
   const wasOpenRef = useRef(false);
   if (isOpen && !wasOpenRef.current) {
     previousActiveElementRef.current =
@@ -70,6 +86,7 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
         return;
       }
       if (e.key === 'Tab') {
+        if (openModalStack[openModalStack.length - 1] !== modalIdRef.current) return;
         const panel = panelRef.current;
         if (!panel) return;
         const focusable = getFocusableElements(panel);
@@ -77,6 +94,13 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         const target = e.target as HTMLElement;
+        // Focus on a non-listed spot (panel background, tabIndex=-1, body or
+        // outside the panel) is pulled back to the matching edge.
+        if (!focusable.includes(target)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+          return;
+        }
         if (e.shiftKey) {
           if (target === first) {
             e.preventDefault();
@@ -96,7 +120,12 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const panel = panelRef.current;
-    const target = initialFocusRef?.current ?? (panel ? getFocusableElements(panel)[0] : undefined);
+    // Content that already took focus (e.g. an `autoFocus` input) wins over the
+    // first-focusable fallback; an explicit initialFocusRef always wins.
+    const alreadyInside = Boolean(panel && panel.contains(document.activeElement));
+    const target =
+      initialFocusRef?.current ??
+      (alreadyInside ? null : panel ? getFocusableElements(panel)[0] : undefined);
     target?.focus();
 
     return () => {
@@ -166,6 +195,16 @@ export const LiquidModal: React.FC<LiquidModalProps> = ({
       sheet.removeEventListener('focusin', onFocusIn);
     };
   }, [isOpen, isBottomSheet]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const id = modalIdRef.current;
+    openModalStack.push(id);
+    return () => {
+      const index = openModalStack.lastIndexOf(id);
+      if (index !== -1) openModalStack.splice(index, 1);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;

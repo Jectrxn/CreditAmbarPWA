@@ -41,6 +41,33 @@ describe('OperatorSelector - 1-Touch Liquid Glass Cashier Selection', () => {
     expect(useAuthStore.getState().currentOperatorName).toBe('Anthony');
   });
 
+  it('uses a fixed 2-column grid without truncated names when there are more than 3 operators', () => {
+    const onSelect = vi.fn();
+    const { container } = render(<OperatorSelector selectedName="Martin" onSelect={onSelect} />);
+
+    const grid = container.querySelector('.grid-cols-2');
+    expect(grid).toBeInTheDocument();
+    expect(grid?.className).not.toMatch(/sm:grid-cols-4/);
+    expect(container.querySelectorAll('.truncate')).toHaveLength(0);
+    expect(screen.getByText('Martin')).toBeInTheDocument();
+    expect(screen.getByText('Emiliano')).toBeInTheDocument();
+    expect(screen.getByText('Anthony')).toBeInTheDocument();
+    expect(screen.getByText('Benjamin')).toBeInTheDocument();
+  });
+
+  it('keeps the previous layout when there are 3 or fewer operators', () => {
+    const onSelect = vi.fn();
+    useAuthStore
+      .getState()
+      .setCashiers(DEFAULT_CASHIERS.filter((c) => c.name !== 'Benjamin'));
+    const { container } = render(<OperatorSelector selectedName="Martin" onSelect={onSelect} />);
+
+    const grid = container.querySelector('.grid-cols-2');
+    expect(grid).toBeInTheDocument();
+    expect(grid?.className).toMatch(/sm:grid-cols-4/);
+    expect(container.querySelectorAll('.truncate').length).toBeGreaterThan(0);
+  });
+
   it('row layout renders the same operators without the grid', () => {
     const onSelect = vi.fn();
     const { container } = render(
