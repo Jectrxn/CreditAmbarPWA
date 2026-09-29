@@ -60,5 +60,13 @@ A mistaken fiado (wrong customer or amount) can only be voided from History, whi
 - RDD: assess since last reviewed boundary `7c175c0` (includes the LiquidModal hardening) medium, 679 lines → consent granted → review-reliability approved; acknowledged, burned (lineage review-c2ade79ea017a338).
 - Post-review fix `2ece4f5` (route inline): the void called `onSuccess` again, so Home showed "¡Operación registrada con éxito!" after voiding. New `onVoided` prop; Home shows "Fiado anulado", Customers/History refresh. RED (onVoided test) → GREEN. Added UI void-error-path test and service tests for unknown tx / missing customer / non-completed status (coverage; passed on existing code). Checks: tsc clean; `npm test` 41 files / 352 tests. Chrome: Home search → + Fiar → S/ 5 → toast "registrada"; Anular → toast "Fiado anulado", balance back to 20.00. No unit test for the Home wiring itself (verified in Chrome only).
 
+## Delivery (final)
+- One slicing pass at existing commits (all ≤ 400; new cut points verified: 588aefa tsc + 334/334, 032c0db tsc + 348/348):
+  - #10 `feat/nuevo-fiado-ux-focus` → #9 (+341/−34)
+  - #11 `feat/nuevo-fiado-ux` → #10 (+180/−10)
+  - #12 `feat/nuevo-fiado-void-core` → #11 (+366/−1)
+  - #13 `feat/nuevo-fiado-undo` → #12 (+246/−26)
+- Merge order: #1, #7, #8, #9, #10, #11, #12, #13.
+
 ## Next step
-PRs for the UX + undo branches (user decision; UX branch ~547 lines and undo branch ~560 lines → slices).
+Human review/merge. Follow-ups: HistoryPage cancel atomic; TabBar refocus FAB; QuickPaymentModal atomic migration.
