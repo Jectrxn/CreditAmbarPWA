@@ -12,6 +12,8 @@ export interface GlassSelectProps {
   onChange: (value: string) => void;
   ariaLabel: string;
   disabled?: boolean;
+  /** Shown in the closed button, in a muted tone, when `value` matches no option. */
+  placeholder?: string;
 }
 
 /**
@@ -28,17 +30,14 @@ export interface GlassSelectProps {
  *   highlight (exposed via aria-activedescendant), Enter selects, Escape
  *   closes, Tab closes, pointer-down outside closes.
  */
-export const GlassSelect: React.FC<GlassSelectProps> = ({
-  options,
-  value,
-  onChange,
-  ariaLabel,
-  disabled = false,
-}) => {
+export const GlassSelect = React.forwardRef<HTMLButtonElement, GlassSelectProps>(function GlassSelect(
+  { options, value, onChange, ariaLabel, disabled = false, placeholder },
+  forwardedRef
+) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const baseId = useId();
   const listboxId = `${baseId}-listbox`;
 
@@ -123,7 +122,14 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({
   return (
     <div ref={containerRef} className="relative">
       <button
-        ref={buttonRef}
+        ref={(el) => {
+          buttonRef.current = el;
+          if (typeof forwardedRef === 'function') {
+            forwardedRef(el);
+          } else if (forwardedRef) {
+            (forwardedRef as React.MutableRefObject<HTMLButtonElement | null>).current = el;
+          }
+        }}
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -139,7 +145,9 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({
         onKeyDown={handleButtonKeyDown}
         className="w-full p-3 text-sm font-semibold text-slate-900 bg-white/[0.50] backdrop-blur-md border border-white/80 border-b-white/40 rounded-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:bg-white/[0.70] focus:ring-2 focus:ring-amber-400/50 focus:outline-none transition-all cursor-pointer flex items-center justify-between gap-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span className="truncate">{selected?.label ?? ''}</span>
+        <span className={selected ? 'truncate' : 'truncate text-slate-400'}>
+          {selected?.label ?? placeholder ?? ''}
+        </span>
         <ChevronDown
           aria-hidden="true"
           className={`w-4 h-4 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -189,4 +197,4 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({
       )}
     </div>
   );
-};
+});

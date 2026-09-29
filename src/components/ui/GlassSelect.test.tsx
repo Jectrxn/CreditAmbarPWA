@@ -74,4 +74,41 @@ describe('GlassSelect', () => {
     fireEvent.keyDown(button, { key: 'Escape' });
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
+
+  it('shows the placeholder in a muted tone when value matches no option', () => {
+    render(
+      <GlassSelect
+        options={options}
+        value=""
+        onChange={() => {}}
+        ariaLabel="Cliente"
+        placeholder="Selecciona un cliente"
+      />
+    );
+    const button = screen.getByRole('button', { name: 'Cliente' });
+
+    expect(button).toHaveTextContent('Selecciona un cliente');
+    const placeholderSpan = screen.getByText('Selecciona un cliente');
+    expect(placeholderSpan.className).toMatch(/text-slate-400/);
+
+    // Accessible name stays the bare ariaLabel (no placeholder appended).
+    expect(button).toHaveAccessibleName('Cliente');
+  });
+
+  it('marks no option as selected when value matches nothing', () => {
+    render(
+      <GlassSelect
+        options={options}
+        value="does-not-exist"
+        onChange={() => {}}
+        ariaLabel="Cliente"
+        placeholder="Selecciona un cliente"
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Cliente' }));
+
+    for (const option of screen.getAllByRole('option')) {
+      expect(option).toHaveAttribute('aria-selected', 'false');
+    }
+  });
 });

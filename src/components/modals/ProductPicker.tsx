@@ -37,15 +37,11 @@ export function suggestedTotal(items: DraftItem[]): number {
  * transaction_items. Errors bubble through onError so the host modal
  * owns the single error alert.
  */
-export const ProductPicker: React.FC<ProductPickerProps> = ({
-  storeId,
-  items,
-  onChange,
-  note,
-  onNoteChange,
-  disabled = false,
-  onError,
-}) => {
+export const ProductPicker = React.forwardRef<HTMLInputElement, ProductPickerProps>(
+  function ProductPicker(
+    { storeId, items, onChange, note, onNoteChange, disabled = false, onError },
+    forwardedRef
+  ) {
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<Product[]>([]);
   const [showPopover, setShowPopover] = useState(false);
@@ -53,7 +49,7 @@ export const ProductPicker: React.FC<ProductPickerProps> = ({
   const [newPriceInput, setNewPriceInput] = useState('');
   const [noteOpen, setNoteOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
   const searchSeq = useRef(0);
 
   // Pointer-down outside closes the matches popover (mirrors GlassSelect).
@@ -162,7 +158,14 @@ export const ProductPicker: React.FC<ProductPickerProps> = ({
           className="absolute inset-y-0 left-0 ml-3.5 my-auto w-5 h-5 text-slate-600 pointer-events-none"
         />
         <input
-          ref={searchRef}
+          ref={(el) => {
+            searchRef.current = el;
+            if (typeof forwardedRef === 'function') {
+              forwardedRef(el);
+            } else if (forwardedRef) {
+              (forwardedRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+            }
+          }}
           type="text"
           value={query}
           onChange={(e) => handleQueryChange(e.target.value)}
@@ -355,4 +358,5 @@ export const ProductPicker: React.FC<ProductPickerProps> = ({
       </div>
     </div>
   );
-};
+  }
+);

@@ -65,6 +65,13 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
   const operationIdRef = useRef<string>('');
   const submittingRef = useRef(false);
 
+  // Initial focus target: the customer select when no customer is given
+  // yet (the operator must actively choose one), otherwise the product
+  // search — skipping straight to the next required input.
+  const customerSelectRef = useRef<HTMLButtonElement>(null);
+  const productSearchRef = useRef<HTMLInputElement>(null);
+  const initialFocusRef = preselectedCustomer ? productSearchRef : customerSelectRef;
+
   useEffect(() => {
     if (isOpen) {
       operationIdRef.current =
@@ -77,13 +84,13 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
       setNotes('');
       setOperatorName(currentOperatorName || 'Martin');
 
+      // Never silently pick a customer on the operator's behalf: fiado to
+      // the wrong person is the most expensive UX mistake here. Only a
+      // customer explicitly preselected by the caller (e.g. opened from a
+      // customer's own detail page) is auto-selected.
       db.customers.where('store_id').equals(activeStoreId).toArray().then((list) => {
         setAllCustomers(list);
-        if (preselectedCustomer) {
-          setSelectedCustomerId(preselectedCustomer.id);
-        } else if (list.length > 0) {
-          setSelectedCustomerId(list[0].id);
-        }
+        setSelectedCustomerId(preselectedCustomer ? preselectedCustomer.id : '');
       });
     }
   }, [isOpen, preselectedCustomer, currentOperatorName, activeStoreId]);
@@ -234,6 +241,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
       title={completedTx ? '¡Fiado Registrado!' : 'Registrar Nuevo Fiado'}
       variant="bottom-sheet"
       maxWidth="md"
+      initialFocusRef={initialFocusRef}
     >
       <div className="py-1 space-y-4">
         {completedTx ? (
@@ -323,10 +331,12 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                 <span>Cliente</span>
               </label>
               <GlassSelect
+                ref={customerSelectRef}
                 options={allCustomers.map((c) => ({ value: c.id, label: c.name }))}
                 value={selectedCustomerId}
                 onChange={setSelectedCustomerId}
                 ariaLabel="Cliente"
+                placeholder="Selecciona un cliente"
               />
 
               {/* Dynamic Credit Info Chip */}
@@ -472,6 +482,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
                 <span>Detalle del Fiado</span>
               </label>
               <ProductPicker
+                ref={productSearchRef}
                 storeId={resolveStoreId()}
                 items={items}
                 onChange={setItems}
