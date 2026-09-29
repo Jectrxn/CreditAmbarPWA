@@ -1,7 +1,7 @@
 import { db } from '../../lib/dexie';
 import type { Customer, CreditTransaction } from '../../types/database';
 import type { DraftItem } from '../../components/modals/ProductPicker';
-import { validateCreditLimit } from '../transactions/transactionRules';
+import { validateCreditLimit, AUDIT_GRACE_PERIOD_MS } from '../transactions/transactionRules';
 import { roundToCents } from '../../utils/money';
 import { syncManager } from '../../lib/syncManager';
 
@@ -445,5 +445,125 @@ export async function registerCreditSale(
     return result;
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Error al guardar el fiado.' };
+  }
+}
+
+export interface VoidCreditSaleParams {
+  operationId: string; // the credit_transaction id to void
+  storeId: string; // active store; the transaction must belong to it
+  reason?: string; // defaults to a generic "voided from the sale" reason
+  now?: Date; // injectable for tests
+}
+
+export type VoidCreditSaleResult =
+  | { ok: true; transaction: CreditTransaction; customer: Customer; replayed: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Voids a credit sale (fiado) as a single atomic, idempotent operation.
+ *
+ * Mirrors the manual cancel flow on the History page (same shape for the
+ * cancelled transaction and the restored balance, same sync queue UPDATEs)
+ * but does it inside one Dexie `rw` transaction: the transaction re-read,
+ * the store/type/status/grace-window checks, and every write (transaction,
+ * customer balance, sync queue entries) happen atomically, so a failure
+ * anywhere inside rolls back all of it.
+ *
+ * Voiding an already-cancelled transaction performs no writes and returns
+ * the already-cancelled transaction with `replayed: true`.
+ */
+export async function voidCreditSale(
+  params: VoidCreditSaleParams
+): Promise<VoidCreditSaleResult> {
+  try {
+    const result = await db.transaction(
+      'rw',
+      db.creditTransactions,
+      db.customers,
+      db.syncQueue,
+      async (): Promise<VoidCreditSaleResult> => {
+        const { operationId, storeId } = params;
+        const now = params.now ?? new Date();
+
+        const tx = await db.creditTransactions.get(operationId);
+        if (!tx) {
+          return { ok: false, error: 'Fiado no encontrado.' };
+        }
+        if (tx.store_id !== storeId) {
+          return { ok: false, error: 'El fiado pertenece a otra tienda.' };
+        }
+        if (tx.type !== 'credit_purchase') {
+          return { ok: false, error: 'Solo se pueden anular fiados.' };
+        }
+
+        if (tx.status === 'cancelled') {
+          // Idempotent replay: already voided, describe it, touch nothing.
+          const currentCustomer = await db.customers.get(tx.customer_id);
+          if (!currentCustomer) {
+            return { ok: false, error: 'Cliente no encontrado.' };
+          }
+          return { ok: true, replayed: true, transaction: tx, customer: currentCustomer };
+        }
+
+        if (tx.status !== 'completed') {
+          return { ok: false, error: 'Solo se pueden anular fiados completados.' };
+        }
+
+        const createdMs = new Date(tx.created_at).getTime();
+        const elapsedMs = now.getTime() - createdMs;
+        if (elapsedMs >= AUDIT_GRACE_PERIOD_MS) {
+          return { ok: false, error: 'La ventana de 10 minutos para anular ha expirado.' };
+        }
+
+        const customer = await db.customers.get(tx.customer_id);
+        if (!customer) {
+          return { ok: false, error: 'Cliente no encontrado.' };
+        }
+
+        const updatedTx: CreditTransaction = {
+          ...tx,
+          status: 'cancelled',
+          edit_reason: params.reason ?? 'Anulado desde el registro del fiado',
+          updated_at: now.toISOString(),
+        };
+
+        await db.creditTransactions.put(updatedTx);
+        await db.syncQueue.add({
+          entity: 'credit_transactions',
+          operation: 'UPDATE',
+          payload: updatedTx,
+          createdAt: Date.now(),
+          retryCount: 0,
+          status: 'pending',
+        });
+
+        const newBalance = Math.max(0, roundToCents(customer.balance - tx.total_amount));
+        const updatedCustomer: Customer = {
+          ...customer,
+          balance: newBalance,
+        };
+
+        await db.customers.put({ ...updatedCustomer, synced: false });
+        await db.syncQueue.add({
+          entity: 'customers',
+          operation: 'UPDATE',
+          payload: updatedCustomer,
+          createdAt: Date.now(),
+          retryCount: 0,
+          status: 'pending',
+        });
+
+        return { ok: true, replayed: false, transaction: updatedTx, customer: updatedCustomer };
+      }
+    );
+
+    if (result.ok) {
+      // Best-effort: never block the caller on the network round trip.
+      syncManager.requestSync();
+    }
+
+    return result;
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Error al anular el fiado.' };
   }
 }

@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { db } from '../../lib/dexie';
+import type { CreditTransaction } from '../../types/database';
 import {
   createCreditAccount,
   recordCreditPurchase,
   recordCreditPayment,
   getCustomerCreditAccount,
   registerCreditSale,
+  voidCreditSale,
   DEFAULT_CREDIT_LIMIT,
 } from './creditService';
 
@@ -392,6 +394,193 @@ describe('creditService - Account Creation & Limit Enforcement', () => {
       const storedCustomer = await db.customers.get(customer.id);
       expect(storedCustomer?.balance).toBe(0);
       expect(await db.creditTransactions.count()).toBe(0);
+    });
+  });
+
+  describe('voidCreditSale (atomic, idempotent use case)', () => {
+    // Sale registered at 00:00:00; this `now` is 5 minutes later, well
+    // inside the 10-minute audit grace window.
+    const now = new Date('2026-01-01T00:05:00.000Z');
+    let customer: Awaited<ReturnType<typeof createCreditAccount>>;
+
+    beforeEach(async () => {
+      await db.creditTransactions.clear();
+      await db.transactionItems.clear();
+      customer = await createCreditAccount({
+        storeId: 'store-1',
+        name: 'Void Customer',
+        creditLimit: 100,
+      });
+      await db.syncQueue.clear();
+    });
+
+    const registerSale = async () => {
+      const result = await registerCreditSale({
+        operationId: 'op-void-1',
+        storeId: 'store-1',
+        customerId: customer.id,
+        amount: 30,
+        operatorName: 'Martin',
+        items: [],
+        now: new Date('2026-01-01T00:00:00.000Z'),
+      });
+      if (!result.ok) throw new Error('expected sale to register');
+      await db.syncQueue.clear();
+      return result;
+    };
+
+    it('cancels the transaction, restores the balance and queues 2 UPDATEs on the happy path', async () => {
+      await registerSale();
+
+      const result = await voidCreditSale({
+        operationId: 'op-void-1',
+        storeId: 'store-1',
+        now,
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error('expected ok result');
+      expect(result.replayed).toBe(false);
+      expect(result.transaction.status).toBe('cancelled');
+      expect(result.transaction.edit_reason).toBe('Anulado desde el registro del fiado');
+      expect(result.transaction.updated_at).toBe(now.toISOString());
+      expect(result.customer.balance).toBe(0);
+
+      const storedTx = await db.creditTransactions.get('op-void-1');
+      expect(storedTx?.status).toBe('cancelled');
+      expect(storedTx?.edit_reason).toBe('Anulado desde el registro del fiado');
+      expect(storedTx?.updated_at).toBe(now.toISOString());
+
+      const storedCustomer = await db.customers.get(customer.id);
+      expect(storedCustomer?.balance).toBe(0);
+
+      expect(await db.syncQueue.where('entity').equals('credit_transactions').count()).toBe(1);
+      expect(await db.syncQueue.where('entity').equals('customers').count()).toBe(1);
+      const txQueue = await db.syncQueue.where('entity').equals('credit_transactions').first();
+      expect(txQueue?.operation).toBe('UPDATE');
+      const custQueue = await db.syncQueue.where('entity').equals('customers').first();
+      expect(custQueue?.operation).toBe('UPDATE');
+    });
+
+    it('accepts a custom reason instead of the default one', async () => {
+      await registerSale();
+
+      const result = await voidCreditSale({
+        operationId: 'op-void-1',
+        storeId: 'store-1',
+        reason: 'Cliente equivocado',
+        now,
+      });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error('expected ok result');
+      expect(result.transaction.edit_reason).toBe('Cliente equivocado');
+    });
+
+    it('is idempotent: voiding an already-cancelled sale replays with no writes', async () => {
+      await registerSale();
+      const first = await voidCreditSale({ operationId: 'op-void-1', storeId: 'store-1', now });
+      expect(first.ok).toBe(true);
+
+      const queueCountAfterFirst = await db.syncQueue.count();
+      const balanceAfterFirst = (await db.customers.get(customer.id))?.balance;
+
+      const second = await voidCreditSale({ operationId: 'op-void-1', storeId: 'store-1', now });
+      expect(second.ok).toBe(true);
+      if (!second.ok) throw new Error('expected ok result');
+      expect(second.replayed).toBe(true);
+      expect(second.transaction.status).toBe('cancelled');
+
+      expect(await db.syncQueue.count()).toBe(queueCountAfterFirst);
+      expect((await db.customers.get(customer.id))?.balance).toBe(balanceAfterFirst);
+    });
+
+    it('refuses to void a transaction belonging to another store, and writes nothing', async () => {
+      await registerSale();
+
+      const result = await voidCreditSale({
+        operationId: 'op-void-1',
+        storeId: 'store-other',
+        now,
+      });
+
+      expect(result.ok).toBe(false);
+      const storedTx = await db.creditTransactions.get('op-void-1');
+      expect(storedTx?.status).toBe('completed');
+      expect((await db.customers.get(customer.id))?.balance).toBe(30);
+      expect(await db.syncQueue.count()).toBe(0);
+    });
+
+    it('refuses to void a payment-type transaction', async () => {
+      const paymentTx: CreditTransaction = {
+        id: 'op-payment-1',
+        store_id: 'store-1',
+        customer_id: customer.id,
+        cashier_pin_hash: 'Martin',
+        total_amount: 20,
+        status: 'completed',
+        created_at: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+        type: 'payment',
+      };
+      await db.creditTransactions.put(paymentTx);
+
+      const result = await voidCreditSale({
+        operationId: 'op-payment-1',
+        storeId: 'store-1',
+        now,
+      });
+
+      expect(result.ok).toBe(false);
+      const stored = await db.creditTransactions.get('op-payment-1');
+      expect(stored?.status).toBe('completed');
+      expect(await db.syncQueue.count()).toBe(0);
+    });
+
+    it('refuses to void outside the 10-minute grace window', async () => {
+      await registerSale();
+      // Sale created at 00:00:00; grace window ends at 00:10:00 sharp.
+      const tooLate = new Date('2026-01-01T00:15:00.000Z');
+
+      const result = await voidCreditSale({
+        operationId: 'op-void-1',
+        storeId: 'store-1',
+        now: tooLate,
+      });
+
+      expect(result.ok).toBe(false);
+      if (result.ok) throw new Error('expected failure');
+      expect(result.error).toBe('La ventana de 10 minutos para anular ha expirado.');
+      const stored = await db.creditTransactions.get('op-void-1');
+      expect(stored?.status).toBe('completed');
+      expect((await db.customers.get(customer.id))?.balance).toBe(30);
+    });
+
+    it('rolls back all writes when an inner write throws', async () => {
+      await registerSale();
+      const putSpy = vi.spyOn(db.customers, 'put').mockRejectedValueOnce(new Error('boom'));
+
+      const result = await voidCreditSale({ operationId: 'op-void-1', storeId: 'store-1', now });
+
+      expect(result.ok).toBe(false);
+      const stored = await db.creditTransactions.get('op-void-1');
+      expect(stored?.status).toBe('completed');
+      expect((await db.customers.get(customer.id))?.balance).toBe(30);
+      expect(await db.syncQueue.count()).toBe(0);
+
+      putSpy.mockRestore();
+    });
+
+    it('restores the balance stored at void time, not a value implied by the sale amount', async () => {
+      await registerSale(); // customer balance now 30
+      // Stale: balance changed in DB after the sale (another purchase, payment,
+      // or sync) before the void call commits.
+      await db.customers.update(customer.id, { balance: 80 });
+
+      const result = await voidCreditSale({ operationId: 'op-void-1', storeId: 'store-1', now });
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error('expected ok result');
+      expect(result.customer.balance).toBe(50); // 80 - 30, not 0
     });
   });
 });
