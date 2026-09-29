@@ -220,6 +220,12 @@ export const HomePage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const handleTransactionVoided = () => {
+    loadData(activeStoreId);
+    setToastMessage('Fiado anulado');
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const handleClearSearch = () => {
     setSearchQuery('');
     setIsSearchFocused(false);
@@ -706,6 +712,7 @@ export const HomePage: React.FC = () => {
         onClose={() => setIsCreditModalOpen(false)}
         customer={modalCustomer}
         onSuccess={handleTransactionSuccess}
+        onVoided={handleTransactionVoided}
       />
 
       <QuickPaymentModal

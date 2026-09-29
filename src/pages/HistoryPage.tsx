@@ -949,6 +949,7 @@ export const HistoryPage: React.FC = () => {
         onClose={() => setIsCreditModalOpen(false)}
         customer={selectedCustomer}
         onSuccess={handleModalSuccess}
+        onVoided={handleModalSuccess}
       />
 
       <CustomerDetailModal

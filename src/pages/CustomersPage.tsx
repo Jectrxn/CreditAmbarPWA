@@ -692,6 +692,7 @@ export const CustomersPage: React.FC = () => {
         onClose={() => setIsCreditModalOpen(false)}
         customer={selectedCustomer}
         onSuccess={handleModalSuccess}
+        onVoided={handleModalSuccess}
       />
 
       <BatchReminderModal

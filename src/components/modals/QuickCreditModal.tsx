@@ -21,7 +21,10 @@ export interface QuickCreditModalProps {
   isOpen: boolean;
   onClose: () => void;
   customer?: Customer;
+  /** A new fiado was registered. */
   onSuccess?: (tx: CreditTransaction) => void;
+  /** The fiado registered in this session was voided from the success screen. */
+  onVoided?: (tx: CreditTransaction) => void;
 }
 
 /**
@@ -40,6 +43,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
   onClose,
   customer: preselectedCustomer,
   onSuccess,
+  onVoided,
 }) => {
   const { currentOperatorName, storeSession } = useAuthStore();
   const activeStoreId = useActiveStoreId();
@@ -269,7 +273,7 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
 
       setVoidedTx({ transaction: result.transaction, customer: result.customer });
       setShowVoidConfirm(false);
-      onSuccess?.(result.transaction);
+      onVoided?.(result.transaction);
     } catch (err: any) {
       setVoidError(err?.message || 'Error al anular el fiado.');
     } finally {

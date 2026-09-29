@@ -429,6 +429,24 @@ describe('creditService - Account Creation & Limit Enforcement', () => {
       return result;
     };
 
+    it('refuses an unknown transaction id, a missing customer and a non-completed status, writing nothing', async () => {
+      const unknown = await voidCreditSale({ operationId: 'op-missing', storeId: 'store-1', now });
+      expect(unknown.ok).toBe(false);
+
+      await registerSale();
+      await db.creditTransactions.update('op-void-1', { status: 'pending' });
+      const pending = await voidCreditSale({ operationId: 'op-void-1', storeId: 'store-1', now });
+      expect(pending.ok).toBe(false);
+
+      await db.creditTransactions.update('op-void-1', { status: 'completed' });
+      await db.customers.delete(customer.id);
+      const orphan = await voidCreditSale({ operationId: 'op-void-1', storeId: 'store-1', now });
+      expect(orphan.ok).toBe(false);
+
+      expect((await db.creditTransactions.get('op-void-1'))?.status).toBe('completed');
+      expect(await db.syncQueue.count()).toBe(0);
+    });
+
     it('cancels the transaction, restores the balance and queues 2 UPDATEs on the happy path', async () => {
       await registerSale();
 
