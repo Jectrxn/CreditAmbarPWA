@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LiquidModal } from '../ui/LiquidModal';
 import type { Customer, CreditTransaction } from '../../types/database';
 import { db } from '../../lib/dexie';
-import { registerCreditSale } from '../../features/credit/creditService';
+import { registerCreditSale, voidCreditSale } from '../../features/credit/creditService';
 import { ProductPicker, suggestedTotal, type DraftItem } from './ProductPicker';
 import { useAuthStore, useActiveStoreId } from '../../store/authStore';
 import { generateWhatsAppReceipt } from '../../features/transactions/whatsappHelper';
@@ -58,12 +58,23 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     customer: Customer;
   } | null>(null);
 
+  // "Anular fiado" on the success screen: an inline confirm, an in-flight
+  // guard mirroring submittingRef, and the voided result once it lands.
+  const [showVoidConfirm, setShowVoidConfirm] = useState<boolean>(false);
+  const [isVoiding, setIsVoiding] = useState<boolean>(false);
+  const [voidError, setVoidError] = useState<string | null>(null);
+  const [voidedTx, setVoidedTx] = useState<{
+    transaction: CreditTransaction;
+    customer: Customer;
+  } | null>(null);
+
   // Idempotency key for the use case, generated once per modal open so a
   // double-submit of the same open replays instead of creating a second
   // transaction. submittingRef is a synchronous in-flight guard that does
   // not depend on a React re-render landing before a second click.
   const operationIdRef = useRef<string>('');
   const submittingRef = useRef(false);
+  const voidingRef = useRef(false);
 
   // Initial focus target: the customer select when no customer is given
   // yet (the operator must actively choose one), otherwise the product
@@ -78,6 +89,10 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
         typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
       setErrorMessage(null);
       setCompletedTx(null);
+      setShowVoidConfirm(false);
+      setIsVoiding(false);
+      setVoidError(null);
+      setVoidedTx(null);
       setAmountInput('');
       setAmountLinked(true);
       setItems([]);
@@ -234,11 +249,42 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
     }
   };
 
+  const handleVoidConfirm = async () => {
+    // Synchronous in-flight guard, mirroring submittingRef above.
+    if (voidingRef.current || !completedTx) return;
+    voidingRef.current = true;
+    setIsVoiding(true);
+    setVoidError(null);
+
+    try {
+      const result = await voidCreditSale({
+        operationId: completedTx.transaction.id,
+        storeId: activeStoreId,
+      });
+
+      if (!result.ok) {
+        setVoidError(result.error);
+        return;
+      }
+
+      setVoidedTx({ transaction: result.transaction, customer: result.customer });
+      setShowVoidConfirm(false);
+      onSuccess?.(result.transaction);
+    } catch (err: any) {
+      setVoidError(err?.message || 'Error al anular el fiado.');
+    } finally {
+      voidingRef.current = false;
+      setIsVoiding(false);
+    }
+  };
+
+  const displaySuccessCustomer = voidedTx ? voidedTx.customer : completedTx?.customer;
+
   return (
     <LiquidModal
       isOpen={isOpen}
       onClose={onClose}
-      title={completedTx ? '¡Fiado Registrado!' : 'Registrar Nuevo Fiado'}
+      title={voidedTx ? 'Fiado anulado' : completedTx ? '¡Fiado Registrado!' : 'Registrar Nuevo Fiado'}
       variant="bottom-sheet"
       maxWidth="md"
       initialFocusRef={initialFocusRef}
@@ -258,22 +304,41 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
             </div>
 
             <div>
-              <h3 className="text-base font-bold text-slate-900">Fiado guardado correctamente</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Se agregaron <span className="font-bold text-amber-700">S/ {completedTx.transaction.total_amount.toFixed(2)}</span> a la cuenta de {completedTx.customer.name}.
-              </p>
+              {voidedTx ? (
+                <>
+                  <h3 className="text-base font-bold text-slate-900">Fiado anulado</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Se devolvió <span className="font-bold text-amber-700">S/ {voidedTx.transaction.total_amount.toFixed(2)}</span> al saldo de {voidedTx.customer.name}.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-base font-bold text-slate-900">Fiado guardado correctamente</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Se agregaron <span className="font-bold text-amber-700">S/ {completedTx.transaction.total_amount.toFixed(2)}</span> a la cuenta de {completedTx.customer.name}.
+                  </p>
+                </>
+              )}
             </div>
+
+            {/* Void error alert — same pattern as the form's own error alert. */}
+            {voidError && (
+              <div className="flex items-center gap-2 p-3 text-xs text-rose-700 bg-rose-50/80 backdrop-blur-md border border-rose-200 rounded-2xl">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{voidError}</span>
+              </div>
+            )}
 
             {/* Summary Glass Card */}
             <div className="p-4 bg-white/[0.40] backdrop-blur-[14px] rounded-2xl border border-white/70 border-t-white/90 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.04)] text-xs space-y-1.5 text-left max-w-sm mx-auto">
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Nuevo Saldo Deuda:</span>
-                <span className="font-bold text-rose-600">S/ {completedTx.customer.balance.toFixed(2)}</span>
+                <span className="font-bold text-rose-600">S/ {(displaySuccessCustomer ?? completedTx.customer).balance.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 font-medium">Crédito Disponible:</span>
                 <span className="font-bold text-emerald-700">
-                  S/ {Math.max(0, completedTx.customer.credit_limit - completedTx.customer.balance).toFixed(2)}
+                  S/ {Math.max(0, (displaySuccessCustomer ?? completedTx.customer).credit_limit - (displaySuccessCustomer ?? completedTx.customer).balance).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between border-t border-white/40 pt-1.5 text-[11px]">
@@ -290,19 +355,55 @@ export const QuickCreditModal: React.FC<QuickCreditModalProps> = ({
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 pt-2 pb-[env(safe-area-inset-bottom,0px)]">
-              <a
-                href={generateWhatsAppReceipt(
-                  completedTx.transaction,
-                  completedTx.customer,
-                  storeSession?.storeName || 'Ámbar Bodega'
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 px-5 py-3 text-xs font-black text-white bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-2xl border border-t-white/80 border-b-emerald-700/50 shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] transition active:scale-[0.97] cursor-pointer"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>Enviar Recibo por WhatsApp</span>
-              </a>
+              {!voidedTx && (
+                <a
+                  href={generateWhatsAppReceipt(
+                    completedTx.transaction,
+                    completedTx.customer,
+                    storeSession?.storeName || 'Ámbar Bodega'
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 text-xs font-black text-white bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 rounded-2xl border border-t-white/80 border-b-emerald-700/50 shadow-[0_4px_12px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.7)] transition active:scale-[0.97] cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Enviar Recibo por WhatsApp</span>
+                </a>
+              )}
+
+              {!voidedTx && !showVoidConfirm && (
+                <button
+                  type="button"
+                  onClick={() => setShowVoidConfirm(true)}
+                  className="w-full px-5 py-2.5 text-xs font-black text-rose-800 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/30 rounded-2xl transition active:scale-[0.97] cursor-pointer"
+                >
+                  Anular fiado
+                </button>
+              )}
+
+              {!voidedTx && showVoidConfirm && (
+                <div className="space-y-2 text-left">
+                  <p className="text-xs font-bold text-slate-700 text-center">¿Anular este fiado?</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleVoidConfirm}
+                      disabled={isVoiding}
+                      className="flex-1 px-5 py-2.5 text-xs font-black text-rose-800 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/30 rounded-2xl transition active:scale-[0.97] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isVoiding ? 'Anulando...' : 'Sí, anular'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowVoidConfirm(false)}
+                      disabled={isVoiding}
+                      className="flex-1 px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-2xl transition cursor-pointer active:scale-[0.97]"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <button
                 type="button"

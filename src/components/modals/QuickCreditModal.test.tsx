@@ -444,4 +444,64 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     expect(submit).toBeDisabled();
     expect(screen.getByText(/excede el disponible por S\/ 849\.00/i)).toBeInTheDocument();
   });
+
+  describe('Void from the success screen (T2)', () => {
+    const registerFiado = async (onSuccess: ReturnType<typeof vi.fn>) => {
+      render(
+        <QuickCreditModal
+          isOpen={true}
+          onClose={() => {}}
+          customer={mockCustomer}
+          onSuccess={onSuccess}
+        />
+      );
+      await screen.findByText(/Carlos Mendoza/i);
+
+      const amountInput = openManualAmount();
+      fireEvent.change(amountInput, { target: { value: '25.50' } });
+      fireEvent.click(screen.getByRole('button', { name: /confirmar fiado/i }));
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+      return onSuccess.mock.calls[0][0];
+    };
+
+    it('voids the fiado from the success screen, restoring the balance and marking the transaction cancelled', async () => {
+      const onSuccess = vi.fn();
+      await registerFiado(onSuccess);
+
+      expect(screen.getByText(/fiado guardado correctamente/i)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /anular fiado/i }));
+      expect(screen.getByText('¿Anular este fiado?')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /sí, anular/i }));
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(2));
+      expect(screen.getByRole('heading', { name: 'Fiado anulado' })).toBeInTheDocument();
+      expect(screen.queryByText(/enviar recibo por whatsapp/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /anular fiado/i })).not.toBeInTheDocument();
+
+      const voidedTx = onSuccess.mock.calls[1][0];
+      expect(voidedTx.status).toBe('cancelled');
+
+      const updatedCustomer = await db.customers.get(mockCustomer.id);
+      expect(updatedCustomer?.balance).toBe(50); // back to the original balance before the fiado
+    });
+
+    it('keeps the fiado completed when the operator cancels the void confirmation', async () => {
+      const onSuccess = vi.fn();
+      const createdTx = await registerFiado(onSuccess);
+
+      fireEvent.click(screen.getByRole('button', { name: /anular fiado/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^cancelar$/i }));
+
+      expect(screen.queryByText('¿Anular este fiado?')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /anular fiado/i })).toBeInTheDocument();
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+
+      const stored = await db.creditTransactions.get(createdTx.id);
+      expect(stored?.status).toBe('completed');
+      expect((await db.customers.get(mockCustomer.id))?.balance).toBe(75.5);
+    });
+  });
 });
