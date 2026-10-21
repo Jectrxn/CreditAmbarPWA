@@ -444,4 +444,84 @@ describe('QuickCreditModal - Cashier Selection & Fiado Flow', () => {
     expect(submit).toBeDisabled();
     expect(screen.getByText(/excede el disponible por S\/ 849\.00/i)).toBeInTheDocument();
   });
+
+  describe('Void from the success screen (T2)', () => {
+    const registerFiado = async (onSuccess: ReturnType<typeof vi.fn>, onVoided?: ReturnType<typeof vi.fn>) => {
+      render(
+        <QuickCreditModal
+          isOpen={true}
+          onClose={() => {}}
+          customer={mockCustomer}
+          onSuccess={onSuccess}
+          onVoided={onVoided}
+        />
+      );
+      await screen.findByText(/Carlos Mendoza/i);
+
+      const amountInput = openManualAmount();
+      fireEvent.change(amountInput, { target: { value: '25.50' } });
+      fireEvent.click(screen.getByRole('button', { name: /confirmar fiado/i }));
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+      return onSuccess.mock.calls[0][0];
+    };
+
+    it('voids the fiado from the success screen, restoring the balance and reporting it via onVoided (not onSuccess)', async () => {
+      const onSuccess = vi.fn();
+      const onVoided = vi.fn();
+      await registerFiado(onSuccess, onVoided);
+
+      expect(screen.getByText(/fiado guardado correctamente/i)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /anular fiado/i }));
+      expect(screen.getByText('¿Anular este fiado?')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /sí, anular/i }));
+
+      await waitFor(() => expect(onVoided).toHaveBeenCalledTimes(1));
+      // onSuccess means "a new fiado was registered": it must not fire again for a void.
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(onVoided.mock.calls[0][0].status).toBe('cancelled');
+
+      expect(screen.getByRole('heading', { name: 'Fiado anulado' })).toBeInTheDocument();
+      expect(screen.queryByText(/enviar recibo por whatsapp/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /anular fiado/i })).not.toBeInTheDocument();
+
+      const updatedCustomer = await db.customers.get(mockCustomer.id);
+      expect(updatedCustomer?.balance).toBe(50); // back to the original balance before the fiado
+    });
+
+    it('shows the error and keeps the confirmation usable when the void fails', async () => {
+      const onSuccess = vi.fn();
+      const onVoided = vi.fn();
+      const createdTx = await registerFiado(onSuccess, onVoided);
+
+      const putSpy = vi.spyOn(db.customers, 'put').mockRejectedValueOnce(new Error('disk full'));
+      fireEvent.click(screen.getByRole('button', { name: /anular fiado/i }));
+      fireEvent.click(screen.getByRole('button', { name: /sí, anular/i }));
+
+      expect(await screen.findByText(/disk full|no se pudo anular/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /sí, anular/i })).toBeEnabled();
+      expect(onVoided).not.toHaveBeenCalled();
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect((await db.creditTransactions.get(createdTx.id))?.status).toBe('completed');
+      putSpy.mockRestore();
+    });
+
+    it('keeps the fiado completed when the operator cancels the void confirmation', async () => {
+      const onSuccess = vi.fn();
+      const createdTx = await registerFiado(onSuccess);
+
+      fireEvent.click(screen.getByRole('button', { name: /anular fiado/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^cancelar$/i }));
+
+      expect(screen.queryByText('¿Anular este fiado?')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /anular fiado/i })).toBeInTheDocument();
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+
+      const stored = await db.creditTransactions.get(createdTx.id);
+      expect(stored?.status).toBe('completed');
+      expect((await db.customers.get(mockCustomer.id))?.balance).toBe(75.5);
+    });
+  });
 });

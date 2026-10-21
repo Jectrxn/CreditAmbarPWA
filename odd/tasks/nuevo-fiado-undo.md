@@ -32,9 +32,9 @@ A mistaken fiado (wrong customer or amount) can only be voided from History, whi
 - Runner: `npx vitest run <file>`
 
 ## Tasks
-- [ ] T1 `voidCreditSale({ operationId, storeId, reason?, now? })`: one `db.transaction` over creditTransactions, customers, syncQueue; re-reads tx and customer; validates store, type, status, grace window; writes cancelled tx + restored rounded balance + 2 queue UPDATEs; idempotent. Tests: happy path, already cancelled (no writes), other store, payment type refused, outside grace window refused, rollback on inner failure, stale balance used from DB. Route: delegated (writer trigger: service + modal + tests).
-- [ ] T2 Success screen: "Anular fiado" secondary action → inline confirm ("¿Anular este fiado?" with "Sí, anular" / "Cancelar"); on success show voided state (title "Fiado anulado", restored balance, WhatsApp receipt hidden) and call `onSuccess` so the caller refreshes; errors shown in the existing alert. Tests: void flow restores balance and marks tx cancelled; cancel keeps it; action gone after voiding. Route: delegated.
-- [ ] T3 Full checks + Chrome verification.
+- [x] T1 `voidCreditSale({ operationId, storeId, reason?, now? })`: one `db.transaction` over creditTransactions, customers, syncQueue; re-reads tx and customer; validates store, type, status, grace window; writes cancelled tx + restored rounded balance + 2 queue UPDATEs; idempotent. Tests: happy path, already cancelled (no writes), other store, payment type refused, outside grace window refused, rollback on inner failure, stale balance used from DB. Route: delegated (writer trigger: service + modal + tests).
+- [x] T2 Success screen: "Anular fiado" secondary action → inline confirm ("¿Anular este fiado?" with "Sí, anular" / "Cancelar"); on success show voided state (title "Fiado anulado", restored balance, WhatsApp receipt hidden) and call `onSuccess` so the caller refreshes; errors shown in the existing alert. Tests: void flow restores balance and marks tx cancelled; cancel keeps it; action gone after voiding. Route: delegated.
+- [x] T3 Full checks + Chrome verification.
 
 ## Acceptance criteria
 - From the success screen, confirming "Sí, anular" leaves the customer balance as before the fiado and the transaction `cancelled`, with sync queue UPDATEs.
@@ -50,7 +50,23 @@ A mistaken fiado (wrong customer or amount) can only be voided from History, whi
 - Strategy: stacked-to-main (cached). Branch `feat/nuevo-fiado-undo` stacked on `feat/nuevo-fiado-ux`. Forecast ~300 authored lines.
 
 ## Progress and evidence
-- (none yet)
+- T1 `032c0db` voidCreditSale — RED 8 failed (not a function); GREEN 28/28.
+- T2 `00b2972` success-screen void — RED 2 failed/18; GREEN 20/20. Only new classes reuse existing rose/neutral tokens; no existing className changed.
+- Shapes vs HistoryPage cancel: same fields and queue entries; deliberate differences: cents rounding and `synced:false` on the customer put (mirrors registerCreditSale).
+- Checks: tsc clean; `npm test` 41 files / 350 tests. Parent spot check: focused 48/48.
+- T3 Chrome (test mode): Eduardo 45.00 → fiado 1× Leche S/ 3.80 → 48.80 → "Anular fiado" → "¿Anular este fiado?" → "Sí, anular" clicked twice → balance 45.00, tx `cancelled` with reason, queue `credit_transactions:UPDATE, customers:UPDATE`; screen "Fiado anulado" with restored balance, WhatsApp and Anular hidden.
+- Visual nits noted (not changed): voided state reuses the amber check icon and repeats "Fiado anulado" in header and body.
+
+- RDD: assess since last reviewed boundary `7c175c0` (includes the LiquidModal hardening) medium, 679 lines → consent granted → review-reliability approved; acknowledged, burned (lineage review-c2ade79ea017a338).
+- Post-review fix `2ece4f5` (route inline): the void called `onSuccess` again, so Home showed "¡Operación registrada con éxito!" after voiding. New `onVoided` prop; Home shows "Fiado anulado", Customers/History refresh. RED (onVoided test) → GREEN. Added UI void-error-path test and service tests for unknown tx / missing customer / non-completed status (coverage; passed on existing code). Checks: tsc clean; `npm test` 41 files / 352 tests. Chrome: Home search → + Fiar → S/ 5 → toast "registrada"; Anular → toast "Fiado anulado", balance back to 20.00. No unit test for the Home wiring itself (verified in Chrome only).
+
+## Delivery (final)
+- One slicing pass at existing commits (all ≤ 400; new cut points verified: 588aefa tsc + 334/334, 032c0db tsc + 348/348):
+  - #10 `feat/nuevo-fiado-ux-focus` → #9 (+341/−34)
+  - #11 `feat/nuevo-fiado-ux` → #10 (+180/−10)
+  - #12 `feat/nuevo-fiado-void-core` → #11 (+366/−1)
+  - #13 `feat/nuevo-fiado-undo` → #12 (+246/−26)
+- Merge order: #1, #7, #8, #9, #10, #11, #12, #13.
 
 ## Next step
-T1–T2 via delegated writer.
+Human review/merge. Follow-ups: HistoryPage cancel atomic; TabBar refocus FAB; QuickPaymentModal atomic migration.
